@@ -54,18 +54,10 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
             `${baseUrl}/products/${p.handle}.json`
           )
 
-          const rxp = (() => {
-            try {
-              return new RegExp(String(test))
-            } catch (_) {
-              return new RegExp(defaultSize)
-            }
-          })()
-
           return Promise.resolve({
             ...p,
             availability: product?.variants?.find(
-              v => rxp.test(v.title) && +v.inventory_quantity
+              v => defaultSize.test(v.title) && +v.inventory_quantity
             )
           })
         })
