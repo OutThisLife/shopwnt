@@ -109,7 +109,7 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
   return (
     <main>
-      <form>
+      <form method="post" action="javascript:;">
         <fieldset>
           {Array.from(brands)
             .map(b => ({
