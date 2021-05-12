@@ -187,7 +187,8 @@ render(
       brands={
         storage.get('brands') ?? [
           { slug: 'loveshackfancy' },
-          { slug: 'fillyboo' }
+          { slug: 'fillyboo' },
+          { slug: 'veronicabeard' }
         ]
       }
     />
