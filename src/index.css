@@ -34,6 +34,32 @@ a {
   font-weight: 700;
 }
 
+form {
+  position: fixed;
+  top: 0;
+  right: 0;
+  background: #fff;
+  border: 0;
+  box-shadow: 0 0 20px #00000055;
+}
+
+form fieldset {
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+}
+
+form fieldset label {
+  display: inherit;
+  gap: inherit;
+  place-items: center;
+}
+
+form fieldset input::placeholder {
+  font-style: italic;
+}
+
 figure {
   display: grid;
   grid-template-columns: 20vw 1fr;

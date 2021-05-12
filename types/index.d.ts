@@ -58,3 +58,8 @@ export interface Product {
   variants: Variant[]
   vendor: string
 }
+
+export interface Brand {
+  slug: string
+  test?: RegExp
+}
