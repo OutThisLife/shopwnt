@@ -15,7 +15,7 @@ const get = async <T extends any>(k: string): Promise<T> => {
   return v as T
 }
 
-const App: React.FC<Props> = ({ brands = [], sizes = /xs|petite|00/ }) => {
+const App: React.FC<Props> = ({ brands = [], sizes = /\// }) => {
   const [state, setState] = React.useState<Product[]>([])
 
   React.useEffect(
@@ -26,72 +26,72 @@ const App: React.FC<Props> = ({ brands = [], sizes = /xs|petite|00/ }) => {
           `${baseUrl}/products.json`
         )
 
-        await Promise.all(
-          products.map(async (p, i) => {
+        const res = await Promise.all(
+          products.map(async p => {
             const { product } = await get<{ product: Product }>(
               `${baseUrl}/products/${p.handle}.json`
             )
 
-            const availability = product?.variants?.find(
-              v => sizes.test(v.title) && v.inventory_quantity
-            )
-
-            if (!availability) {
-              delete products[i]
-            } else {
-              Object.assign(p, { availability })
-            }
+            return Promise.resolve({
+              ...p,
+              availability: product?.variants?.find(
+                v => sizes.test(v.title) && v.inventory_quantity
+              )
+            })
           })
         )
 
-        setState(st => [...new Set([...st, ...products.filter(i => i)])])
+        setState(st => [...new Set([...st, ...res])])
       }),
     []
   )
 
   return (
     <main>
-      {Array.from(state)
-        .sort((a, b) => +a.updated_at - +b.updated_at)
-        .map(p => (
-          <figure key={p.id}>
+      {Array.from(state).map(p => (
+        <figure key={p.id}>
+          <div>
+            <a
+              href={`https://${p.vendor}.myshopify.com/products/${p.handle}`}
+              target="_blank"
+              rel="noopener">
+              {p.title}
+            </a>
+
+            <em>{p.vendor}</em>
+
             <div>
-              <a
-                href={`https://${p.vendor}.myshopify.com/products/${p.handle}`}
-                target="_blank"
-                rel="noopener">
-                {p.title}
-              </a>
-
-              <em>{p.vendor}</em>
-
-              <div>
-                {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
-                  style: 'currency',
-                  currency: 'USD'
-                })}
-              </div>
-
-              <div>
-                {p.availability?.inventory_quantity} <em>left in</em>{' '}
-                {p.availability?.option2}
-              </div>
+              {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
+                style: 'currency',
+                currency: 'USD'
+              })}
             </div>
 
             <div>
-              {p.images?.map((i, n) => (
-                <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
-              ))}
+              <em>
+                {p.availability?.inventory_quantity ?? 0} left in{' '}
+                {p.availability?.title}
+              </em>
             </div>
-          </figure>
-        ))}
+          </div>
+
+          <div>
+            {p.images?.map((i, n) => (
+              <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
+            ))}
+          </div>
+        </figure>
+      ))}
     </main>
   )
 }
 
 render(
   <React.StrictMode>
-    <App brands={['loveshackfancy', 'fillyboo']} sizes={/xs|petite|00/} />
+    <App
+      brands={['loveshackfancy', 'fillyboo']}
+      sizes={/x?s|petite|00|o\/s/i}
+    />
   </React.StrictMode>,
   document.getElementById('root')
 )
