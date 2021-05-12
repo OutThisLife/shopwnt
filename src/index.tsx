@@ -4,16 +4,20 @@ import { render } from 'react-dom'
 import type { Brand, Product } from '../types'
 import './index.css'
 
+const defaultSize = /x?s|petite|00|o\/s/i
+
 const storage = {
-  get: (k: string) => {
+  get: <T extends any>(k: string): T => {
     if (storage.has(k)) {
-      return JSON.parse(localStorage.getItem(k) ?? '{}')
+      return JSON.parse(localStorage.getItem(k) ?? '{}') as T
     }
 
-    return undefined
+    return undefined as T
   },
 
-  has: (k: string) => !!localStorage.getItem(k)
+  has: (k: string) => !!localStorage.getItem(k),
+  set: <T extends any>(k: string, v: T): void =>
+    localStorage.setItem(k, JSON.stringify(v))
 }
 
 const query = async <T extends any>(k: string): Promise<T> => {
@@ -32,17 +36,13 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
   const [brands, setBrands] = React.useState<Brand[]>(init)
 
   React.useEffect(() => {
-    const v = localStorage.getItem('brands')
-
-    if (v) {
-      setBrands(JSON.parse(v) as Brand[])
+    if (storage.has('brands')) {
+      setBrands(storage.get<Brand[]>('brands'))
     }
   }, [])
 
   React.useEffect(() => {
-    setState([])
-
-    brands.forEach(async ({ slug, test = /x?s|petite|00|o\/s/i }) => {
+    brands.forEach(async ({ slug, test = defaultSize }) => {
       const baseUrl = `https://${slug}.myshopify.com`
       const { products = [] } = await query<{ products: Product[] }>(
         `${baseUrl}/products.json`
@@ -54,19 +54,37 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
             `${baseUrl}/products/${p.handle}.json`
           )
 
+          const rxp = (() => {
+            try {
+              return new RegExp(String(test))
+            } catch (_) {
+              return new RegExp(defaultSize)
+            }
+          })()
+
           return Promise.resolve({
             ...p,
             availability: product?.variants?.find(
-              v => test.test(v.title) && +v.inventory_quantity
+              v => rxp.test(v.title) && +v.inventory_quantity
             )
           })
         })
       )
 
-      setState(st => [...new Set([...st, ...res])].filter(i => i?.availability))
+      setState(st =>
+        [...new Set([...st, ...res])]
+          .filter(
+            (p, i, r) =>
+              p?.availability && r.findIndex(p2 => p2.id === p.id) === i
+          )
+          .sort((a, b) => +b.updated_at - +a.updated_at)
+      )
     })
 
-    localStorage.setItem('brands', JSON.stringify(brands))
+    storage.set(
+      'brands',
+      brands.map(b => ({ ...b, test: String(b) }))
+    )
   }, [brands])
 
   const onChange = React.useCallback(
@@ -80,7 +98,7 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
         const slug = e.currentTarget.value
 
         window.requestAnimationFrame(() =>
-          setBrands(st => [...new Set([{ slug }, ...st])])
+          setBrands(st => [...new Set([{ slug, test: defaultSize }, ...st])])
         )
 
         e.currentTarget.value = ''
@@ -91,61 +109,74 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
   return (
     <main>
-      <form action="javascript:;" method="post">
+      <form>
         <fieldset>
+          {Array.from(brands)
+            .map(b => ({
+              ...b,
+              valid: !!state.find(
+                p => p.vendor.toLowerCase() === b.slug.toLowerCase()
+              )
+            }))
+            .map(b => (
+              <label key={b.slug}>
+                <input type="checkbox" checked onChange={onChange(b)} />
+                {b.valid ? b.slug : <s>{b.slug}</s>}
+              </label>
+            ))}
+
           <input
             autoComplete="off"
             id="brand"
             name="brand"
-            placeholder="add brand"
+            placeholder="brand name"
             spellCheck={false}
             type="text"
             {...{ onKeyDown }}
           />
-
-          {Array.from(brands).map(b => (
-            <label key={b.slug}>
-              <input type="checkbox" checked onChange={onChange(b)} />
-              {b.slug}
-            </label>
-          ))}
         </fieldset>
       </form>
 
-      {state.map(p => (
-        <figure key={p.id}>
-          <div>
-            <a
-              href={`https://${p.vendor}.myshopify.com/products/${p.handle}`}
-              target="_blank"
-              rel="noopener">
-              {p.title}
-            </a>
-
-            <em>{p.vendor}</em>
-
+      {state.length ? (
+        state.map(p => (
+          <figure key={p.id}>
             <div>
-              {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
-                style: 'currency',
-                currency: 'USD'
-              })}
+              <a
+                href={`https://${p.vendor}.myshopify.com/products/${p.handle}`}
+                target="_blank"
+                rel="noopener">
+                {p.title}
+              </a>
+
+              <em>{p.vendor}</em>
+
+              <div>
+                {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: 'USD'
+                })}
+              </div>
+
+              <div>
+                <em>
+                  {p.availability?.inventory_quantity ?? 0} left in{' '}
+                  {p.availability?.title}
+                </em>
+              </div>
             </div>
 
             <div>
-              <em>
-                {p.availability?.inventory_quantity ?? 0} left in{' '}
-                {p.availability?.title}
-              </em>
+              {p.images?.map((i, n) => (
+                <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
+              ))}
             </div>
-          </div>
-
-          <div>
-            {p.images?.map((i, n) => (
-              <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
-            ))}
-          </div>
+          </figure>
+        ))
+      ) : (
+        <figure>
+          <div>No products found.</div>
         </figure>
-      ))}
+      )}
     </main>
   )
 }
@@ -155,12 +186,8 @@ render(
     <App
       brands={
         storage.get('brands') ?? [
-          {
-            slug: 'loveshackfancy'
-          },
-          {
-            slug: 'fillyboo'
-          }
+          { slug: 'loveshackfancy' },
+          { slug: 'fillyboo' }
         ]
       }
     />

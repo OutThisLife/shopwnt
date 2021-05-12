@@ -36,7 +36,7 @@ a {
 
 form {
   position: fixed;
-  top: 0;
+  bottom: 0;
   right: 0;
   background: #fff;
   border: 0;
@@ -56,8 +56,17 @@ form fieldset label {
   place-items: center;
 }
 
+form fieldset input {
+  padding: 0.1em;
+  border: 1px solid hsla(0, 0%, 0%, 0.25);
+}
+
 form fieldset input::placeholder {
   font-style: italic;
+}
+
+form fieldset input:read-only {
+  opacity: 0.2;
 }
 
 figure {
