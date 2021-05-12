@@ -83,7 +83,7 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
     storage.set(
       'brands',
-      brands.map(b => ({ ...b, test: String(b) }))
+      brands.map(b => ({ ...b, test: String(b.test ?? defaultSize) }))
     )
   }, [brands])
 
