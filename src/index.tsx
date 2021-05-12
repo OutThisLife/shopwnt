@@ -62,18 +62,25 @@ const App: React.FC<Props> = ({ brands = [], sizes = /xs|petite|00/ }) => {
                 rel="noopener">
                 {p.title}
               </a>
+
               <em>{p.vendor}</em>
-              {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
-                style: 'currency',
-                currency: 'USD'
-              })}
-              <br />
-              {p.availability?.inventory_quantity} left
+
+              <div>
+                {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
+                  style: 'currency',
+                  currency: 'USD'
+                })}
+              </div>
+
+              <div>
+                {p.availability?.inventory_quantity} <em>left in</em>{' '}
+                {p.availability?.option2}
+              </div>
             </div>
 
             <div>
               {p.images?.map((i, n) => (
-                <img key={i.id} src={`${i.src}&width=200`} loading="lazy" />
+                <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
               ))}
             </div>
           </figure>
