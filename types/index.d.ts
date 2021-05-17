@@ -1,27 +1,28 @@
 export interface Variant {
+  available: boolean
+  barcode?: any
+  compare_at_price: string
+  created_at: Date
+  featured_image?: any
+  grams: number
   id: string
-  title: string
+  image_id?: any
+  inventory_management: string
+  inventory_quantity: number
+  old_inventory_quantity: number
   option1: string
   option2?: any
   option3?: any
-  sku: string
-  requires_shipping: boolean
-  taxable: boolean
-  featured_image?: any
-  available: boolean
-  price: string
-  grams: number
-  compare_at_price: string
   position: number
+  price: string
   product_id: any
-  created_at: Date
+  requires_shipping: boolean
+  sku: string
+  taxable: boolean
+  title: string
   updated_at: Date
-  barcode?: any
-  image_id?: any
-  weight: number
   weight_unit: string
-  inventory_quantity: number
-  old_inventory_quantity: number
+  weight: number
 }
 
 export interface Image {

@@ -10,7 +10,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #999;
+  background: #00000011;
 }
 
 :root {
@@ -82,7 +82,7 @@ figure em {
 }
 
 figure > div:first-child {
-  background: linear-gradient(90deg, #fff 80%, transparent);
+  background: #fff;
   display: flex;
   flex-direction: column;
   left: 0;
