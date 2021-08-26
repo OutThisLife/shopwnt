@@ -1,8 +1,8 @@
 import 'normalize.css'
 import React from 'react'
-import type { Brand, Product } from '../types'
-import './index.css'
-import { clean, query, storage } from './util'
+import '~/index.css'
+import type { Brand, Product } from '~/types'
+import { clean, query, storage } from '~/util'
 
 const defaultSize = /x?s|petite|00|o\/?s/i
 const defaultTest = `${defaultSize}`.slice(1, -2)
@@ -20,11 +20,14 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
   React.useEffect(() => {
     if (!brands.length) {
-      return setState([])
+      setState([])
+    } else {
+      storage.set('brands', brands)
     }
 
     brands.forEach(async ({ slug, test = defaultTest }) => {
       const baseUrl = `https://${slug}.myshopify.com`
+
       const { products = [] } = await query<{ products: Product[] }>(
         `${baseUrl}/products.json?limit=150`
       )
@@ -59,8 +62,6 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
           )
       )
     })
-
-    storage.set('brands', brands)
   }, [brands])
 
   const onChange = React.useCallback(
@@ -86,7 +87,7 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
   return (
     <main>
-      <form method="post" action="javascript:;" {...{ ref, onKeyDown }}>
+      <form {...{ onKeyDown, ref }}>
         <fieldset>
           {Array.from(brands)
             .map(b => {
@@ -99,8 +100,8 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
               }
             })
             .map(b => (
-              <label key={b.slug}>
-                <input type="checkbox" checked onChange={onChange(b)} />
+              <label key={b.slug} htmlFor={b.slug}>
+                <input checked onChange={onChange(b)} type="checkbox" />
                 {b.valid ? b.vendor : <s>{b.vendor}</s>}
               </label>
             ))}
@@ -116,12 +117,12 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
           <input
             autoComplete="off"
+            defaultValue={defaultTest}
             id="size"
             name="size"
             placeholder="sizes"
             spellCheck={false}
             type="text"
-            defaultValue={defaultTest}
           />
         </fieldset>
       </form>
@@ -140,8 +141,8 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
                   href={`https://${clean(p.vendor)}.myshopify.com/products/${
                     p.handle
                   }`}
-                  target="_blank"
-                  rel="noopener">
+                  rel="noopener noreferrer"
+                  target="_blank">
                   {p.title}
                 </a>
 
@@ -149,8 +150,8 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
                 <div>
                   {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
-                    style: 'currency',
-                    currency: 'USD'
+                    currency: 'USD',
+                    style: 'currency'
                   })}
                 </div>
 
@@ -165,7 +166,12 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
               <div>
                 {p.images?.map(i => (
-                  <img key={i.id} src={`${i.src}&width=250`} loading="lazy" />
+                  <img
+                    key={i.id}
+                    alt=""
+                    loading="lazy"
+                    src={`${i.src}&width=250`}
+                  />
                 ))}
               </div>
             </figure>

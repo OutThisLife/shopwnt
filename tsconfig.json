@@ -1,20 +1,47 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "types": ["vite/client"],
     "allowJs": false,
-    "skipLibCheck": false,
-    "esModuleInterop": false,
     "allowSyntheticDefaultImports": true,
-    "strict": true,
+    "assumeChangesOnlyAffectDirectDependencies": true,
+    "baseUrl": "./",
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
-    "module": "ESNext",
-    "moduleResolution": "Node",
-    "resolveJsonModule": true,
+    "importHelpers": true,
     "isolatedModules": true,
+    "jsx": "react",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
+    "moduleResolution": "node",
     "noEmit": true,
-    "jsx": "react"
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "pretty": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "target": "esnext",
+    "types": ["vite/client"],
+    "typeRoots": ["types"],
+    "paths": {
+      "~*": ["./src/*"],
+      "~/types": ["./types"]
+    },
+    "plugins": [
+      {
+        "name": "typescript-styled-plugin",
+        "tags": ["createGlobalStyle", "css", "media", "styled", "keyframes"]
+      },
+      {
+        "transform": "typescript-plugin-styled-components",
+        "type": "config",
+        "minify": true,
+        "ssr": true
+      }
+    ]
   },
-  "include": ["./src"]
+  "include": ["src", "types", "./*.ts"],
+  "exclude": ["node_modules", "dist"]
 }

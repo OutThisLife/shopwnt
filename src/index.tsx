@@ -1,9 +1,9 @@
 import 'normalize.css'
 import React from 'react'
 import { render } from 'react-dom'
-import App from './app'
-import './index.css'
-import { storage } from './util'
+import App from '~/app'
+import '~/index.css'
+import { storage } from '~/util'
 
 render(
   <React.StrictMode>

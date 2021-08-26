@@ -1,3 +1,5 @@
+/* eslint-disable camelcase */
+
 export interface Variant {
   available: boolean
   barcode?: any
