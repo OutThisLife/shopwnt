@@ -43,7 +43,7 @@ export default styled.form`
     input {
       border: 1px solid hsla(0, 0%, 0%, 0.25);
       border-radius: 100em;
-      font-size: 1rem;
+      font-size: 13px;
       line-height: 0;
       padding: 0.5em 1em 0.7em;
 
