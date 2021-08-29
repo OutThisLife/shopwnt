@@ -1,5 +1,6 @@
 import * as React from 'react'
 import type { Brand } from '../../types'
+import { Input } from './Input'
 import StyledForm from './style'
 
 export const Form: React.FC<FormProps> = React.forwardRef<
@@ -23,27 +24,21 @@ export const Form: React.FC<FormProps> = React.forwardRef<
       <fieldset>
         <label htmlFor="brand">
           brand:{' '}
-          <input
-            autoComplete="off"
+          <Input
             defaultValue={slug}
             id="brand"
             name="brand"
             placeholder="brand name"
-            spellCheck={false}
-            type="text"
           />
         </label>
 
         <label htmlFor="sizes">
           sizes:{' '}
-          <input
-            autoComplete="off"
+          <Input
             defaultValue={`${test}`}
             id="size"
             name="size"
             placeholder="sizes"
-            spellCheck={false}
-            type="text"
           />
         </label>
 
