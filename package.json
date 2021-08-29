@@ -12,7 +12,7 @@
     "lint:types": "tsc --noEmit",
     "lint": "yarn lint:fix & yarn lint:types",
     "start": "vite preview",
-    "prebuild": "npx --yes rimraf dist"
+    "prebuild": "rm -rf dist"
   },
   "dependencies": {
     "normalize.css": "^8.0.1",
