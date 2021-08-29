@@ -1,14 +1,16 @@
 /* eslint-disable no-restricted-globals */
-;((self: ServiceWorkerGlobalScope) => {
+;(self => {
   self.addEventListener('activate', e =>
     e.waitUntil(
       caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
     )
   )
 
-  self.addEventListener('fetch', ({ request: r, respondWith }) =>
-    respondWith(
+  self.addEventListener('fetch', e =>
+    e.respondWith(
       (async () => {
+        const r = e.request
+
         if (!r.url.includes('json')) {
           return fetch(r.clone())
         }
@@ -30,4 +32,4 @@
 
   self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
   self.addEventListener('install', e => e.waitUntil(self.skipWaiting()))
-})(self as any as ServiceWorkerGlobalScope)
+})(self)

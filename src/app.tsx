@@ -2,163 +2,92 @@ import 'normalize.css'
 import * as React from 'react'
 import type { Brand, Product } from '../types'
 import { Form } from './Form'
-import './index.css'
-import { clean, query } from './util'
+import { Item } from './Item'
+import { clean, query, sleep, storage } from './util'
 
 const defaultSize = /x?s|petite|00|o\/?s/i
-const defaultTest = `${defaultSize}`.slice(1, -2)
 
-const App: React.FC<Props> = ({ brands: init = [] }) => {
-  const ref = React.useRef<HTMLFormElement>(null)
+const App: React.FC = () => {
   const [state, setState] = React.useState<Product[]>([])
-  const [brands, setBrands] = React.useState<Brand[]>(init)
+
+  const [{ slug = 'loveshackfancy', test = defaultSize }, setBrand] =
+    React.useState<Brand>(
+      () => storage.get('brand') ?? [{ slug: 'loveshackfancy' }]
+    )
 
   React.useEffect(() => {
-    const onReady = () => {
-      brands.forEach(async ({ slug, test = defaultTest }) => {
-        const baseUrl = `https://${slug}.myshopify.com`
+    ;(async () => {
+      document.body.classList.toggle('loading', true)
 
-        const { products = [] } = await query<{ products: Product[] }>(
-          `${baseUrl}/products.json?limit=150`
-        )
-
-        const res = await Promise.all(
-          products.map(async p => {
-            const { product } = await query<{ product: Product }>(
-              `${baseUrl}/products/${p.handle}.json`
-            )
-
-            return Promise.resolve({
-              ...p,
-              availability: product?.variants
-                ?.map(v => ({
-                  ...v,
-                  inventory_quantity: v.inventory_quantity ?? Infinity
-                }))
-                .find(
-                  v =>
-                    new RegExp(test, 'i').test(v.title) && +v.inventory_quantity
-                )
-            })
-          })
-        )
-
-        setState(st =>
-          [...new Set([...st, ...res])]
-            .filter(i => brands.find(k => clean(k.slug) === clean(i.vendor)))
-            .filter(
-              (p, i, r) =>
-                p?.availability && r.findIndex(p2 => p2.id === p.id) === i
-            )
-        )
+      storage.set('brand', {
+        slug,
+        test: typeof test === 'string' ? test : `${test}`
       })
-    }
 
-    navigator.serviceWorker.ready.then(onReady)
-  }, [brands])
+      const baseUrl = `https://${slug}.myshopify.com`
 
-  const onChange = React.useCallback(
-    (k: Brand) => () => setBrands(st => st.filter(v => v.slug !== k.slug)),
-    []
-  )
+      const { products = [] } = await query<{ products: Product[] }>(
+        `${baseUrl}/products.json?limit=150`
+      )
 
-  const onKeyDown = React.useCallback(
-    (e: React.KeyboardEvent<HTMLFormElement>) => {
-      if (ref.current instanceof HTMLFormElement && e.code === 'Enter') {
-        const slug = ref.current?.brand?.value
-        const test = ref.current?.size?.value ?? defaultSize
+      const res = await Promise.all(
+        products.map(async p => {
+          await sleep(1e3)
 
-        window.requestAnimationFrame(() =>
-          setBrands(st => [...new Set([{ slug, test }, ...st])])
-        )
+          const { product } = await query<{ product: Product }>(
+            `${baseUrl}/products/${p.handle}.json`
+          )
 
-        ref.current?.reset()
-      }
-    },
-    []
-  )
-
-  return (
-    <main>
-      <Form {...{ onKeyDown, ref }}>
-        {Array.from(brands)
-          .map(b => {
-            const item = state.find(i => clean(i.vendor) === clean(b.slug))
-
-            return {
-              ...b,
-              valid: !!item,
-              vendor: item?.vendor ?? b.slug
-            }
+          return Promise.resolve({
+            ...p,
+            availability: product?.variants
+              ?.map(v => ({
+                ...v,
+                inventory_quantity: v.inventory_quantity ?? Infinity
+              }))
+              .find(
+                v =>
+                  new RegExp(test, 'i').test(v.title) && +v.inventory_quantity
+              )
           })
-          .map(b => (
-            <label key={b.slug} htmlFor={b.slug}>
-              <input checked onChange={onChange(b)} type="checkbox" />
-              {b.valid ? b.vendor : <s>{b.vendor}</s>}
-            </label>
-          ))}
-      </Form>
+        })
+      )
 
-      {state.length ? (
-        Array.from(state)
+      setState(st =>
+        [...new Set([...st, ...res])]
+          .filter(i => clean(slug) === clean(i.vendor))
+          .filter(
+            (p, i, r) =>
+              p?.availability && r.findIndex(p2 => p2.id === p.id) === i
+          )
           .sort(
             (a, b) =>
               +(a.availability?.updated_at ?? Infinity) -
               +(b.availability?.updated_at ?? Infinity)
           )
-          .map(p => (
-            <figure key={p.id}>
-              <div>
-                <a
-                  href={`https://${clean(p.vendor)}.myshopify.com/products/${
-                    p.handle
-                  }`}
-                  rel="noopener noreferrer"
-                  target="_blank">
-                  {p.title}
-                </a>
+      )
 
-                <em>{p.vendor}</em>
+      window.requestAnimationFrame(() =>
+        document.body.classList.toggle('loading', false)
+      )
+    })()
+  }, [slug])
 
-                <div>
-                  {parseFloat(p.variants?.[0]?.price).toLocaleString('en-US', {
-                    currency: 'USD',
-                    style: 'currency'
-                  })}
-                </div>
+  return (
+    <main>
+      <Form {...{ setBrand, slug, test }} />
 
-                <div>
-                  <em>
-                    {p.availability?.title}
-                    <br />
-                    {p.availability?.inventory_quantity}
-                  </em>
-                </div>
-              </div>
-
-              <div>
-                {p.images?.map(i => (
-                  <img
-                    key={i.id}
-                    alt=""
-                    loading="lazy"
-                    src={`${i.src}&width=250`}
-                  />
-                ))}
-              </div>
-            </figure>
-          ))
-      ) : (
-        <figure>
-          <div>No products found.</div>
-        </figure>
-      )}
+      <section>
+        {state.length ? (
+          state.map(i => <Item key={i.id} {...i} />)
+        ) : (
+          <Item>
+            <div>No products found.</div>
+          </Item>
+        )}
+      </section>
     </main>
   )
-}
-
-interface Props {
-  brands?: Brand[]
 }
 
 export default App

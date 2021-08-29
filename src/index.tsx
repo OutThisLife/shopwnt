@@ -2,12 +2,12 @@ import 'normalize.css'
 import React from 'react'
 import { render } from 'react-dom'
 import App from './app'
-import './index.css'
-import { storage } from './util'
+import GlobalStyles from './style'
 
 render(
   <React.StrictMode>
-    <App brands={storage.get('brands') ?? [{ slug: 'loveshackfancy' }]} />
+    <App />
+    <GlobalStyles />
   </React.StrictMode>,
   document.getElementById('root')
 )

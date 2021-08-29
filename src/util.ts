@@ -16,3 +16,6 @@ export const query = async <T extends any>(k: string): Promise<T> =>
   (await fetch(k)).json() as T
 
 export const clean = (s: string) => s.replace(/ /g, '').toLocaleLowerCase()
+
+export const sleep = (ms: number): Promise<void> =>
+  new Promise(y => setTimeout(y, ms))
