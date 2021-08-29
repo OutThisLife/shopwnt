@@ -7,7 +7,7 @@ export default styled.figure`
   overflow: overlay;
 
   @media (min-width: 1024px) {
-    grid-template-columns: calc(var(--vsq) * 20) 1fr;
+    grid-template-columns: 20rem 1fr;
   }
 
   > a {
@@ -22,6 +22,7 @@ export default styled.figure`
     position: sticky;
     text-decoration: none;
     z-index: 1;
+    grid-template-columns: 1fr;
 
     h3 {
       font-size: 1.5rem;
