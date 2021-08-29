@@ -1,8 +1,9 @@
 import 'normalize.css'
-import React from 'react'
-import '~/index.css'
-import type { Brand, Product } from '~/types'
-import { clean, query, storage } from '~/util'
+import * as React from 'react'
+import type { Brand, Product } from '../types'
+import { Form } from './Form'
+import './index.css'
+import { clean, query } from './util'
 
 const defaultSize = /x?s|petite|00|o\/?s/i
 const defaultTest = `${defaultSize}`.slice(1, -2)
@@ -13,55 +14,47 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
   const [brands, setBrands] = React.useState<Brand[]>(init)
 
   React.useEffect(() => {
-    if (storage.has('brands')) {
-      setBrands(storage.get<Brand[]>('brands'))
-    }
-  }, [])
+    const onReady = () => {
+      brands.forEach(async ({ slug, test = defaultTest }) => {
+        const baseUrl = `https://${slug}.myshopify.com`
 
-  React.useEffect(() => {
-    if (!brands.length) {
-      setState([])
-    } else {
-      storage.set('brands', brands)
-    }
+        const { products = [] } = await query<{ products: Product[] }>(
+          `${baseUrl}/products.json?limit=150`
+        )
 
-    brands.forEach(async ({ slug, test = defaultTest }) => {
-      const baseUrl = `https://${slug}.myshopify.com`
+        const res = await Promise.all(
+          products.map(async p => {
+            const { product } = await query<{ product: Product }>(
+              `${baseUrl}/products/${p.handle}.json`
+            )
 
-      const { products = [] } = await query<{ products: Product[] }>(
-        `${baseUrl}/products.json?limit=150`
-      )
-
-      const res = await Promise.all(
-        products.map(async p => {
-          const { product } = await query<{ product: Product }>(
-            `${baseUrl}/products/${p.handle}.json`
-          )
-
-          return Promise.resolve({
-            ...p,
-            availability: product?.variants
-              ?.map(v => ({
-                ...v,
-                inventory_quantity: v.inventory_quantity ?? Infinity
-              }))
-              .find(
-                v =>
-                  new RegExp(test, 'i').test(v.title) && +v.inventory_quantity
-              )
+            return Promise.resolve({
+              ...p,
+              availability: product?.variants
+                ?.map(v => ({
+                  ...v,
+                  inventory_quantity: v.inventory_quantity ?? Infinity
+                }))
+                .find(
+                  v =>
+                    new RegExp(test, 'i').test(v.title) && +v.inventory_quantity
+                )
+            })
           })
-        })
-      )
+        )
 
-      setState(st =>
-        [...new Set([...st, ...res])]
-          .filter(i => brands.find(k => clean(k.slug) === clean(i.vendor)))
-          .filter(
-            (p, i, r) =>
-              p?.availability && r.findIndex(p2 => p2.id === p.id) === i
-          )
-      )
-    })
+        setState(st =>
+          [...new Set([...st, ...res])]
+            .filter(i => brands.find(k => clean(k.slug) === clean(i.vendor)))
+            .filter(
+              (p, i, r) =>
+                p?.availability && r.findIndex(p2 => p2.id === p.id) === i
+            )
+        )
+      })
+    }
+
+    navigator.serviceWorker.ready.then(onReady)
   }, [brands])
 
   const onChange = React.useCallback(
@@ -87,52 +80,31 @@ const App: React.FC<Props> = ({ brands: init = [] }) => {
 
   return (
     <main>
-      <form {...{ onKeyDown, ref }}>
-        <fieldset>
-          {Array.from(brands)
-            .map(b => {
-              const item = state.find(i => clean(i.vendor) === clean(b.slug))
+      <Form {...{ onKeyDown, ref }}>
+        {Array.from(brands)
+          .map(b => {
+            const item = state.find(i => clean(i.vendor) === clean(b.slug))
 
-              return {
-                ...b,
-                valid: !!item,
-                vendor: item?.vendor ?? b.slug
-              }
-            })
-            .map(b => (
-              <label key={b.slug} htmlFor={b.slug}>
-                <input checked onChange={onChange(b)} type="checkbox" />
-                {b.valid ? b.vendor : <s>{b.vendor}</s>}
-              </label>
-            ))}
-
-          <input
-            autoComplete="off"
-            id="brand"
-            name="brand"
-            placeholder="brand name"
-            spellCheck={false}
-            type="text"
-          />
-
-          <input
-            autoComplete="off"
-            defaultValue={defaultTest}
-            id="size"
-            name="size"
-            placeholder="sizes"
-            spellCheck={false}
-            type="text"
-          />
-        </fieldset>
-      </form>
+            return {
+              ...b,
+              valid: !!item,
+              vendor: item?.vendor ?? b.slug
+            }
+          })
+          .map(b => (
+            <label key={b.slug} htmlFor={b.slug}>
+              <input checked onChange={onChange(b)} type="checkbox" />
+              {b.valid ? b.vendor : <s>{b.vendor}</s>}
+            </label>
+          ))}
+      </Form>
 
       {state.length ? (
         Array.from(state)
           .sort(
             (a, b) =>
-              +(a.availability?.inventory_quantity ?? Infinity) -
-              +(b.availability?.inventory_quantity ?? Infinity)
+              +(a.availability?.updated_at ?? Infinity) -
+              +(b.availability?.updated_at ?? Infinity)
           )
           .map(p => (
             <figure key={p.id}>

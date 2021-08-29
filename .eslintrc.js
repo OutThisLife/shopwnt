@@ -75,7 +75,6 @@ const init = (
           'class',
           'continue',
           'debugger',
-          'expression',
           'if',
           'multiline-const',
           'multiline-let',
@@ -89,7 +88,6 @@ const init = (
         prev: [
           'case',
           'default',
-          'expression',
           'multiline-block-like',
           'multiline-const',
           'multiline-let'
