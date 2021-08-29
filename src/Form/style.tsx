@@ -12,6 +12,7 @@ export default styled.form`
   z-index: 1000;
 
   fieldset {
+    flex-wrap: wrap;
     border: 0;
     display: flex;
     flex-direction: row;

@@ -46,6 +46,10 @@ img {
 }
 
 section {
+  position: relative;
+  max-width: 100vw;
+  overflow: hidden;
+  
   &:before,
   &:after {
     bottom: 0;

@@ -2,10 +2,13 @@ import styled from 'styled-components'
 
 export default styled.figure`
   display: grid;
-  grid-template-columns: 20vw 1fr;
   margin: 1px auto;
-  max-width: 100vw;
+  max-width: 100%;
   overflow: overlay;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: calc(var(--vsq) * 20) 1fr;
+  }
 
   > a {
     backdrop-filter: blur(50px);
