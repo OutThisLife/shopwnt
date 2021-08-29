@@ -11,7 +11,8 @@
     "lint:fix": "eslint --fix src/ --ext .ts,.tsx",
     "lint:types": "tsc --noEmit",
     "lint": "yarn lint:fix & yarn lint:types",
-    "serve": "vite preview"
+    "start": "vite preview",
+    "prebuild": "npx --yes rimraf dist"
   },
   "dependencies": {
     "normalize.css": "^8.0.1",

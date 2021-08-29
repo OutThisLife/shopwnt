@@ -11,6 +11,7 @@
     "importHelpers": true,
     "isolatedModules": false,
     "jsx": "react",
+    "outDir": "dist/",
     "lib": ["dom", "dom.iterable", "esnext", "webworker"],
     "module": "esnext",
     "moduleResolution": "node",
