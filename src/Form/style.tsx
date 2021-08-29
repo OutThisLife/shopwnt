@@ -12,10 +12,10 @@ export default styled.form`
   z-index: 1000;
 
   fieldset {
-    flex-wrap: wrap;
     border: 0;
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
     gap: calc(var(--vsq) * 3);
     padding: 1em;
     place-content: center;
@@ -54,6 +54,7 @@ export default styled.form`
   }
 
   button {
-    display: none;
+    position: absolute;
+    visibility: hidden;
   }
 `

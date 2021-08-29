@@ -8,6 +8,7 @@ export const Form: React.FC<FormProps> = React.forwardRef<
 >(function _({ setBrand, slug, test, ...props }, ref) {
   const onSubmit = React.useCallback(
     (e: React.FormEvent<HTMLFormElement>) => {
+      alert('submitted')
       e.preventDefault()
 
       setBrand({
