@@ -1,71 +1,89 @@
 import 'normalize.css'
 import * as React from 'react'
-import type { Brand, Product } from '../types'
-import { Form } from './Form'
+import type { Product } from '../types'
+import type { State } from './ctx'
+import { BrandContext } from './ctx'
+import { Form, Input } from './Form'
 import { Item } from './Item'
-import { clean, query, sleep, storage } from './util'
-
-const defaultSize = /x?s|petite|00|o\/?s/i
+import { clean, query, sleep } from './util'
 
 const App: React.FC = () => {
-  const [state, setState] = React.useState<Product[]>([])
+  const ctx = React.useContext(BrandContext)
+  const [state, setState] = React.useState<State>(() => ctx)
 
-  const [{ slug = 'loveshackfancy', test = defaultSize }, setBrand] =
-    React.useState<Brand>(
-      () => storage.get('brand') ?? [{ slug: 'loveshackfancy' }]
-    )
+  const [products, update] = React.useState<Map<number, Product>>(
+    () => new Map()
+  )
+
+  const slug = React.useMemo<string>(
+    () => `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`,
+    [state]
+  )
+
+  const sizes = React.useMemo<string[]>(() => [...state.sizes.keys()], [state])
+
+  const items = React.useMemo<Product[]>(
+    () =>
+      [...products.values()]
+        .filter(p => p)
+        .filter(p => ({
+          ...p,
+          availability: p?.variants
+            ?.map(v => ({
+              ...v,
+              inventory_quantity: v.inventory_quantity ?? Infinity
+            }))
+            .find(v =>
+              sizes.length
+                ? new RegExp(
+                    `(o/s|${sizes.join('|').replace('xs', 'x?s')})`,
+                    'i'
+                  ).test(`${v.title}`)
+                : v
+            )
+        }))
+        .sort(
+          (a, b) =>
+            +(a.availability?.updated_at ?? Infinity) -
+            +(b.availability?.updated_at ?? Infinity)
+        ),
+    [products, sizes]
+  )
 
   React.useEffect(() => {
     ;(async () => {
       document.body.classList.toggle('loading', true)
 
-      storage.set('brand', {
-        slug,
-        test: typeof test === 'string' ? test : `${test}`
-      })
+      try {
+        const baseUrl = `https://${slug}.myshopify.com`
 
-      const baseUrl = `https://${slug}.myshopify.com`
+        const catalog = await query<{ products: Product[] }>(
+          `${baseUrl}/products.json?limit=150`
+        )
 
-      const { products = [] } = await query<{ products: Product[] }>(
-        `${baseUrl}/products.json?limit=150`
-      )
+        // eslint-disable-next-line no-sequences
+        update(st => (st.clear(), st))
 
-      const res = await Promise.all(
-        products.map(async p => {
-          await sleep(1e3)
+        update(
+          new Map(
+            await Promise.all(
+              (catalog.products ?? [])
+                .filter(i => clean(slug) === clean(i.vendor))
+                .map(async ({ handle }): Promise<[number, Product]> => {
+                  await sleep(1e3)
 
-          const { product } = await query<{ product: Product }>(
-            `${baseUrl}/products/${p.handle}.json`
+                  const { product: p } = await query<{ product: Product }>(
+                    `${baseUrl}/products/${handle}.json`
+                  )
+
+                  return [p.id, p]
+                })
+            )
           )
-
-          return Promise.resolve({
-            ...p,
-            availability: product?.variants
-              ?.map(v => ({
-                ...v,
-                inventory_quantity: v.inventory_quantity ?? Infinity
-              }))
-              .find(
-                v =>
-                  new RegExp(test, 'i').test(v.title) && +v.inventory_quantity
-              )
-          })
-        })
-      )
-
-      setState(st =>
-        [...new Set([...st, ...res])]
-          .filter(i => clean(slug) === clean(i.vendor))
-          .filter(
-            (p, i, r) =>
-              p?.availability && r.findIndex(p2 => p2.id === p.id) === i
-          )
-          .sort(
-            (a, b) =>
-              +(a.availability?.updated_at ?? Infinity) -
-              +(b.availability?.updated_at ?? Infinity)
-          )
-      )
+        )
+      } catch (err) {
+        console.error(err)
+      }
 
       window.requestAnimationFrame(() =>
         document.body.classList.toggle('loading', false)
@@ -75,17 +93,26 @@ const App: React.FC = () => {
 
   return (
     <main>
-      <Form {...{ setBrand, slug, test }} />
+      <BrandContext.Provider value={{ ...state, setState }}>
+        <Form>
+          <fieldset>
+            <Input for="slugs" />
+            <Input for="sizes" />
+          </fieldset>
+        </Form>
 
-      <section>
-        {state.length ? (
-          state.map(i => <Item key={i.id} {...i} />)
-        ) : (
-          <Item>
-            <div>No products found.</div>
-          </Item>
-        )}
-      </section>
+        <section>
+          {items.length ? (
+            items.map(i => <Item key={i.id} {...i} />)
+          ) : (
+            <Item>
+              <div>
+                No products found for <strong>{slug}.</strong>
+              </div>
+            </Item>
+          )}
+        </section>
+      </BrandContext.Provider>
     </main>
   )
 }

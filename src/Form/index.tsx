@@ -1,53 +1,14 @@
 import * as React from 'react'
-import type { Brand } from '../../types'
-import { Input } from './Input'
 import StyledForm from './style'
 
-export const Form: React.FC<FormProps> = React.forwardRef<
-  HTMLFormElement,
-  FormProps
->(function _({ setBrand, slug, test, ...props }, ref) {
-  const onSubmit = React.useCallback(
-    (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault()
-
-      setBrand({
-        slug: e.currentTarget?.brand?.value,
-        test: e.currentTarget?.size?.value
-      })
-    },
-    [setBrand]
+export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
+  React.forwardRef<HTMLFormElement, React.FormHTMLAttributes<HTMLFormElement>>(
+    function _(props, ref) {
+      return <StyledForm action="#!" method="post" {...{ ref, ...props }} />
+    }
   )
 
-  return (
-    <StyledForm action="#!" method="post" {...{ onSubmit, ref, ...props }}>
-      <fieldset>
-        <label htmlFor="brand">
-          brand:{' '}
-          <Input
-            defaultValue={slug}
-            id="brand"
-            name="brand"
-            placeholder="brand name"
-          />
-        </label>
+export default Form
 
-        <label htmlFor="sizes">
-          sizes:{' '}
-          <Input
-            defaultValue={`${test}`}
-            id="size"
-            name="size"
-            placeholder="sizes"
-          />
-        </label>
-
-        <button type="submit">submit</button>
-      </fieldset>
-    </StyledForm>
-  )
-})
-
-export interface FormProps extends Brand {
-  setBrand(k: Brand): void
-}
+export * from './Input'
+export * from './Tag'

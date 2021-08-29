@@ -6,54 +6,29 @@ export default styled.form`
   border: 0;
   box-shadow: 0 0 20px #00000022;
   left: 0;
+  overflow: hidden;
   position: sticky;
   right: 0;
   top: 0;
+  user-select: none;
   z-index: 1000;
 
   fieldset {
+    all: unset;
     border: 0;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
-    gap: calc(var(--vsq) * 3);
-    padding: 1em;
     place-content: center;
+    padding: 1rem;
     place-items: center;
-  }
 
-  label {
-    color: hsla(0, 0%, 0%, 0.5);
-    display: inherit;
-    font-weight: 500;
-    gap: calc(var(--vsq) * 1.5);
-    letter-spacing: 0.02em;
-    line-height: 1;
-    place-items: center;
-    text-transform: uppercase;
-
-    &:focus-within {
-      color: var(--primary);
-
-      input {
-        border-color: var(--primary);
-      }
-    }
-
-    input {
-      border: 1px solid hsla(0, 0%, 0%, 0.25);
-      border-radius: 100em;
-      font-size: max(1em, 16px);
-      line-height: 0;
-      padding: 0.5em 1em 0.7em;
-
-      &:focus {
-        outline: none;
-      }
+    @media (min-width: 1024px) {
+      gap: calc(var(--vsq) * 3);
     }
   }
 
-  button {
+  [type='submit'] {
     position: absolute;
     visibility: hidden;
   }

@@ -3,8 +3,12 @@ import { createGlobalStyle } from 'styled-components'
 export default createGlobalStyle`
 :root {
   --vsq: calc((1vw + 1vh) / 2);
-  --primary: #00f;
-  --bg: #fff;
+
+  --primary: hsl(240, 100%, 50%);
+
+  --bg-hsl: 0, 0%, 100%;
+  --bg: hsl(var(--bg-hsl));
+
   --pad: calc(var(--vsq) * 4);
 }
 
@@ -12,6 +16,11 @@ export default createGlobalStyle`
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+main * {
+  --primary-fg: 240, calc(var(--fs, 1) * 100%), calc(var(--fl, 1) * 50%);
+  --primary-bg: 240, calc(var(--bs, 1) * 100%), calc(var(--bl, 1) * 50%);
 }
 
 ::-webkit-scrollbar {

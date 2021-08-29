@@ -50,7 +50,7 @@ export interface Product {
   body_html: string
   created_at: Date
   handle: string
-  id: string
+  id: number
   images: Image[]
   options: Option[]
   product_type: string
@@ -60,9 +60,4 @@ export interface Product {
   updated_at: Date
   variants: Variant[]
   vendor: string
-}
-
-export interface Brand {
-  slug: string
-  test?: RegExp
 }
