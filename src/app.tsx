@@ -58,7 +58,9 @@ const App: React.FC = () => {
         const baseUrl = `https://${slug}.myshopify.com`
 
         const catalog = await query<{ products: Product[] }>(
-          `${baseUrl}/products.json?limit=150`
+          `${baseUrl}/products.json?limit=${
+            window.innerWidth < 1024 ? 20 : 150
+          }`
         )
 
         // eslint-disable-next-line no-sequences
