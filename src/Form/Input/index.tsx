@@ -19,7 +19,7 @@ export const Input: React.FC<InputProps> = ({ for: key }) => {
     })
 
   const add = () => {
-    const str = window.prompt('Add new brand', '')
+    const str = window.prompt(`Add New ${singleton ? 'Brand' : 'Size'}`, '')
 
     if (str) {
       handle(str, true)
@@ -54,7 +54,7 @@ export const Input: React.FC<InputProps> = ({ for: key }) => {
 
   return (
     <StyledInput htmlFor={key}>
-      {label}
+      <span>{label}</span>
 
       <div>
         {[...ctx[key].entries()].map(([t]) => (

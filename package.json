@@ -18,6 +18,7 @@
     "normalize.css": "^8.0.1",
     "react": "^17.0.0",
     "react-dom": "^17.0.0",
+    "react-lazyload": "^3.2.0",
     "styled-components": "^5.3.1"
   },
   "devDependencies": {
@@ -26,6 +27,7 @@
     "@types/prettier": "^2.3.2",
     "@types/react": "^17.0.0",
     "@types/react-dom": "^17.0.0",
+    "@types/react-lazyload": "^3.1.1",
     "@types/styled-components": "^5.1.13",
     "@typescript-eslint/eslint-plugin": "^4.17.0",
     "@typescript-eslint/parser": "^4.17.0",

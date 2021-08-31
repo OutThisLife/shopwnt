@@ -1,11 +1,12 @@
 import 'normalize.css'
 import * as React from 'react'
+import LazyLoad from 'react-lazyload'
 import type { Product } from '../types'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
-import { Form, Input } from './Form'
+import { Form } from './Form'
 import { Item } from './Item'
-import { clean, query, sleep } from './util'
+import { pick, query } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
@@ -15,72 +16,43 @@ const App: React.FC = () => {
     () => new Map()
   )
 
+  const sizes = React.useMemo<string[]>(
+    () => [...state.sizes.keys()].map(s => s.toLocaleLowerCase()),
+    [state]
+  )
+
   const slug = React.useMemo<string>(
     () => `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`,
     [state]
   )
 
-  const sizes = React.useMemo<string[]>(() => [...state.sizes.keys()], [state])
-
-  const items = React.useMemo<Product[]>(
-    () =>
-      [...products.values()]
-        .filter(p => p)
-        .filter(p => ({
-          ...p,
-          availability: p?.variants
-            ?.map(v => ({
-              ...v,
-              inventory_quantity: v.inventory_quantity ?? Infinity
-            }))
-            .find(v =>
-              sizes.length
-                ? new RegExp(
-                    `(o/s|${sizes.join('|').replace('xs', 'x?s')})`,
-                    'i'
-                  ).test(`${v.title}`)
-                : v
-            )
-        }))
-        .sort(
-          (a, b) =>
-            +(a.availability?.updated_at ?? Infinity) -
-            +(b.availability?.updated_at ?? Infinity)
-        ),
-    [products, sizes]
-  )
-
   React.useEffect(() => {
     ;(async () => {
+      window.scrollTo({ behavior: 'smooth', top: 0 })
       document.body.classList.toggle('loading', true)
 
       try {
-        const baseUrl = `https://${slug}.myshopify.com`
-
-        const catalog = await query<{ products: Product[] }>(
-          `${baseUrl}/products.json?limit=${
-            window.innerWidth < 1024 ? 20 : 150
-          }`
-        )
-
-        // eslint-disable-next-line no-sequences
-        update(st => (st.clear(), st))
+        const res = await query<{ products: Product[] }>(slug, 'products', {
+          limit: 150
+        })
 
         update(
           new Map(
-            await Promise.all(
-              (catalog.products ?? [])
-                .filter(i => clean(slug) === clean(i.vendor))
-                .map(async ({ handle }): Promise<[number, Product]> => {
-                  await sleep(1e3)
-
-                  const { product: p } = await query<{ product: Product }>(
-                    `${baseUrl}/products/${handle}.json`
+            (res.products ?? []).map(p => [
+              p.id,
+              {
+                ...pick(p, 'id', 'handle', 'vendor'),
+                variants: p.variants?.filter(v => {
+                  const vs = Object.values(
+                    pick(v, 'option1', 'option2', 'option3')
                   )
+                    .filter(i => i)
+                    .map(i => i.toLocaleLowerCase())
 
-                  return [p.id, p]
+                  return sizes.some(s => vs.includes(s))
                 })
-            )
+              }
+            ])
           )
         )
       } catch (err) {
@@ -91,21 +63,25 @@ const App: React.FC = () => {
         document.body.classList.toggle('loading', false)
       )
     })()
-  }, [slug])
+  }, [slug, sizes])
 
   return (
     <main>
       <BrandContext.Provider value={{ ...state, setState }}>
-        <Form>
-          <fieldset>
-            <Input for="slugs" />
-            <Input for="sizes" />
-          </fieldset>
-        </Form>
+        <Form />
 
         <section>
-          {items.length ? (
-            items.map(i => <Item key={i.id} {...i} />)
+          {products.size ? (
+            [...products.values()]
+              .sort(
+                (a, b) =>
+                  +(a.updated_at ?? Infinity) - +(b.updated_at ?? Infinity)
+              )
+              .map(i => (
+                <LazyLoad key={i.id} height={250} offset={100}>
+                  <Item {...i} />
+                </LazyLoad>
+              ))
           ) : (
             <Item>
               <div>

@@ -59,5 +59,6 @@ export interface Product {
   title: string
   updated_at: Date
   variants: Variant[]
+  originalVariants?: Variant[]
   vendor: string
 }

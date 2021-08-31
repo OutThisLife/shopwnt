@@ -23,15 +23,6 @@ main * {
   --primary-bg: 240, calc(var(--bs, 1) * 100%), calc(var(--bl, 1) * 50%);
 }
 
-::-webkit-scrollbar {
-  width: 2px;
-  height: 2px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--primary);
-}
-
 @keyframes rotate360 {
   from {
     transform: rotate(0deg);
@@ -43,15 +34,22 @@ main * {
 
 html {
   line-height: 1.3;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
-    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  font-size: clamp(13px, calc(var(--vsq) * 1.5), 16px);
+  font-family: Poppins, sans-serif;
+  font-size: clamp(13px, calc(var(--vsq) * 1.5), 14px);
   letter-spacing: 0.02em;
 }
 
 img {
   max-width: 100%;
   height: auto;
+}
+
+a {
+  color: initial;
+
+  &:hover{
+    color: var(--primary)
+  }
 }
 
 section {

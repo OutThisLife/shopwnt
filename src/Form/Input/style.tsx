@@ -10,7 +10,6 @@ export default styled.label`
   letter-spacing: 0.02em;
   line-height: 1;
   max-width: 100%;
-  padding: var(--pad);
   place-items: center;
   position: relative;
   text-transform: uppercase;
@@ -20,6 +19,19 @@ export default styled.label`
   }
 
   > {
+    span {
+      @media (max-width: 1024px) {
+        &:first-of-type {
+          width: 45px;
+        }
+
+        &:last-of-type {
+          position: absolute;
+          right: 0;
+        }
+      }
+    }
+
     div {
       display: inherit;
       gap: inherit;
@@ -29,13 +41,6 @@ export default styled.label`
         max-width: 70%;
         overflow: overlay;
         padding: 0.5rem 0;
-      }
-    }
-
-    span:last-of-type {
-      @media (max-width: 1024px) {
-        position: absolute;
-        right: 0;
       }
     }
   }
