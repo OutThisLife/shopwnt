@@ -1,6 +1,7 @@
-import * as React from 'react'
+import type { SetStateAction } from 'react'
+import { createContext } from 'react'
 
-export const BrandContext = React.createContext<CTX>({
+export const BrandContext = createContext<CTX>({
   setState: () => null,
   sizes: new Map<string, boolean>([
     ['00', true],
@@ -19,6 +20,6 @@ export interface State {
   slugs: Map<string, boolean>
 }
 
-interface CTX extends State {
-  setState(v: React.SetStateAction<State>): void
+export interface CTX extends State {
+  setState(v: SetStateAction<State>): void
 }

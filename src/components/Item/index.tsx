@@ -1,6 +1,7 @@
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '../../../types'
+import { useVisibility } from '../../hooks'
 import { clean, fetcher } from '../../util'
 import StyledItem from './style'
 
@@ -9,28 +10,32 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
   handle,
   vendor
 }) => {
+  const [ref, isVisible] = useVisibility()
+  const suspense = Boolean(handle && vendor && isVisible)
+  const url = `https://${clean(`${vendor}`)}.myshopify.com/products/${handle}`
+
   const { data } = useSWR<{ product: Product }>(
-    () =>
-      handle && vendor
-        ? `https://${clean(vendor)}.myshopify.com/products/${handle}.json`
-        : null,
-    { fetcher, suspense: Boolean(handle && vendor) }
+    () => (suspense ? `${url}.json` : null),
+    { fetcher, suspense }
   )
 
   const product = {
     ...data?.product,
-    url: `https://${clean(`${vendor}`)}.myshopify.com/products/${handle}`,
+    url,
     variants: data?.product?.variants?.filter(
       v => v.inventory_quantity ?? Infinity
     )
   }
 
   return (
-    <StyledItem>
+    <StyledItem {...{ ref }}>
       {children || (
         <>
           <aside>
-            <a href={product?.url} rel="noopener noreferrer" target="_blank">
+            <a
+              href={product?.url ?? '#/'}
+              rel="noopener noreferrer"
+              target="_blank">
               <h3>{product?.title ?? '...'}</h3>
             </a>
 
@@ -61,18 +66,16 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
             )}
           </aside>
 
-          {product?.images && (
-            <div>
-              {product.images?.map(i => (
-                <img
-                  key={i.id}
-                  alt=""
-                  loading="lazy"
-                  src={`${i.src}&width=250`}
-                />
-              ))}
-            </div>
-          )}
+          <div>
+            {product?.images?.map(i => (
+              <img
+                key={i.id}
+                alt=""
+                loading="lazy"
+                src={`${i.src}&width=250`}
+              />
+            ))}
+          </div>
         </>
       )}
     </StyledItem>

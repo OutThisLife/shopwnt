@@ -6,11 +6,16 @@ import type { Product } from '../types'
 import { Form, Item } from './components'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
+import { useStorage } from './hooks'
 import { fetcher, pick } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
-  const [state, setState] = React.useState<State>(() => ctx)
+
+  const [state, setState] = useStorage<State>(
+    'ctx',
+    pick(ctx, 'slugs', 'sizes')
+  )
 
   const { data } = useSWR<{ products: Product[] }>(
     () =>

@@ -36,7 +36,7 @@ export default styled.form<{ $open?: boolean }>`
     flex-direction: row;
     flex-wrap: wrap;
     padding: 0 1rem;
-    place-content: center;
+    place-content: space-between;
     place-items: center;
 
     @media (min-width: 1024px) {
