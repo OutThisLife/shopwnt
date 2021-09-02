@@ -7,15 +7,12 @@ import { Form, Item } from './components'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
 import { useStorage } from './hooks'
-import { fetcher, pick } from './util'
+import { fetcher, omit, pick } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
 
-  const [state, setState] = useStorage<State>(
-    'ctx',
-    pick(ctx, 'slugs', 'sizes')
-  )
+  const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
 
   const { data } = useSWR<{ products: Product[] }>(
     () =>
@@ -29,7 +26,7 @@ const App: React.FC = () => {
 
   const items = Array.from([...(data?.products ?? [])])
     .map(p => ({
-      ...pick(p, 'id', 'handle', 'vendor'),
+      ...omit(p, 'images', 'body_html', 'options', 'tags', 'originalVariants'),
       variants: p.variants?.filter(v =>
         [...state.sizes.keys()]
           .map(s => s.toLocaleLowerCase())
@@ -42,7 +39,15 @@ const App: React.FC = () => {
       )
     }))
     .filter(p => p.variants?.length)
-    .sort((a, b) => +(a.updated_at ?? Infinity) - +(b.updated_at ?? Infinity))
+    .sort((a, b) => {
+      const c = a[state.sortBy] > b[state.sortBy]
+
+      return c ? -1 : +(a[state.sortBy] > b[state.sortBy])
+    })
+
+  React.useEffect(() => {
+    window.scrollTo({ behavior: 'smooth', top: 0 })
+  }, [state])
 
   return (
     <main>

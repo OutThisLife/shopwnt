@@ -55,11 +55,9 @@ export const Option: React.FC<OptionProps> = ({ for: key }) => {
     }
   }
 
-  const label = React.useMemo(() => (key ? `${key}: ` : ''), [])
-
   return (
     <StyledOption htmlFor={key}>
-      <span>{label}</span>
+      <span>{`${key}: `}</span>
 
       <div>
         {[...ctx[key].entries()].map(([t]) => (
@@ -79,7 +77,7 @@ export const Option: React.FC<OptionProps> = ({ for: key }) => {
 }
 
 interface OptionProps {
-  for: keyof State
+  for: keyof Omit<State, 'sortBy'>
 }
 
 export default Option

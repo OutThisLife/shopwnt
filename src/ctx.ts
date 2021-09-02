@@ -12,10 +12,12 @@ export const BrandContext = createContext<CTX>({
     ['loveshackfancy', true],
     ['veronicabeard', false],
     ['fillyboo', false]
-  ])
+  ]),
+  sortBy: 'updated_at'
 })
 
 export interface State {
+  sortBy: string
   sizes: Map<string, boolean>
   slugs: Map<string, boolean>
 }
