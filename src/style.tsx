@@ -52,6 +52,23 @@ a {
   }
 }
 
+main {
+  position: relative;
+  overflow: hidden;
+  
+  &:before {
+    z-index: 500;
+    pointer-events: none;
+    bottom: 0;
+    content: '';
+    left: 0;
+    position: fixed;
+    right: 0;
+    top: 0;
+    border: 10px solid #fff;
+  }
+}
+
 section {
   position: relative;
   max-width: 100vw;

@@ -13,7 +13,7 @@ export default styled.form<{ $open?: boolean }>`
   box-shadow: 0 0 20px #00000022;
   left: 0;
   overflow: hidden;
-  position: sticky;
+  position: fixed;
   right: 0;
   top: 0;
   transition: 0.2s ease-in-out;
@@ -21,7 +21,6 @@ export default styled.form<{ $open?: boolean }>`
   z-index: 1000;
 
   @media (max-width: 1024px) {
-    position: fixed;
     transform: translateY(calc(var(--closed, 0) * -1 * (100% - var(--nav))));
 
     + section {

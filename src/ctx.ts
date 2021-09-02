@@ -9,7 +9,8 @@ export const BrandContext = React.createContext<CTX>({
   ]),
   slugs: new Map<string, boolean>([
     ['loveshackfancy', true],
-    ['veronicabeard', false]
+    ['veronicabeard', false],
+    ['fillyboo', false]
   ])
 })
 

@@ -1,6 +1,7 @@
 import * as React from 'react'
-import { Input } from './Input'
 import StyledForm from './style'
+
+const Option = React.lazy(() => import('./Option'))
 
 export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
   props => {
@@ -14,8 +15,8 @@ export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
     return (
       <StyledForm action="#!" data-open={$open} method="post" {...props}>
         <fieldset>
-          <Input for="slugs" />
-          <Input for="sizes" />
+          <Option for="slugs" />
+          <Option for="sizes" />
 
           <a href="#/" onClick={toggle}>
             <span>
@@ -30,6 +31,3 @@ export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
   }
 
 export default Form
-
-export * from './Input'
-export * from './Tag'

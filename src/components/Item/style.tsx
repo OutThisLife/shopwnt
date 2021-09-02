@@ -1,20 +1,10 @@
 import styled from 'styled-components'
 
 export default styled.figure`
-  border: 10px solid white;
   display: grid;
   margin: 1px auto;
-  max-width: 100%;
-  overflow: overlay;
-
-  ::-webkit-scrollbar {
-    width: 2px;
-    height: 2px;
-  }
-
-  ::-webkit-scrollbar-thumb {
-    background: hsl(0, 0%, 90%);
-  }
+  min-height: 25vh;
+  width: 100%;
 
   @media (min-width: 1024px) {
     grid-template-columns: 20rem 1fr;
@@ -31,17 +21,23 @@ export default styled.figure`
       display: grid;
       grid-gap: 0.5rem;
       grid-template-columns: 1fr;
-      left: 0;
       padding: 2rem;
       place-content: center;
-      position: sticky;
       text-align: center;
       text-decoration: none;
+      place-items: center;
       z-index: 1;
 
       @media (max-width: 1024px) {
+        display: flex;
         grid-row: 2;
+        flex-direction: column;
+        width: 100%;
         padding: 2rem 2rem 3rem;
+      }
+
+      > a {
+        display: contents;
       }
 
       h3 {
@@ -52,20 +48,17 @@ export default styled.figure`
       }
 
       table {
-        display: inline-grid;
+        display: flex;
         font-size: min(11px, 0.7rem);
         font-weight: 300;
         gap: 0.5rem;
-        grid-template-columns: repeat(2, 1fr);
         padding: 0.5rem;
         place-content: center;
         place-items: center;
         place-self: center;
         position: relative;
-
-        @media (max-width: 1024px) {
-          grid-auto-flow: column;
-        }
+        max-width: 80%;
+        flex-wrap: wrap;
 
         tbody {
           display: contents;
@@ -78,19 +71,32 @@ export default styled.figure`
       }
     }
 
-    div {
-      &:only-child {
-        font-style: italic;
-        grid-column: 1 / -1;
-        padding: 5rem;
-        text-align: center;
+    aside + div {
+      display: flex;
+      gap: 0.5rem;
+      max-width: 100%;
+      overflow: overlay;
+      place-content: start;
+
+      ::-webkit-scrollbar {
+        height: 2px;
+        width: 2px;
       }
 
-      &:not(:only-child) {
-        display: flex;
-        gap: 0.5rem;
-        place-content: start;
+      ::-webkit-scrollbar-thumb {
+        background: hsl(0, 0%, 90%);
       }
+
+      img {
+        flex: auto 0 0;
+      }
+    }
+
+    div:only-child {
+      font-style: italic;
+      grid-column: 1 / -1;
+      padding: 5rem;
+      text-align: center;
     }
   }
 `

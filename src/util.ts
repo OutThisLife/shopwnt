@@ -12,16 +12,8 @@ export const storage = {
     localStorage.setItem(k, JSON.stringify(v))
 }
 
-export const query = async <T extends any>(
-  slug: string,
-  path: string,
-  params: Record<string, any> = {}
-): Promise<T> => {
-  const u = new URL(`${path}.json`, `https://${slug}.myshopify.com`)
-  Object.entries(params).forEach(([k, v]) => u.searchParams.set(k, v))
-
-  return (await fetch(u.toString())).json()
-}
+export const fetcher = async <T extends any>(k: string): Promise<T> =>
+  (await fetch(k)).json() as T
 
 export const clean = (s: string) => s.replace(/ /g, '').toLocaleLowerCase()
 

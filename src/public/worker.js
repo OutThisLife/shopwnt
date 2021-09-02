@@ -1,10 +1,9 @@
 /* eslint-disable no-restricted-globals */
 ;(self => {
-  self.addEventListener('activate', e =>
-    e.waitUntil(
-      caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
-    )
-  )
+  const CACHE_KEY = 'SHOPWNT'
+
+  self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
+  self.addEventListener('install', e => e.waitUntil(self.skipWaiting()))
 
   self.addEventListener('fetch', e =>
     e.respondWith(
@@ -15,7 +14,7 @@
           return fetch(r.clone())
         }
 
-        const cache = await caches.open('SHOPWNT')
+        const cache = await caches.open(CACHE_KEY)
         const res = await cache.match(r.clone())
 
         if (res) {
@@ -30,6 +29,11 @@
     )
   )
 
-  self.addEventListener('activate', e => e.waitUntil(self.clients.claim()))
-  self.addEventListener('install', e => e.waitUntil(self.skipWaiting()))
+  self.addEventListener('message', async e => {
+    const cache = await caches.open(CACHE_KEY)
+
+    ;(await cache.keys())
+      .filter(k => k.url.includes(`${e.data}`))
+      .forEach(k => cache.delete(k))
+  })
 })(self)

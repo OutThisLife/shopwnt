@@ -1,11 +1,12 @@
 /* eslint-disable no-alert */
 import * as React from 'react'
-import type { State } from '../../ctx'
-import { BrandContext } from '../../ctx'
-import { Tag } from '../Tag'
-import StyledInput from './style'
+import type { State } from '../../../ctx'
+import { BrandContext } from '../../../ctx'
+import StyledOption from './style'
 
-export const Input: React.FC<InputProps> = ({ for: key }) => {
+const Tag = React.lazy(() => import('../Tag'))
+
+export const Option: React.FC<OptionProps> = ({ for: key }) => {
   const ctx = React.useContext(BrandContext)
   const singleton = React.useRef(key === 'slugs').current
 
@@ -38,6 +39,10 @@ export const Input: React.FC<InputProps> = ({ for: key }) => {
     e.stopPropagation()
 
     if (window.confirm(`Are you sure you want to remove ${t}?`)) {
+      navigator.serviceWorker.controller?.postMessage({
+        data: t
+      })
+
       ctx.setState(s => {
         s[key].delete(t)
 
@@ -53,7 +58,7 @@ export const Input: React.FC<InputProps> = ({ for: key }) => {
   const label = React.useMemo(() => (key ? `${key}: ` : ''), [])
 
   return (
-    <StyledInput htmlFor={key}>
+    <StyledOption htmlFor={key}>
       <span>{label}</span>
 
       <div>
@@ -69,12 +74,12 @@ export const Input: React.FC<InputProps> = ({ for: key }) => {
       </div>
 
       <Tag $invert label="+" onClick={add} />
-    </StyledInput>
+    </StyledOption>
   )
 }
 
-interface InputProps {
+interface OptionProps {
   for: keyof State
 }
 
-export default Input
+export default Option

@@ -50,6 +50,7 @@ export interface Product {
   body_html: string
   created_at: Date
   handle: string
+  url: string
   id: number
   images: Image[]
   options: Option[]

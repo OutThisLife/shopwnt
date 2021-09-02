@@ -1,93 +1,64 @@
 import 'normalize.css'
 import * as React from 'react'
-import LazyLoad from 'react-lazyload'
+import Skeleton from 'react-loading-skeleton'
+import useSWR from 'swr'
 import type { Product } from '../types'
+import { Form, Item } from './components'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
-import { Form } from './Form'
-import { Item } from './Item'
-import { pick, query } from './util'
+import { fetcher, pick } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
   const [state, setState] = React.useState<State>(() => ctx)
 
-  const [products, update] = React.useState<Map<number, Product>>(
-    () => new Map()
+  const { data } = useSWR<{ products: Product[] }>(
+    () =>
+      state?.slugs?.size
+        ? `https://${[...state.slugs.entries()]
+            .find(([, v]) => v)
+            ?.shift()}.myshopify.com/products.json?limit=150`
+        : null,
+    fetcher
   )
 
-  const sizes = React.useMemo<string[]>(
-    () => [...state.sizes.keys()].map(s => s.toLocaleLowerCase()),
-    [state]
-  )
-
-  const slug = React.useMemo<string>(
-    () => `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`,
-    [state]
-  )
-
-  React.useEffect(() => {
-    ;(async () => {
-      window.scrollTo({ behavior: 'smooth', top: 0 })
-      document.body.classList.toggle('loading', true)
-
-      try {
-        const res = await query<{ products: Product[] }>(slug, 'products', {
-          limit: 150
-        })
-
-        update(
-          new Map(
-            (res.products ?? []).map(p => [
-              p.id,
-              {
-                ...pick(p, 'id', 'handle', 'vendor'),
-                variants: p.variants?.filter(v => {
-                  const vs = Object.values(
-                    pick(v, 'option1', 'option2', 'option3')
-                  )
-                    .filter(i => i)
-                    .map(i => i.toLocaleLowerCase())
-
-                  return sizes.some(s => vs.includes(s))
-                })
-              }
-            ])
+  const items = Array.from([...(data?.products ?? [])])
+    .map(p => ({
+      ...pick(p, 'id', 'handle', 'vendor'),
+      variants: p.variants?.filter(v =>
+        [...state.sizes.keys()]
+          .map(s => s.toLocaleLowerCase())
+          .some(s =>
+            Object.values(pick(v, 'option1', 'option2', 'option3'))
+              .filter(i => i)
+              .map(i => i.toLocaleLowerCase())
+              .includes(s)
           )
-        )
-      } catch (err) {
-        console.error(err)
-      }
-
-      window.requestAnimationFrame(() =>
-        document.body.classList.toggle('loading', false)
       )
-    })()
-  }, [slug, sizes])
+    }))
+    .filter(p => p.variants?.length)
+    .sort((a, b) => +(a.updated_at ?? Infinity) - +(b.updated_at ?? Infinity))
 
   return (
     <main>
       <BrandContext.Provider value={{ ...state, setState }}>
-        <Form />
+        <React.Suspense fallback={<Skeleton height={90} />}>
+          <Form />
+        </React.Suspense>
 
         <section>
-          {products.size ? (
-            [...products.values()]
-              .sort(
-                (a, b) =>
-                  +(a.updated_at ?? Infinity) - +(b.updated_at ?? Infinity)
-              )
-              .map(i => (
-                <LazyLoad key={i.id} height={250} offset={100}>
-                  <Item {...i} />
-                </LazyLoad>
-              ))
+          {items.length > 0 ? (
+            items.map(i => (
+              <React.Suspense key={i.id} fallback={<Skeleton height={250} />}>
+                <Item {...i} />
+              </React.Suspense>
+            ))
           ) : (
-            <Item>
-              <div>
-                No products found for <strong>{slug}.</strong>
-              </div>
-            </Item>
+            <React.Suspense fallback={<Skeleton height={250} />}>
+              <Item>
+                <div>No products found</div>
+              </Item>
+            </React.Suspense>
           )}
         </section>
       </BrandContext.Provider>
