@@ -1,6 +1,7 @@
 import styled from 'styled-components'
 
 export default styled.figure`
+  content-visibility: auto;
   display: grid;
   margin: 1px auto;
   min-height: 25vh;
@@ -23,9 +24,9 @@ export default styled.figure`
       grid-template-columns: 1fr;
       padding: 2rem;
       place-content: center;
+      place-items: center;
       text-align: center;
       text-decoration: none;
-      place-items: center;
       z-index: 1;
 
       @media (max-width: 1024px) {
@@ -49,16 +50,16 @@ export default styled.figure`
 
       table {
         display: flex;
+        flex-wrap: wrap;
         font-size: min(11px, 0.7rem);
         font-weight: 300;
         gap: 0.5rem;
+        max-width: 80%;
         padding: 0.5rem;
         place-content: center;
         place-items: center;
         place-self: center;
         position: relative;
-        max-width: 80%;
-        flex-wrap: wrap;
 
         tbody {
           display: contents;
