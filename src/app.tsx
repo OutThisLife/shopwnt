@@ -56,9 +56,7 @@ const App: React.FC = () => {
         )
       }
 
-      const c = a[k] < b[k]
-
-      return c ? -1 : +(a[k] > b[k])
+      return a[k] < b[k] ? -1 : +(a[k] > b[k])
     })
 
   React.useEffect(
