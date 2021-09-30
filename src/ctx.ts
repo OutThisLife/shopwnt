@@ -12,7 +12,8 @@ export const BrandContext = createContext<CTX>({
     ['loveshackfancy', true],
     ['veronicabeard', false],
     ['fillyboo', false],
-    ['naked-cashmere', false]
+    ['naked-cashmere', false],
+    ['stripe-stare', false]
   ]),
   sortBy: 'updated_at'
 })
