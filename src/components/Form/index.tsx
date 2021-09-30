@@ -3,6 +3,7 @@ import StyledForm from './style'
 
 const Option = React.lazy(() => import('./Option'))
 const Sort = React.lazy(() => import('./Sort'))
+const Tag = React.lazy(() => import('./Tag'))
 
 export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
   props => {
@@ -13,22 +14,28 @@ export const Form: React.FC<React.FormHTMLAttributes<HTMLFormElement>> =
       setState(st => !st)
     }
 
+    const refresh = () => navigator.serviceWorker.controller?.postMessage('all')
+
     return (
       <StyledForm action="#!" data-open={$open} method="post" {...props}>
         <fieldset>
           <Option for="slugs" />
-          <Option for="sizes" />
 
-          <Sort
-            for="sortBy"
-            options={[
-              'updated_at',
-              'created_at',
-              'published_at',
-              'id',
-              'title'
-            ]}
-          />
+          <div>
+            <Sort
+              for="sortBy"
+              options={[
+                'price',
+                'updated_at',
+                'created_at',
+                'published_at',
+                'id',
+                'title'
+              ]}
+            />
+
+            <Tag $invert label="⟳" onClick={refresh} />
+          </div>
 
           <a href="#/" onClick={toggle}>
             <span>

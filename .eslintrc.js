@@ -59,6 +59,7 @@ const init = (
     'jsx-a11y/anchor-is-valid': 0,
     'no-console': 0,
     'no-empty': 0,
+    'no-void': 0,
     'no-param-reassign': 0,
     'no-plusplus': 0,
     'no-return-assign': 0,

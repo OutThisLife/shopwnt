@@ -11,7 +11,8 @@ export const BrandContext = createContext<CTX>({
   slugs: new Map<string, boolean>([
     ['loveshackfancy', true],
     ['veronicabeard', false],
-    ['fillyboo', false]
+    ['fillyboo', false],
+    ['naked-cashmere', false]
   ]),
   sortBy: 'updated_at'
 })

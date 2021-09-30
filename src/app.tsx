@@ -1,7 +1,7 @@
 import 'normalize.css'
 import * as React from 'react'
 import Skeleton from 'react-loading-skeleton'
-import useSWR from 'swr'
+import useSWR, { useSWRConfig } from 'swr'
 import type { Product } from '../types'
 import { Form, Item } from './components'
 import type { State } from './ctx'
@@ -14,15 +14,22 @@ const App: React.FC = () => {
 
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
 
-  const { data } = useSWR<{ products: Product[] }>(
+  const vendor = React.useMemo(
     () =>
       state?.slugs?.size
-        ? `https://${[...state.slugs.entries()]
-            .find(([, v]) => v)
-            ?.shift()}.myshopify.com/products.json?limit=150`
-        : null,
-    fetcher
+        ? `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`
+        : undefined,
+    [state]
   )
+
+  const key = React.useMemo(
+    () =>
+      vendor ? `https://${vendor}.myshopify.com/products.json?limit=150` : null,
+    [vendor]
+  )
+
+  const { mutate } = useSWRConfig()
+  const { data } = useSWR<{ products: Product[] }>(key, fetcher)
 
   const items = Array.from([...(data?.products ?? [])])
     .map(p => ({
@@ -40,14 +47,34 @@ const App: React.FC = () => {
     }))
     .filter(p => p.variants?.length)
     .sort((a, b) => {
-      const c = a[state.sortBy] > b[state.sortBy]
+      const k = state.sortBy
 
-      return c ? -1 : +(a[state.sortBy] > b[state.sortBy])
+      if (k === 'price') {
+        return (
+          parseFloat(b.variants?.[0]?.price) -
+          parseFloat(a?.variants?.[0]?.price)
+        )
+      }
+
+      const c = a[k] < b[k]
+
+      return c ? -1 : +(a[k] > b[k])
     })
 
+  React.useEffect(
+    () => void window.scrollTo({ behavior: 'smooth', top: 0 }),
+    [state]
+  )
+
   React.useEffect(() => {
-    window.scrollTo({ behavior: 'smooth', top: 0 })
-  }, [state])
+    const onMessage = (e: MessageEvent<any>) =>
+      key && e.data === 'revalidate' && mutate(key)
+
+    navigator.serviceWorker?.addEventListener('message', onMessage)
+
+    return () =>
+      navigator.serviceWorker?.removeEventListener('message', onMessage)
+  }, [key])
 
   return (
     <main>
@@ -60,7 +87,7 @@ const App: React.FC = () => {
           {items.length > 0 ? (
             items.map(i => (
               <React.Suspense key={i.id} fallback={<Skeleton height={250} />}>
-                <Item {...i} />
+                <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
               </React.Suspense>
             ))
           ) : (

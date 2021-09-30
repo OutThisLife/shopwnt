@@ -39,9 +39,7 @@ export const Option: React.FC<OptionProps> = ({ for: key }) => {
     e.stopPropagation()
 
     if (window.confirm(`Are you sure you want to remove ${t}?`)) {
-      navigator.serviceWorker.controller?.postMessage({
-        data: t
-      })
+      navigator.serviceWorker.controller?.postMessage({ data: t })
 
       ctx.setState(s => {
         s[key].delete(t)

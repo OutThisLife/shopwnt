@@ -15,7 +15,7 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
   const url = `https://${clean(`${vendor}`)}.myshopify.com/products/${handle}`
 
   const { data } = useSWR<{ product: Product }>(
-    () => (suspense ? `${url}.json` : null),
+    suspense ? `${url}.json` : null,
     { fetcher, suspense }
   )
 
@@ -26,6 +26,8 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
       v => v.inventory_quantity ?? Infinity
     )
   }
+
+  const price = product?.variants?.[0]?.price
 
   return (
     <StyledItem {...{ ref }}>
@@ -41,14 +43,14 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
 
             {product?.id && (
               <>
-                <strong>
-                  {parseFloat(
-                    `${product?.variants?.[0]?.price}`
-                  ).toLocaleString('en-US', {
-                    currency: 'USD',
-                    style: 'currency'
-                  })}
-                </strong>
+                {price && (
+                  <strong>
+                    {parseFloat(`${price}`).toLocaleString('en-US', {
+                      currency: 'USD',
+                      style: 'currency'
+                    })}
+                  </strong>
+                )}
 
                 <table>
                   <tbody>

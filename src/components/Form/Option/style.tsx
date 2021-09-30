@@ -14,10 +14,6 @@ export default styled.label`
   position: relative;
   text-transform: uppercase;
 
-  @media (max-width: 1024px) {
-    width: 100%;
-  }
-
   > {
     span {
       @media (max-width: 1024px) {

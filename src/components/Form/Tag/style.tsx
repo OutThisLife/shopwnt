@@ -11,6 +11,7 @@ export default styled.span<TagProps>`
   place-content: center;
   text-transform: lowercase;
   vertical-align: text-top;
+  white-space: nowrap;
 
   ${p =>
     p.$invert

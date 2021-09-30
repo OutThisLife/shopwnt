@@ -33,7 +33,11 @@
     const cache = await caches.open(CACHE_KEY)
 
     ;(await cache.keys())
-      .filter(k => k.url.includes(`${e.data}`))
+      .filter(k => (e.data === 'all' ? k : k.url.includes(`${e.data}`)))
       .forEach(k => cache.delete(k))
+
+    if (e.data === 'all') {
+      ;(await self.clients.matchAll()).forEach(c => c.postMessage('revalidate'))
+    }
   })
 })(self)

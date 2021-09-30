@@ -31,7 +31,6 @@ export default styled.form<{ $open?: boolean }>`
   > fieldset {
     all: unset;
     border: 0;
-    display: grid;
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
@@ -72,6 +71,12 @@ export default styled.form<{ $open?: boolean }>`
           width: 100%;
         }
       }
+    }
+
+    > div {
+      display: flex;
+      gap: 1em;
+      place-items: center;
     }
   }
 `
