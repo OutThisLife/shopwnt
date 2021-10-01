@@ -1,4 +1,4 @@
-import { Divider, Space, Typography } from 'antd'
+import { Typography } from 'antd'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
@@ -42,26 +42,24 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
               })`
           )}
         extra={
-          <Space>
-            <Typography.Text type="secondary">
+          <>
+            {price && (
+              <Typography.Text strong type="success">
+                {parseFloat(`${price}`).toLocaleString('en-US', {
+                  currency: 'USD',
+                  style: 'currency'
+                })}
+              </Typography.Text>
+            )}
+
+            <br />
+
+            <Typography.Text style={{ fontSize: 12 }} type="secondary">
               {relTime(product?.updated_at)}
               <br />
               {relTime(product?.created_at)}
             </Typography.Text>
-
-            {price && (
-              <>
-                <Divider type="vertical" />
-
-                <Typography.Text strong>
-                  {parseFloat(`${price}`).toLocaleString('en-US', {
-                    currency: 'USD',
-                    style: 'currency'
-                  })}
-                </Typography.Text>
-              </>
-            )}
-          </Space>
+          </>
         }
         hoverable
         loading={!!children}
