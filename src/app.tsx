@@ -91,17 +91,17 @@ const App: React.FC = () => {
         <Form />
 
         <Layout.Content style={{ padding: '2rem' }}>
-          <React.Suspense fallback={<Skeleton />}>
-            {items.length > 0 ? (
-              items.map(i => (
-                <Item key={i.id} {...{ ...i, vendor: vendor ?? i?.vendor }} />
-              ))
-            ) : (
-              <Item>
-                <div>No products found</div>
-              </Item>
-            )}
-          </React.Suspense>
+          {items.length > 0 ? (
+            items.map(i => (
+              <React.Suspense key={i.id} fallback={<Skeleton />}>
+                <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
+              </React.Suspense>
+            ))
+          ) : (
+            <Item>
+              <div>No products found</div>
+            </Item>
+          )}
         </Layout.Content>
       </Layout>
     </BrandContext.Provider>
