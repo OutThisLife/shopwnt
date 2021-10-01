@@ -3,11 +3,6 @@ import { createContext } from 'react'
 
 export const BrandContext = createContext<CTX>({
   setState: () => null,
-  sizes: new Map<string, boolean>([
-    ['00', true],
-    ['petite', true],
-    ['xs', true]
-  ]),
   slugs: new Map<string, boolean>([
     ['loveshackfancy', true],
     ['veronicabeard', false],
@@ -20,7 +15,6 @@ export const BrandContext = createContext<CTX>({
 
 export interface State {
   sortBy: string
-  sizes: Map<string, boolean>
   slugs: Map<string, boolean>
 }
 

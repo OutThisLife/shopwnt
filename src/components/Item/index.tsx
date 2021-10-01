@@ -1,8 +1,9 @@
+import { Divider, Space, Typography } from 'antd'
 import * as React from 'react'
 import useSWR from 'swr'
-import type { Product } from '../../../types'
-import { useVisibility } from '../../hooks'
-import { clean, fetcher } from '../../util'
+import type { Product } from '~/../types'
+import { useVisibility } from '~/hooks'
+import { clean, fetcher, relTime } from '~/util'
 import StyledItem from './style'
 
 export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
@@ -30,57 +31,47 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
   const price = product?.variants?.[0]?.price
 
   return (
-    <StyledItem {...{ ref }}>
-      {children || (
-        <>
-          <aside>
-            <a
-              href={product?.url ?? '#/'}
-              rel="noopener noreferrer"
-              target="_blank">
-              <h3>{product?.title ?? '...'}</h3>
-            </a>
+    <figure className="item" {...{ ref }}>
+      <StyledItem
+        actions={product?.variants
+          ?.slice(0, 4)
+          .map(
+            v =>
+              `${v.option3 ?? v.option2 ?? v.option1 ?? v.title} (${
+                v.inventory_quantity ?? '∞'
+              })`
+          )}
+        extra={
+          <Space>
+            <Typography.Text type="secondary">
+              {relTime(product?.updated_at)}
+              <br />
+              {relTime(product?.created_at)}
+            </Typography.Text>
 
-            {product?.id && (
+            {price && (
               <>
-                {price && (
-                  <strong>
-                    {parseFloat(`${price}`).toLocaleString('en-US', {
-                      currency: 'USD',
-                      style: 'currency'
-                    })}
-                  </strong>
-                )}
+                <Divider type="vertical" />
 
-                <table>
-                  <tbody>
-                    {product?.variants?.map(v => (
-                      <tr key={v.id}>
-                        <td>
-                          {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
-                        </td>
-                        <td>({v.inventory_quantity ?? '∞'})</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                <Typography.Text strong>
+                  {parseFloat(`${price}`).toLocaleString('en-US', {
+                    currency: 'USD',
+                    style: 'currency'
+                  })}
+                </Typography.Text>
               </>
             )}
-          </aside>
-
-          <div>
-            {product?.images?.map(i => (
-              <img
-                key={i.id}
-                alt=""
-                loading="lazy"
-                src={`${i.src}&width=250`}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </StyledItem>
+          </Space>
+        }
+        hoverable
+        loading={!!children}
+        onClick={() => window.open(product.url, '_blank')}
+        title={<>{product?.title ?? '...'}</>}>
+        {product?.images?.map(i => (
+          <img key={i.id} alt="" loading="lazy" src={`${i.src}&width=250`} />
+        ))}
+      </StyledItem>
+    </figure>
   )
 }
 

@@ -1,3 +1,4 @@
+import 'antd/dist/antd.css'
 import 'normalize.css'
 import React from 'react'
 import { render } from 'react-dom'

@@ -4,10 +4,13 @@ import { defineConfig } from 'vite'
 import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
+  alias: {
+    '~': resolve(__dirname, 'src')
+  },
   base: '/',
   build: {
     outDir: resolve(__dirname, 'dist')
   },
-  plugins: [reactRefresh(), tsconfigPaths()],
+  plugins: [tsconfigPaths(), reactRefresh()],
   root: resolve(__dirname, 'src')
 })

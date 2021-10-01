@@ -1,16 +1,17 @@
+import { Layout, Skeleton } from 'antd'
 import 'normalize.css'
 import * as React from 'react'
-import Skeleton from 'react-loading-skeleton'
-import useSWR, { useSWRConfig } from 'swr'
+import useSWR from 'swr'
 import type { Product } from '../types'
 import { Form, Item } from './components'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
-import { useStorage } from './hooks'
+import { useContentVisibility, useStorage } from './hooks'
 import { fetcher, omit, pick } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
+  const watch = useContentVisibility()
 
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
 
@@ -28,19 +29,18 @@ const App: React.FC = () => {
     [vendor]
   )
 
-  const { mutate } = useSWRConfig()
-  const { data } = useSWR<{ products: Product[] }>(key, fetcher)
+  const { data, mutate } = useSWR<{ products: Product[] }>(key, fetcher)
 
   const items = Array.from([...(data?.products ?? [])])
     .map(p => ({
       ...omit(p, 'images', 'body_html', 'options', 'tags', 'originalVariants'),
       variants: p.variants?.filter(v =>
-        [...state.sizes.keys()]
-          .map(s => s.toLocaleLowerCase())
+        ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
+          .flatMap(s => s.toLocaleLowerCase())
           .some(s =>
             Object.values(pick(v, 'option1', 'option2', 'option3'))
               .filter(i => i)
-              .map(i => i.toLocaleLowerCase())
+              .flatMap(i => i.toLocaleLowerCase())
               .includes(s)
           )
       )
@@ -48,25 +48,34 @@ const App: React.FC = () => {
     .filter(p => p.variants?.length)
     .sort((a, b) => {
       const k = state.sortBy
+      const av = a[k]
+      const bv = b[k]
 
-      if (k === 'price') {
-        return (
-          parseFloat(b.variants?.[0]?.price) -
-          parseFloat(a?.variants?.[0]?.price)
-        )
+      switch (k) {
+        case 'price':
+          return (
+            parseFloat(b.variants?.[0]?.price) -
+            parseFloat(a?.variants?.[0]?.price)
+          )
+
+        case 'updated_at':
+        case 'created_at': {
+          return +new Date(bv) - +new Date(av)
+        }
+
+        default:
+          return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
       }
-
-      return a[k] < b[k] ? -1 : +(a[k] > b[k])
     })
 
   React.useEffect(
     () => void window.scrollTo({ behavior: 'smooth', top: 0 }),
-    [state]
+    [state, data]
   )
 
   React.useEffect(() => {
     const onMessage = (e: MessageEvent<any>) =>
-      key && e.data === 'revalidate' && mutate(key)
+      key && e.data === 'revalidate' && mutate(data, true)
 
     navigator.serviceWorker?.addEventListener('message', onMessage)
 
@@ -74,30 +83,28 @@ const App: React.FC = () => {
       navigator.serviceWorker?.removeEventListener('message', onMessage)
   }, [key])
 
-  return (
-    <main>
-      <BrandContext.Provider value={{ ...state, setState }}>
-        <React.Suspense fallback={<Skeleton height={90} />}>
-          <Form />
-        </React.Suspense>
+  React.useLayoutEffect(() => watch(document.getElementsByClassName('item')))
 
-        <section>
-          {items.length > 0 ? (
-            items.map(i => (
-              <React.Suspense key={i.id} fallback={<Skeleton height={250} />}>
-                <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
-              </React.Suspense>
-            ))
-          ) : (
-            <React.Suspense fallback={<Skeleton height={250} />}>
+  return (
+    <BrandContext.Provider value={{ ...state, setState }}>
+      <Layout style={{ minHeight: '100vh' }}>
+        <Form />
+
+        <Layout.Content style={{ padding: '2rem' }}>
+          <React.Suspense fallback={<Skeleton />}>
+            {items.length > 0 ? (
+              items.map(i => (
+                <Item key={i.id} {...{ ...i, vendor: vendor ?? i?.vendor }} />
+              ))
+            ) : (
               <Item>
                 <div>No products found</div>
               </Item>
-            </React.Suspense>
-          )}
-        </section>
-      </BrandContext.Provider>
-    </main>
+            )}
+          </React.Suspense>
+        </Layout.Content>
+      </Layout>
+    </BrandContext.Provider>
   )
 }
 

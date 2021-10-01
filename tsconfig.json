@@ -26,6 +26,9 @@
     "target": "esnext",
     "types": ["vite/client"],
     "typeRoots": ["types"],
+    "paths": {
+      "~/*": ["./src/*"]
+    },
     "plugins": [
       {
         "name": "typescript-styled-plugin",
