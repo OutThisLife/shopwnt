@@ -3,22 +3,24 @@ import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { useVisibility } from '~/hooks'
-import { clean, fetcher, relTime } from '~/util'
+import { fetcher, relTime } from '~/util'
 import StyledItem from './style'
 
-export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
+export const Item: React.FC<Partial<Product>> = ({
   children,
   handle,
   vendor
 }) => {
   const [ref, isVisible] = useVisibility()
-  const suspense = Boolean(handle && vendor && isVisible)
-  const url = `https://${clean(`${vendor}`)}.myshopify.com/products/${handle}`
+  const suspense = !!(handle && vendor && isVisible)
+  const url = `https://${vendor}.myshopify.com/products/${handle}`
 
-  const { data } = useSWR<{ product: Product }>(
+  const { data, isValidating } = useSWR<{ product: Product }>(
     suspense ? `${url}.json` : null,
     { fetcher, suspense }
   )
+
+  const loading = (!!data || isValidating) && !!children
 
   const product = {
     ...data?.product,
@@ -42,32 +44,36 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
               })`
           )}
         extra={
-          <>
-            {price && (
-              <Typography.Text strong type="success">
-                {parseFloat(`${price}`).toLocaleString('en-US', {
-                  currency: 'USD',
-                  style: 'currency'
-                })}
-              </Typography.Text>
-            )}
+          price &&
+          product?.updated_at && (
+            <>
+              {price && (
+                <Typography.Text strong type="success">
+                  {parseFloat(`${price}`).toLocaleString('en-US', {
+                    currency: 'USD',
+                    style: 'currency'
+                  })}
+                </Typography.Text>
+              )}
 
-            <br />
-
-            <Typography.Text style={{ fontSize: 12 }} type="secondary">
-              {relTime(product?.updated_at)}
               <br />
-              {relTime(product?.created_at)}
-            </Typography.Text>
-          </>
+
+              <Typography.Text style={{ fontSize: 12 }} type="secondary">
+                {relTime(product?.updated_at)}
+                <br />
+                {relTime(product?.created_at)}
+              </Typography.Text>
+            </>
+          )
         }
         hoverable
-        loading={!!children}
-        onClick={() => window.open(product.url, '_blank')}
-        title={<>{product?.title ?? '...'}</>}>
-        {product?.images?.map(i => (
-          <img key={i.id} alt="" loading="lazy" src={`${i.src}&width=250`} />
-        ))}
+        onClick={() => void (loading || window.open(product.url, '_blank'))}
+        title={product?.title}
+        {...{ loading }}>
+        {children ||
+          product?.images?.map(i => (
+            <img key={i.id} alt="" loading="lazy" src={`${i.src}&width=250`} />
+          ))}
       </StyledItem>
     </figure>
   )

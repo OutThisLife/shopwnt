@@ -1,4 +1,5 @@
-import { Layout, Skeleton } from 'antd'
+/* eslint-disable no-nested-ternary */
+import { Button, Layout, Result, Skeleton, Spin } from 'antd'
 import 'normalize.css'
 import * as React from 'react'
 import useSWR from 'swr'
@@ -7,32 +8,37 @@ import { Form, Item } from './components'
 import type { State } from './ctx'
 import { BrandContext } from './ctx'
 import { useContentVisibility, useStorage } from './hooks'
-import { fetcher, omit, pick } from './util'
+import { omit, pick } from './util'
 
 const App: React.FC = () => {
   const ctx = React.useContext(BrandContext)
   const watch = useContentVisibility()
 
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
+  const [visible, set] = React.useState(() => false)
+  const toggle = () => set(st => !st)
 
-  const vendor = React.useMemo(
+  const { data, isValidating, mutate } = useSWR<
+    { products: Product[]; vendor: string }[]
+  >(
     () =>
-      state?.slugs?.size
-        ? `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`
-        : undefined,
-    [state]
+      [...state.slugs.entries()].filter(([k, v]) => k && v).map(([k]) => k) ??
+      null,
+    async (...args: string[]) =>
+      Promise.all(
+        args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
+          ...(await (
+            await fetch(`https://${k}.myshopify.com/products.json?limit=150`)
+          ).json()),
+          vendor: k
+        }))
+      )
   )
 
-  const key = React.useMemo(
-    () =>
-      vendor ? `https://${vendor}.myshopify.com/products.json?limit=150` : null,
-    [vendor]
-  )
-
-  const { data, mutate } = useSWR<{ products: Product[] }>(key, fetcher)
-
-  const items = Array.from([...(data?.products ?? [])])
-    .map(p => ({
+  const items = data
+    ?.filter(d => d?.products?.length)
+    ?.flatMap(d => d?.products.flatMap(p => ({ ...p, vendor: d.vendor })))
+    ?.map(p => ({
       ...omit(p, 'images', 'body_html', 'options', 'tags', 'originalVariants'),
       variants: p.variants?.filter(v =>
         ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
@@ -68,39 +74,43 @@ const App: React.FC = () => {
       }
     })
 
-  React.useEffect(
-    () => void window.scrollTo({ behavior: 'smooth', top: 0 }),
-    [state, data]
-  )
-
   React.useEffect(() => {
     const onMessage = (e: MessageEvent<any>) =>
-      key && e.data === 'revalidate' && mutate(data, true)
+      e.data === 'revalidate' && mutate(data, true)
 
     navigator.serviceWorker?.addEventListener('message', onMessage)
 
     return () =>
       navigator.serviceWorker?.removeEventListener('message', onMessage)
-  }, [key])
+  }, [mutate])
 
   React.useLayoutEffect(() => watch(document.getElementsByClassName('item')))
 
   return (
     <BrandContext.Provider value={{ ...state, setState }}>
       <Layout style={{ minHeight: '100vh' }}>
-        <Form />
+        <Form {...{ toggle, visible }} />
 
         <Layout.Content style={{ padding: '2rem' }}>
-          {items.length > 0 ? (
-            items.map(i => (
+          {(items?.length || 0) > 0 ? (
+            items?.map(i => (
               <React.Suspense key={i.id} fallback={<Skeleton />}>
-                <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
+                <Item {...i} />
               </React.Suspense>
             ))
+          ) : isValidating ? (
+            <Spin />
           ) : (
-            <Item>
-              <div>No products found</div>
-            </Item>
+            <Result
+              extra={
+                <Button onClick={toggle} type="primary">
+                  Open Menu
+                </Button>
+              }
+              status="404"
+              subTitle="Please add slugs from the search menu"
+              title="No products added to watchlist"
+            />
           )}
         </Layout.Content>
       </Layout>

@@ -28,5 +28,9 @@ export default styled(Card)`
     img {
       flex: auto 0 0;
     }
+
+    .ant-card-loading-content {
+      flex: 100% 0 0;
+    }
   }
 `
