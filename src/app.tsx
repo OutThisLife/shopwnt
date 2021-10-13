@@ -1,4 +1,5 @@
 /* eslint-disable no-nested-ternary */
+import { MenuOutlined } from '@ant-design/icons'
 import { Button, Layout, Result, Skeleton, Spin } from 'antd'
 import 'normalize.css'
 import * as React from 'react'
@@ -16,14 +17,29 @@ const App: React.FC = () => {
 
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
   const [visible, set] = React.useState(() => false)
-  const toggle = () => set(st => !st)
+
+  const toggle = (e: React.MouseEvent<HTMLElement>) => {
+    if (visible && e.type === 'wheel') {
+      set(false)
+    } else if (!e.currentTarget?.className?.startsWith('ant-layout')) {
+      set(st => !st)
+    } else if (
+      visible &&
+      e.target instanceof HTMLElement &&
+      e.target?.className?.startsWith('ant-layout')
+    ) {
+      set(false)
+    }
+  }
+
+  const urls = [...state.slugs.entries()]
+    .filter(([k, v]) => k && v)
+    ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
 
   const { data, isValidating, mutate } = useSWR<
     { products: Product[]; vendor: string }[]
   >(
-    () =>
-      [...state.slugs.entries()].filter(([k, v]) => k && v).map(([k]) => k) ??
-      null,
+    () => (urls.length ? urls : null),
     async (...args: string[]) =>
       Promise.all(
         args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
@@ -88,10 +104,23 @@ const App: React.FC = () => {
 
   return (
     <BrandContext.Provider value={{ ...state, setState }}>
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout
+        onPointerDown={toggle}
+        onWheelCapture={toggle}
+        style={{ minHeight: '100vh' }}>
+        <Button
+          icon={<MenuOutlined />}
+          onPointerDown={toggle}
+          style={{
+            inset: 'calc(var(--pad) / 2) calc(var(--pad) / 2) auto auto',
+            position: 'fixed',
+            zIndex: 1e3
+          }}
+        />
+
         <Form {...{ toggle, visible }} />
 
-        <Layout.Content style={{ padding: '2rem' }}>
+        <Layout.Content style={{ padding: 'var(--pad)' }}>
           {(items?.length || 0) > 0 ? (
             items?.map(i => (
               <React.Suspense key={i.id} fallback={<Skeleton />}>
@@ -103,7 +132,7 @@ const App: React.FC = () => {
           ) : (
             <Result
               extra={
-                <Button onClick={toggle} type="primary">
+                <Button onPointerDown={toggle} type="primary">
                   Open Menu
                 </Button>
               }
