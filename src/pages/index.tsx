@@ -108,14 +108,10 @@ const Page: React.FC = () => {
 
   React.useEffect(() => {
     if (ref.current instanceof HTMLElement) {
-      const cb = (el: Element, a = el.getBoundingClientRect()) => {
-        if (height !== a.height) {
-          setHeight(a.height)
-        }
-      }
+      const cb = (el: Element, a = el.getBoundingClientRect()) =>
+        height !== a.height && setHeight(a.height)
 
       const ro = new ResizeObserver(([e]) => cb(e.target))
-
       window.requestAnimationFrame(() => cb(ref.current as Element))
       ro.observe(ref.current)
 
