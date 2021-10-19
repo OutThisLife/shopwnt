@@ -1,4 +1,7 @@
-import { Layout, Skeleton } from 'antd'
+/* eslint-disable no-nested-ternary */
+import { MenuOutlined } from '@ant-design/icons'
+import { Button, Layout, Result, Skeleton, Spin } from 'antd'
+import 'normalize.css'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
@@ -6,31 +9,51 @@ import { Form, Item } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useContentVisibility, useStorage } from '~/hooks'
-import { fetcher, omit, pick } from '~/lib/util'
+import { omit, pick } from '~/lib'
 
-const Page = () => {
+const Page: React.FC = () => {
   const ctx = React.useContext(BrandContext)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
+  const [visible, set] = React.useState(() => false)
   const watch = useContentVisibility()
 
-  const vendor = React.useMemo(
-    () =>
-      state?.slugs?.size
-        ? `${[...state.slugs.entries()].find(([, v]) => v)?.shift()}`
-        : undefined,
-    [state]
+  const toggle = (e: React.MouseEvent<HTMLElement>) => {
+    if (visible && e.type === 'wheel') {
+      set(false)
+    } else if (!e.currentTarget?.className?.startsWith('ant-layout')) {
+      set(st => !st)
+    } else if (
+      visible &&
+      e.target instanceof HTMLElement &&
+      e.target?.className?.startsWith('ant-layout')
+    ) {
+      set(false)
+    }
+  }
+
+  const urls = [...state.slugs.entries()]
+    .filter(([k, v]) => k && v)
+    ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
+
+  const { data, isValidating, mutate } = useSWR<
+    { products: Product[]; vendor: string }[]
+  >(
+    () => (urls.length ? urls : null),
+    async (...args: string[]) =>
+      Promise.all(
+        args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
+          ...(await (
+            await fetch(`https://${k}.myshopify.com/products.json?limit=150`)
+          ).json()),
+          vendor: k
+        }))
+      )
   )
 
-  const key = React.useMemo(
-    () =>
-      vendor ? `https://${vendor}.myshopify.com/products.json?limit=150` : null,
-    [vendor]
-  )
-
-  const { data, mutate } = useSWR<{ products: Product[] }>(key, fetcher)
-
-  const items = Array.from([...(data?.products ?? [])])
-    .map(p => ({
+  const items = data
+    ?.filter(d => d?.products?.length)
+    ?.flatMap(d => d?.products.flatMap(p => ({ ...p, vendor: d.vendor })))
+    ?.map(p => ({
       ...omit(p, 'images', 'body_html', 'options', 'tags', 'originalVariants'),
       variants: p.variants?.filter(v =>
         ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
@@ -66,40 +89,59 @@ const Page = () => {
       }
     })
 
-  React.useEffect(
-    () => void window.scrollTo({ behavior: 'smooth', top: 0 }),
-    [state, data]
-  )
-
   React.useEffect(() => {
     const onMessage = (e: MessageEvent<any>) =>
-      key && e.data === 'revalidate' && mutate(data, true)
+      e.data === 'revalidate' && mutate(data, true)
 
     navigator.serviceWorker?.addEventListener('message', onMessage)
 
     return () =>
       navigator.serviceWorker?.removeEventListener('message', onMessage)
-  }, [key])
+  }, [mutate])
 
   React.useEffect(() => watch(document.getElementsByClassName('item')))
 
   return (
     <BrandContext.Provider value={{ ...state, setState }}>
-      <Form />
+      <Layout
+        onPointerDown={toggle}
+        onWheelCapture={toggle}
+        style={{ minHeight: '100vh' }}>
+        <Button
+          icon={<MenuOutlined />}
+          onPointerDown={toggle}
+          style={{
+            inset: 'calc(var(--pad) / 2) calc(var(--pad) / 2) auto auto',
+            position: 'fixed',
+            zIndex: 1e3
+          }}
+        />
 
-      <Layout.Content style={{ padding: '2rem' }}>
-        {items.length > 0 ? (
-          items.map(i => (
-            <React.Suspense key={i.id} fallback={<Skeleton />}>
-              <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
-            </React.Suspense>
-          ))
-        ) : (
-          <Item>
-            <div>No products found</div>
-          </Item>
-        )}
-      </Layout.Content>
+        <Form {...{ toggle, visible }} />
+
+        <Layout.Content style={{ padding: 'var(--pad)' }}>
+          {(items?.length || 0) > 0 ? (
+            items?.map(i => (
+              <React.Suspense key={i.id} fallback={<Skeleton />}>
+                <Item {...i} />
+              </React.Suspense>
+            ))
+          ) : isValidating ? (
+            <Spin />
+          ) : (
+            <Result
+              extra={
+                <Button onPointerDown={toggle} type="primary">
+                  Open Menu
+                </Button>
+              }
+              status="404"
+              subTitle="Please add slugs from the search menu"
+              title="No products added to watchlist"
+            />
+          )}
+        </Layout.Content>
+      </Layout>
     </BrandContext.Provider>
   )
 }

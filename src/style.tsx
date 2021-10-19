@@ -25,4 +25,11 @@ img {
   max-width: 100%;
   height: auto;
 }
+
+@media (max-width: 1024px) {
+  input,
+  select {
+    font-size: max(1rem, 16px);
+  }
+}
 `

@@ -1,7 +1,7 @@
-export const fetcher = async <T extends any>(k: string): Promise<T> =>
+export const fetcher = async <T extends unknown>(k: string): Promise<T> =>
   (await fetch(k)).json() as T
 
-export const clean = (s: string) => s.replace(/ /g, '').toLocaleLowerCase()
+export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
 
 export const sleep = (ms: number): Promise<void> =>
   new Promise(y => setTimeout(y, ms))
