@@ -1,5 +1,4 @@
-import { lazy } from 'react'
+import dynamic from 'next/dynamic'
 
-export * from './Form'
-
-export const Item = lazy(() => import('./Item'))
+export const Form = dynamic(() => import('./Form'))
+export const Item = dynamic(() => import('./Item'))

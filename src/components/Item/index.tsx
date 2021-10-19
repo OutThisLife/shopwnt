@@ -1,4 +1,4 @@
-import { Typography } from 'antd'
+import Typography from 'antd/lib/typography'
 import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'

@@ -1,6 +1,9 @@
 /* eslint-disable no-nested-ternary */
 import { MenuOutlined } from '@ant-design/icons'
-import { Button, Layout, Result, Skeleton, Spin } from 'antd'
+import Button from 'antd/lib/button'
+import Layout from 'antd/lib/layout'
+import Skeleton from 'antd/lib/skeleton'
+import dynamic from 'next/dynamic'
 import * as React from 'react'
 import { areEqual, FixedSizeList as List } from 'react-window'
 import useSWR from 'swr'
@@ -11,16 +14,15 @@ import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
 import { omit, pick } from '~/lib'
 
+const Result = dynamic(() => import('antd/lib/result'), { ssr: false })
+const Spin = dynamic(() => import('antd/lib/spin'), { ssr: false })
+
 const Page: React.FC = () => {
   const ref = React.useRef<HTMLElement>(null)
   const ctx = React.useContext(BrandContext)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
   const [visible, set] = React.useState(() => false)
   const [height, setHeight] = React.useState(() => 550)
-
-  const vp = React.useRef(
-    'browser' in process ? window.visualViewport : { height: 768, width: 1024 }
-  ).current
 
   const toggle = (e: React.MouseEvent<HTMLElement>) => {
     if (visible && e.type === 'wheel') {
@@ -155,7 +157,7 @@ const Page: React.FC = () => {
         <Layout.Content>
           {(items?.length || 0) > 0 ? (
             <List
-              height={vp.height}
+              height={'browser' in process ? window.visualViewport.height : 768}
               itemCount={items?.length || 0}
               itemSize={height + 50}
               width="100%">

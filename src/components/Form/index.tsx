@@ -1,9 +1,14 @@
 import { MenuOutlined, ReloadOutlined } from '@ant-design/icons'
-import { Button, Drawer, Select, Space, Tag, Typography } from 'antd'
+import Button from 'antd/lib/button'
+import Drawer from 'antd/lib/drawer'
+import Select from 'antd/lib/select'
+import Space from 'antd/lib/space'
+import Tag from 'antd/lib/tag'
+import Typography from 'antd/lib/typography'
 import * as React from 'react'
 import { BrandContext } from '~/ctx'
 
-export const Form: React.FC<{
+const Form: React.FC<{
   visible: boolean
   toggle(e: unknown): void
 }> = ({ toggle, visible }) => {
@@ -89,3 +94,5 @@ export const Form: React.FC<{
     </Drawer>
   )
 }
+
+export default Form

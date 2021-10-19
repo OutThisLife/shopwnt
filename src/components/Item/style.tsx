@@ -1,5 +1,7 @@
-import { Card } from 'antd'
+import dynamic from 'next/dynamic'
 import styled from 'styled-components'
+
+const Card = dynamic(() => import('antd/lib/card'))
 
 export default styled(Card)`
   content-visibility: auto;
