@@ -7,11 +7,7 @@ import { useVisibility } from '~/hooks'
 import { fetcher, relTime } from '~/lib'
 import StyledItem from './style'
 
-export const Item: React.FC<Partial<Product>> = ({
-  children,
-  handle,
-  vendor
-}) => {
+const Item: React.FC<Partial<Product>> = ({ children, handle, vendor }) => {
   const [ref, isVisible] = useVisibility()
   const suspense = !!(handle && vendor && isVisible)
   const url = `https://${vendor}.myshopify.com/products/${handle}`
@@ -88,3 +84,5 @@ export const Item: React.FC<Partial<Product>> = ({
     </figure>
   )
 }
+
+export default Item

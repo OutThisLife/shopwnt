@@ -1,2 +1,5 @@
+import { lazy } from 'react'
+
 export * from './Form'
-export * from './Item'
+
+export const Item = lazy(() => import('./Item'))
