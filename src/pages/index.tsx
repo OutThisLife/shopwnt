@@ -1,7 +1,6 @@
 /* eslint-disable no-nested-ternary */
 import { MenuOutlined } from '@ant-design/icons'
 import { Button, Layout, Result, Skeleton, Spin } from 'antd'
-import 'normalize.css'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
