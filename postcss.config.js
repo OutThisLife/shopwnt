@@ -26,9 +26,13 @@ module.exports = {
             /^ant-modal.*?/,
             /^ant-card.*?/,
             /^ant-spin.*?/,
-            /^ant-skeleton.*?/
+            /^ant-skeleton.*?/,
+            /^ant-select.*?/,
+            /^ant-tag.*?/,
+            /^ant-space.*?/,
+            /^ant-typography.*?/
           ],
-          standard: ['html', 'body', 'ul', 'li']
+          standard: ['html', 'body', 'ul', 'li', 'anticon']
         }
       }
     ]

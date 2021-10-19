@@ -2,19 +2,25 @@
 import { MenuOutlined } from '@ant-design/icons'
 import { Button, Layout, Result, Skeleton, Spin } from 'antd'
 import * as React from 'react'
+import { areEqual, FixedSizeList as List } from 'react-window'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { Form, Item } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
-import { useContentVisibility, useStorage } from '~/hooks'
+import { useStorage } from '~/hooks'
 import { omit, pick } from '~/lib'
 
 const Page: React.FC = () => {
+  const ref = React.useRef<HTMLElement>(null)
   const ctx = React.useContext(BrandContext)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
   const [visible, set] = React.useState(() => false)
-  const watch = useContentVisibility()
+  const [height, setHeight] = React.useState(() => 550)
+
+  const vp = React.useRef(
+    'browser' in process ? window.visualViewport : { height: 768, width: 1024 }
+  ).current
 
   const toggle = (e: React.MouseEvent<HTMLElement>) => {
     if (visible && e.type === 'wheel') {
@@ -98,14 +104,42 @@ const Page: React.FC = () => {
       navigator.serviceWorker?.removeEventListener('message', onMessage)
   }, [mutate])
 
-  React.useEffect(() => watch(document.getElementsByClassName('item')))
+  React.useEffect(() => {
+    if (ref.current instanceof HTMLElement) {
+      const cb = (el: Element, a = el.getBoundingClientRect()) => {
+        if (height !== a.height) {
+          setHeight(a.height)
+        }
+      }
+
+      const ro = new ResizeObserver(([e]) => cb(e.target))
+
+      window.requestAnimationFrame(() => cb(ref.current as Element))
+      ro.observe(ref.current)
+
+      return () => {
+        ro.disconnect()
+      }
+    }
+
+    return () => null
+  }, [])
+
+  const Row = React.memo<{ index: number; style: Record<string, any> }>(
+    ({ index, style }) => (
+      <React.Suspense key={index} fallback={<Skeleton />}>
+        <Item
+          ref={index === 0 ? ref : undefined}
+          {...{ style, ...items?.[index] }}
+        />
+      </React.Suspense>
+    ),
+    areEqual
+  )
 
   return (
     <BrandContext.Provider value={{ ...state, setState }}>
-      <Layout
-        onPointerDown={toggle}
-        onWheelCapture={toggle}
-        style={{ minHeight: '100vh' }}>
+      <Layout onPointerDown={toggle} onWheelCapture={toggle}>
         <Button
           icon={<MenuOutlined />}
           onPointerDown={toggle}
@@ -118,13 +152,15 @@ const Page: React.FC = () => {
 
         <Form {...{ toggle, visible }} />
 
-        <Layout.Content style={{ padding: 'var(--pad)' }}>
+        <Layout.Content>
           {(items?.length || 0) > 0 ? (
-            items?.map(i => (
-              <React.Suspense key={i.id} fallback={<Skeleton />}>
-                <Item {...i} />
-              </React.Suspense>
-            ))
+            <List
+              height={vp.height}
+              itemCount={items?.length || 0}
+              itemSize={height + 50}
+              width="100%">
+              {Row}
+            </List>
           ) : isValidating ? (
             <Spin />
           ) : (

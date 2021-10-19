@@ -3,13 +3,14 @@ import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { useVisibility } from '~/hooks'
 import { fetcher, relTime } from '~/lib'
 import StyledItem from './style'
 
-const Item: React.FC<Partial<Product>> = ({ children, handle, vendor }) => {
-  const [ref, isVisible] = useVisibility()
-  const suspense = !!(handle && vendor && isVisible)
+const Item = React.forwardRef<
+  HTMLElement,
+  Partial<Product & { $hide?: boolean; style?: Record<string, any> }>
+>(function Item({ $hide, children, handle, style, vendor }, ref) {
+  const suspense = !!(handle && vendor)
   const url = `https://${vendor}.myshopify.com/products/${handle}`
 
   const { data, isValidating } = useSWR<{ product: Product }>(
@@ -30,7 +31,21 @@ const Item: React.FC<Partial<Product>> = ({ children, handle, vendor }) => {
   const price = product?.variants?.[0]?.price
 
   return (
-    <figure className="item" {...{ ref }}>
+    <figure
+      className="item"
+      style={
+        $hide
+          ? {
+              pointerEvents: 'none',
+              position: 'absolute',
+              visibility: 'hidden'
+            }
+          : {
+              padding: 'var(--pad)',
+              ...style
+            }
+      }
+      {...{ ref }}>
       <StyledItem
         actions={product?.variants
           ?.slice(0, 4)
@@ -72,10 +87,7 @@ const Item: React.FC<Partial<Product>> = ({ children, handle, vendor }) => {
             <Image
               key={id}
               alt=""
-              blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP89fZPPQAJMANkAJ520wAAAABJRU5ErkJggg=="
               height={250 * 1.5}
-              loading="lazy"
-              placeholder="blur"
               src={`${src}&w=250`}
               width={250}
             />
@@ -83,6 +95,8 @@ const Item: React.FC<Partial<Product>> = ({ children, handle, vendor }) => {
       </StyledItem>
     </figure>
   )
-}
+})
+
+Item.displayName = 'Item'
 
 export default Item
