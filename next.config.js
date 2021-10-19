@@ -5,6 +5,5 @@ module.exports = {
     minimumCacheTTL: 60
   },
   poweredByHeader: false,
-  reactStrictMode: true,
-  target: 'serverless'
+  reactStrictMode: true
 }
