@@ -119,9 +119,7 @@ const Page: React.FC = () => {
       window.requestAnimationFrame(() => cb(ref.current as Element))
       ro.observe(ref.current)
 
-      return () => {
-        ro.disconnect()
-      }
+      return () => ro.disconnect()
     }
 
     return () => null
