@@ -1,3 +1,5 @@
+import 'antd/dist/antd.css'
+import 'normalize.css'
 import { createGlobalStyle } from 'styled-components'
 
 export default createGlobalStyle`

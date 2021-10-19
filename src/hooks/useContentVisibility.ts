@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useCallback, useRef } from 'react'
 
 const spaced = new WeakMap<Element, DOMRect>()
 
@@ -19,48 +19,53 @@ const cb = (el: Element, a = el.getBoundingClientRect()) => {
 }
 
 export const useContentVisibility = () => {
-  const ro = React.useRef<ResizeObserver>(
-    new ResizeObserver(([e]) => cb(e.target, e.contentRect))
+  const ro = useRef<ResizeObserver | boolean>(
+    'browser' in process &&
+      new ResizeObserver(([e]) => cb(e.target, e.contentRect))
   ).current
 
-  const io = React.useRef<IntersectionObserver>(
-    new IntersectionObserver(([e]) => cb(e.target, e.boundingClientRect))
+  const io = useRef<IntersectionObserver | boolean>(
+    'browser' in process &&
+      new IntersectionObserver(([e]) => cb(e.target, e.boundingClientRect))
   ).current
 
-  return React.useCallback(
-    (elements?: Element[] | HTMLCollectionOf<Element>) => {
-      if (!elements?.length) {
-        return () => null
+  return useCallback((elements?: Element[] | HTMLCollectionOf<Element>) => {
+    if (!elements?.length) {
+      return () => null
+    }
+
+    Array.from(elements).forEach(e => {
+      if (
+        e instanceof HTMLElement &&
+        ro instanceof ResizeObserver &&
+        io instanceof IntersectionObserver
+      ) {
+        cb(e)
+
+        ro.unobserve(e)
+        io.unobserve(e)
+
+        ro.observe(e)
+        io.observe(e)
+
+        window.requestAnimationFrame(() =>
+          window.requestAnimationFrame(() =>
+            e.style.setProperty('content-visibility', 'auto')
+          )
+        )
       }
+    })
 
+    return () =>
       Array.from(elements).forEach(e => {
-        if (e instanceof HTMLElement) {
-          cb(e)
-
+        if (
+          e instanceof HTMLElement &&
+          ro instanceof ResizeObserver &&
+          io instanceof IntersectionObserver
+        ) {
           ro.unobserve(e)
           io.unobserve(e)
-
-          ro.observe(e)
-          io.observe(e)
-
-          window.requestAnimationFrame(() =>
-            window.requestAnimationFrame(() =>
-              e.style.setProperty('content-visibility', 'auto')
-            )
-          )
         }
       })
-
-      return () =>
-        Array.from(elements).forEach(e => {
-          if (e instanceof HTMLElement) {
-            ro.unobserve(e)
-            io.unobserve(e)
-          }
-        })
-    },
-    []
-  )
+  }, [])
 }
-
-export default useContentVisibility

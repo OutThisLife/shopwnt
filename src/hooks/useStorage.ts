@@ -2,9 +2,9 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
 const storage = {
-  get: <T extends any>(k: string): T => {
+  get<T extends any>(k: string): T {
     if (storage.has(k)) {
-      return Object.entries(JSON.parse(localStorage.getItem(k) ?? '{}')).reduce(
+      return Object.entries(JSON.parse(this.store.getItem(k) ?? '{}')).reduce(
         (acc, [k0, v]) => ({
           ...acc,
           [k0]: Array.isArray(v) && v[0].length === 2 ? new Map(v) : v
@@ -16,11 +16,13 @@ const storage = {
     return undefined as T
   },
 
-  has: (k: string) => !!localStorage.getItem(k),
+  has(k: string) {
+    return !!this.store.getItem(k)
+  },
 
-  set: <T extends any>(k: string, v: T): void => {
+  set<T extends any>(k: string, v: T): void {
     if (v && typeof v === 'object') {
-      localStorage.setItem(
+      this.store.setItem(
         k,
         JSON.stringify(
           Object.entries(v as Record<string, any>).reduce(
@@ -33,8 +35,20 @@ const storage = {
         )
       )
     } else {
-      localStorage.setItem(k, JSON.stringify(v))
+      this.store.setItem(k, JSON.stringify(v))
     }
+  },
+
+  get store(): Storage {
+    if ('browser' in process) {
+      return window.self.localStorage
+    }
+
+    return new Proxy<Storage>({} as Storage, {
+      get() {
+        return () => null
+      }
+    })
   }
 }
 
@@ -47,5 +61,3 @@ export const useStorage = <T extends any>(
 
   return [state, setState]
 }
-
-export default useState

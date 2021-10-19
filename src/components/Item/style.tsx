@@ -25,7 +25,7 @@ export default styled(Card)`
       background: currentColor;
     }
 
-    img {
+    > * {
       flex: auto 0 0;
     }
   }

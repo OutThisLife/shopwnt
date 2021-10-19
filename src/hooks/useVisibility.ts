@@ -7,26 +7,36 @@ export const useVisibility = (
   const ref = useRef<HTMLElement>(null)
   const [st, set] = useState<boolean>(() => false)
 
-  const io: IntersectionObserver = useRef<IntersectionObserver>(
-    new IntersectionObserver(
-      ([{ isIntersecting: v }]) => (v ? (set(v), io.disconnect()) : null),
-      { rootMargin: '0px', threshold: 0.1, ...args }
-    )
+  const io = useRef<IntersectionObserver | undefined>(
+    (() => {
+      if ('browser' in process) {
+        const o: IntersectionObserver = new IntersectionObserver(
+          ([{ isIntersecting: v }]) => (v ? (set(v), o.disconnect()) : null),
+          { rootMargin: '0px', threshold: 0.1, ...args }
+        )
+
+        return o
+      }
+
+      return undefined
+    })()
   ).current
 
   useEffect(() => {
-    if (ref.current instanceof HTMLElement) {
-      io.observe(ref.current)
-    } else {
-      io?.disconnect()
+    if (io instanceof IntersectionObserver) {
+      if (ref.current instanceof HTMLElement) {
+        io?.observe(ref.current)
+      } else {
+        io?.disconnect()
+      }
+
+      return () => {
+        io?.disconnect()
+      }
     }
 
-    return () => {
-      io?.disconnect()
-    }
+    return () => null
   }, [])
 
   return [ref, st]
 }
-
-export default useVisibility

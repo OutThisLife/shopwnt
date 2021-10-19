@@ -1,19 +1,17 @@
 import { Layout, Skeleton } from 'antd'
-import 'normalize.css'
 import * as React from 'react'
 import useSWR from 'swr'
-import type { Product } from '../types'
-import { Form, Item } from './components'
-import type { State } from './ctx'
-import { BrandContext } from './ctx'
-import { useContentVisibility, useStorage } from './hooks'
-import { fetcher, omit, pick } from './util'
+import type { Product } from '~/../types'
+import { Form, Item } from '~/components'
+import type { State } from '~/ctx'
+import { BrandContext } from '~/ctx'
+import { useContentVisibility, useStorage } from '~/hooks'
+import { fetcher, omit, pick } from '~/lib/util'
 
-const App: React.FC = () => {
+const Page = () => {
   const ctx = React.useContext(BrandContext)
-  const watch = useContentVisibility()
-
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
+  const watch = useContentVisibility()
 
   const vendor = React.useMemo(
     () =>
@@ -83,29 +81,27 @@ const App: React.FC = () => {
       navigator.serviceWorker?.removeEventListener('message', onMessage)
   }, [key])
 
-  React.useLayoutEffect(() => watch(document.getElementsByClassName('item')))
+  React.useEffect(() => watch(document.getElementsByClassName('item')))
 
   return (
     <BrandContext.Provider value={{ ...state, setState }}>
-      <Layout style={{ minHeight: '100vh' }}>
-        <Form />
+      <Form />
 
-        <Layout.Content style={{ padding: '2rem' }}>
-          {items.length > 0 ? (
-            items.map(i => (
-              <React.Suspense key={i.id} fallback={<Skeleton />}>
-                <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
-              </React.Suspense>
-            ))
-          ) : (
-            <Item>
-              <div>No products found</div>
-            </Item>
-          )}
-        </Layout.Content>
-      </Layout>
+      <Layout.Content style={{ padding: '2rem' }}>
+        {items.length > 0 ? (
+          items.map(i => (
+            <React.Suspense key={i.id} fallback={<Skeleton />}>
+              <Item {...{ ...i, vendor: vendor ?? i?.vendor }} />
+            </React.Suspense>
+          ))
+        ) : (
+          <Item>
+            <div>No products found</div>
+          </Item>
+        )}
+      </Layout.Content>
     </BrandContext.Provider>
   )
 }
 
-export default App
+export default Page

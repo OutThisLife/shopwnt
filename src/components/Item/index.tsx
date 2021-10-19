@@ -1,9 +1,10 @@
 import { Typography } from 'antd'
+import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { useVisibility } from '~/hooks'
-import { clean, fetcher, relTime } from '~/util'
+import { clean, fetcher, relTime } from '~/lib'
 import StyledItem from './style'
 
 export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
@@ -65,12 +66,19 @@ export const Item: React.FC<Pick<Partial<Product>, 'handle' | 'vendor'>> = ({
         loading={!!children}
         onClick={() => window.open(product.url, '_blank')}
         title={<>{product?.title ?? '...'}</>}>
-        {product?.images?.map(i => (
-          <img key={i.id} alt="" loading="lazy" src={`${i.src}&width=250`} />
+        {product?.images?.map(({ id, src }) => (
+          <Image
+            key={id}
+            alt=""
+            blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP89fZPPQAJMANkAJ520wAAAABJRU5ErkJggg=="
+            height={250 * 1.5}
+            loading="lazy"
+            placeholder="blur"
+            width={250}
+            {...{ src }}
+          />
         ))}
       </StyledItem>
     </figure>
   )
 }
-
-export default Item

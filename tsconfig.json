@@ -9,10 +9,15 @@
     "experimentalDecorators": true,
     "forceConsistentCasingInFileNames": true,
     "importHelpers": true,
-    "isolatedModules": false,
-    "jsx": "react",
+    "isolatedModules": true,
+    "jsx": "preserve",
     "outDir": "dist/",
-    "lib": ["dom", "dom.iterable", "esnext", "webworker"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext",
+      "webworker"
+    ],
     "module": "esnext",
     "moduleResolution": "node",
     "noEmit": true,
@@ -24,15 +29,24 @@
     "strict": true,
     "suppressImplicitAnyIndexErrors": true,
     "target": "esnext",
-    "types": ["vite/client"],
-    "typeRoots": ["types"],
+    "typeRoots": [
+      "types"
+    ],
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": [
+        "./src/*"
+      ]
     },
     "plugins": [
       {
         "name": "typescript-styled-plugin",
-        "tags": ["createGlobalStyle", "css", "media", "styled", "keyframes"]
+        "tags": [
+          "createGlobalStyle",
+          "css",
+          "media",
+          "styled",
+          "keyframes"
+        ]
       },
       {
         "transform": "typescript-plugin-styled-components",
@@ -42,6 +56,15 @@
       }
     ]
   },
-  "include": ["src", "types", "./*.ts"],
-  "exclude": ["node_modules", "dist"]
+  "include": [
+    "src",
+    "types",
+    "./*.ts",
+    "next.config.js",
+    "public"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

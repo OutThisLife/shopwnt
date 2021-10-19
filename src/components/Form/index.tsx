@@ -8,10 +8,6 @@ export const Form: React.FC = () => {
   const [visible, set] = React.useState(() => false)
 
   const refresh = () => navigator.serviceWorker.controller?.postMessage('all')
-
-  const handle = (k?: string | null, v = true) =>
-    k && ctx.setState(s => ({ ...s, slugs: s.slugs.set(k, v) }))
-
   const toggle = () => set(st => !st)
 
   return (
@@ -62,7 +58,15 @@ export const Form: React.FC = () => {
           ].filter(v => v)}
           id="brands"
           mode="tags"
-          onChange={r => r.forEach(e => handle(e, !ctx.slugs.get(e)))}
+          onChange={r => {
+            if (r.length) {
+              r.forEach(k => ctx.slugs.set(k, true))
+            } else {
+              ;[...ctx.slugs.keys()].forEach(k => ctx.slugs.set(k, false))
+            }
+
+            ctx.setState(st => ({ ...st, slugs: ctx.slugs }))
+          }}
           placeholder="Stores to watch"
           style={{ width: '95%' }}
           tagRender={({ label, ...props }) => (
@@ -80,5 +84,3 @@ export const Form: React.FC = () => {
     </>
   )
 }
-
-export default Form
