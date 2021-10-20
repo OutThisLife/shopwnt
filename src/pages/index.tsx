@@ -1,14 +1,11 @@
 /* eslint-disable no-nested-ternary */
-import { MenuOutlined } from '@ant-design/icons'
-import Button from 'antd/lib/button'
-import Layout from 'antd/lib/layout'
-import Skeleton from 'antd/lib/skeleton'
+import type ILayout from 'antd/lib/layout'
 import dynamic from 'next/dynamic'
 import * as React from 'react'
 import { areEqual, FixedSizeList as List } from 'react-window'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { Form, Item } from '~/components'
+import { Form, Item, MenuOutlined } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
@@ -16,6 +13,21 @@ import { omit, pick } from '~/lib'
 
 const Result = dynamic(() => import('antd/lib/result'), { ssr: false })
 const Spin = dynamic(() => import('antd/lib/spin'), { ssr: false })
+const Skeleton = dynamic(() => import('antd/lib/skeleton'), { ssr: false })
+const Button = dynamic(() => import('antd/lib/button'))
+
+const Layout = new Proxy(
+  dynamic(() => import('antd/lib/layout')),
+  {
+    get(o, k) {
+      if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
+        o[k] = dynamic(() => import('antd/lib/layout').then(m => m.default[k]))
+      }
+
+      return o[k]
+    }
+  }
+) as typeof ILayout
 
 const Page: React.FC = () => {
   const ref = React.useRef<HTMLElement>(null)

@@ -1,12 +1,27 @@
-import { MenuOutlined, ReloadOutlined } from '@ant-design/icons'
-import Button from 'antd/lib/button'
-import Drawer from 'antd/lib/drawer'
-import Select from 'antd/lib/select'
-import Space from 'antd/lib/space'
-import Tag from 'antd/lib/tag'
-import Typography from 'antd/lib/typography'
+import type SelectInterface from 'antd/lib/select'
+import dynamic from 'next/dynamic'
 import * as React from 'react'
+import { MenuOutlined, ReloadOutlined } from '~/components/Icons'
 import { BrandContext } from '~/ctx'
+
+const Button = dynamic(() => import('antd/lib/button'))
+const Drawer = dynamic(() => import('antd/lib/drawer'))
+const Tag = dynamic(() => import('antd/lib/tag'))
+const Space = dynamic(() => import('antd/lib/space'))
+const Text = dynamic(() => import('antd/lib/typography/Text'))
+
+const Select = new Proxy(
+  dynamic(() => import('antd/lib/select')),
+  {
+    get(o, k) {
+      if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
+        o[k] = dynamic(() => import('antd/lib/select').then(m => m.default[k]))
+      }
+
+      return o[k]
+    }
+  }
+) as typeof SelectInterface
 
 const Form: React.FC<{
   visible: boolean
@@ -22,7 +37,7 @@ const Form: React.FC<{
       footer={
         <Space style={{ justifyContent: 'space-between', width: '100%' }}>
           <Space>
-            <Typography.Text>Sort by:</Typography.Text>
+            <Text>Sort by:</Text>
 
             <Select
               key="sort"

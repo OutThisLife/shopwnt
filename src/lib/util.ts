@@ -1,5 +1,6 @@
-export const fetcher = async <T extends unknown>(k: string): Promise<T> =>
-  (await fetch(k)).json() as T
+export const fetcher = async <T extends Record<string, any>>(
+  k: string
+): Promise<T> => (await fetch(k)).json() as Promise<T>
 
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
 

@@ -1,10 +1,12 @@
-import Typography from 'antd/lib/typography'
+import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { fetcher, relTime } from '~/lib'
 import StyledItem from './style'
+
+const Text = dynamic(() => import('antd/lib/typography/Text'))
 
 const Item = React.forwardRef<
   HTMLElement,
@@ -60,21 +62,21 @@ const Item = React.forwardRef<
           product?.updated_at && (
             <>
               {price && (
-                <Typography.Text strong type="success">
+                <Text strong type="success">
                   {parseFloat(`${price}`).toLocaleString('en-US', {
                     currency: 'USD',
                     style: 'currency'
                   })}
-                </Typography.Text>
+                </Text>
               )}
 
               <br />
 
-              <Typography.Text style={{ fontSize: 12 }} type="secondary">
+              <Text style={{ fontSize: 12 }} type="secondary">
                 {relTime(product?.updated_at)}
                 <br />
                 {relTime(product?.created_at)}
-              </Typography.Text>
+              </Text>
             </>
           )
         }
