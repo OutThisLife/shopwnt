@@ -11,7 +11,7 @@ const Item = React.forwardRef<
   Partial<Product & { $hide?: boolean; style?: Record<string, any> }>
 >(function Item({ $hide, children, handle, style, vendor }, ref) {
   const suspense = !!(handle && vendor)
-  const url = `https://${vendor}.myshopify.com/products/${handle}`
+  const url = `//${vendor}.myshopify.com/products/${handle}`
 
   const { data, isValidating } = useSWR<{ product: Product }>(
     suspense ? `${url}.json` : null,
