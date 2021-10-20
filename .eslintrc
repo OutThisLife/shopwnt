@@ -1,6 +1,6 @@
  {
   "extends": ["airbnb-typescript-prettier"],
-  "ignorePatterns": [".eslintrc.js"],
+  "ignorePatterns": [".eslintrc.js", "next.config.js", "postcss.config.js"],
   "parser": "@typescript-eslint/parser",
   "plugins": [
     "import",

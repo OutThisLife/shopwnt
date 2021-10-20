@@ -1,6 +1,7 @@
 /* eslint-disable no-nested-ternary */
+import dynamic from 'next/dynamic'
 import * as React from 'react'
-import { areEqual, FixedSizeList as List } from 'react-window'
+import type { FixedSizeList } from 'react-window'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { Form, Item } from '~/components'
@@ -16,6 +17,10 @@ import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
 import { omit, pick } from '~/lib'
+
+const List = dynamic(() =>
+  import('react-window').then(m => m.FixedSizeList)
+) as typeof FixedSizeList
 
 const Page: React.FC = () => {
   const ref = React.useRef<HTMLElement>(null)
@@ -50,7 +55,7 @@ const Page: React.FC = () => {
       Promise.all(
         args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
           ...(await (
-            await fetch(`https://${k}.myshopify.com/products.json?limit=150`)
+            await fetch(`//${k}.myshopify.com/products.json?limit=150`)
           ).json()),
           vendor: k
         }))
@@ -130,7 +135,7 @@ const Page: React.FC = () => {
         />
       </React.Suspense>
     ),
-    areEqual
+    (p, n) => p.index === n.index
   )
 
   return (
