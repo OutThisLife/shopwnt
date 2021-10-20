@@ -5,124 +5,58 @@ import dynamic from 'next/dynamic'
 export const MenuOutlined = dynamic(
   () =>
     import(
-      /* webpackChunkName: "antd-icons" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ '@ant-design/icons/MenuOutlined'
+      /* webpackChunkName: "antd-icons[request]" */
+      '@ant-design/icons/MenuOutlined'
     )
 )
 
 export const ReloadOutlined = dynamic(
   () =>
     import(
-      /* webpackChunkName: "antd-icons" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ '@ant-design/icons/ReloadOutlined'
+      /* webpackChunkName: "antd-icons[request]" */
+      '@ant-design/icons/ReloadOutlined'
     )
 )
 
 export const Button = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/button'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/button')
 )
 export const Result = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/result'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/result')
 )
 export const Skeleton = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/skeleton'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/skeleton')
 )
 export const Space = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/space'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/space')
 )
 export const Spin = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/spin'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/spin')
 )
 export const Tag = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/tag'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/tag')
 )
 export const Drawer = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/drawer'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/drawer')
 )
 export const Text = dynamic(
   () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/typography/Text'
-    )
+    import(/* webpackChunkName: "antd[request]" */ 'antd/lib/typography/Text')
 )
 export const Card = dynamic(
-  () =>
-    import(
-      /* webpackChunkName: "antd-lib" */
-      /* webpackPrefetch: true */
-      /* webpackPreload: true */
-      /* webpackExports: ["default"] */ 'antd/lib/card'
-    )
+  () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/card')
 )
 
 export const Layout = new Proxy(
   dynamic(
-    () =>
-      import(
-        /* webpackChunkName: "antd-lib" */
-        /* webpackPrefetch: true */
-        /* webpackPreload: true */
-        /* webpackExports: ["default"] */ 'antd/lib/layout'
-      )
+    () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/layout')
   ),
   {
     get(o, k) {
       if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
         o[k] = dynamic(() =>
           import(
-            /* webpackChunkName: "antd-lib" */
-            /* webpackPrefetch: true */
-            /* webpackPreload: true */
-            /* webpackExports: ["default"] */ 'antd/lib/layout'
+            /* webpackChunkName: "antd[request]" */ 'antd/lib/layout'
           ).then(m => m.default[k])
         )
       }
@@ -134,23 +68,14 @@ export const Layout = new Proxy(
 
 export const Select = new Proxy(
   dynamic(
-    () =>
-      import(
-        /* webpackChunkName: "antd-lib" */
-        /* webpackPrefetch: true */
-        /* webpackPreload: true */
-        /* webpackExports: ["default"] */ 'antd/lib/select'
-      )
+    () => import(/* webpackChunkName: "antd[request]" */ 'antd/lib/select')
   ),
   {
     get(o, k) {
       if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
         o[k] = dynamic(() =>
           import(
-            /* webpackChunkName: "antd-lib" */
-            /* webpackPrefetch: true */
-            /* webpackPreload: true */
-            /* webpackExports: ["default"] */ 'antd/lib/select'
+            /* webpackChunkName: "antd[request]" */ 'antd/lib/select'
           ).then(m => m.default[k])
         )
       }
