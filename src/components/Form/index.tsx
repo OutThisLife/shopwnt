@@ -1,27 +1,15 @@
-import type SelectInterface from 'antd/lib/select'
-import dynamic from 'next/dynamic'
 import * as React from 'react'
-import { MenuOutlined, ReloadOutlined } from '~/components/Icons'
+import {
+  Button,
+  Drawer,
+  MenuOutlined,
+  ReloadOutlined,
+  Select,
+  Space,
+  Tag,
+  Text
+} from '~/components/antd'
 import { BrandContext } from '~/ctx'
-
-const Button = dynamic(() => import('antd/lib/button'))
-const Drawer = dynamic(() => import('antd/lib/drawer'))
-const Tag = dynamic(() => import('antd/lib/tag'))
-const Space = dynamic(() => import('antd/lib/space'))
-const Text = dynamic(() => import('antd/lib/typography/Text'))
-
-const Select = new Proxy(
-  dynamic(() => import('antd/lib/select')),
-  {
-    get(o, k) {
-      if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
-        o[k] = dynamic(() => import('antd/lib/select').then(m => m.default[k]))
-      }
-
-      return o[k]
-    }
-  }
-) as typeof SelectInterface
 
 const Form: React.FC<{
   visible: boolean

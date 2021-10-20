@@ -1,11 +1,9 @@
 import 'antd/dist/antd.css'
 import type { AppProps } from 'next/app'
-import dynamic from 'next/dynamic'
 import Head from 'next/head'
 import 'normalize.css'
 import * as React from 'react'
-
-const Layout = dynamic(() => import('antd/lib/layout'))
+import { Layout } from '~/components/antd'
 
 const MyApp: React.FC<AppProps> = ({ Component, pageProps }) => (
   <>

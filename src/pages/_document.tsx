@@ -1,10 +1,10 @@
 import type { DocumentContext } from 'next/document'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 import Script from 'next/script'
-import { ServerStyleSheet } from 'styled-components'
 
 class MyDocument extends Document {
   static async getInitialProps(ctx: DocumentContext) {
+    const { ServerStyleSheet } = await import('styled-components')
     const sheet = new ServerStyleSheet()
     const originalRenderPage = ctx.renderPage
 

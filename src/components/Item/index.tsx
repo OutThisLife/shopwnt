@@ -1,12 +1,10 @@
-import dynamic from 'next/dynamic'
 import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
+import { Text } from '~/components/antd'
 import { fetcher, relTime } from '~/lib'
 import StyledItem from './style'
-
-const Text = dynamic(() => import('antd/lib/typography/Text'))
 
 const Item = React.forwardRef<
   HTMLElement,
