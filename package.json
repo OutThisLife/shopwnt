@@ -9,6 +9,7 @@
     "dev": "next dev",
     "start": "next start",
     "lint": "eslint --fix src/**/",
+    "lint:types": "tsc --noEmit",
     "analyze": "npx -y cross-env ANALYZE=1 yarn build"
   },
   "dependencies": {

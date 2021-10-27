@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
 const storage = {
-  get<T>(k: string): T {
+  get<T>(k: string): T | undefined {
     if (storage.has(k)) {
       return Object.entries(JSON.parse(this.store.getItem(k) ?? '{}')).reduce(
         (acc, [k0, v]) => ({
@@ -13,7 +13,7 @@ const storage = {
       ) as T
     }
 
-    return undefined as T
+    return undefined
   },
 
   has(k: string) {
