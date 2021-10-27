@@ -54,7 +54,8 @@
         "minify": true,
         "ssr": true
       }
-    ]
+    ],
+    "incremental": true
   },
   "include": [
     "src",

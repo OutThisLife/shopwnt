@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
 
 const storage = {
-  get<T extends any>(k: string): T {
+  get<T>(k: string): T {
     if (storage.has(k)) {
       return Object.entries(JSON.parse(this.store.getItem(k) ?? '{}')).reduce(
         (acc, [k0, v]) => ({
@@ -20,7 +20,7 @@ const storage = {
     return !!this.store.getItem(k)
   },
 
-  set<T extends any>(k: string, v: T): void {
+  set<T>(k: string, v: T): void {
     if (v && typeof v === 'object') {
       this.store.setItem(
         k,
@@ -52,7 +52,7 @@ const storage = {
   }
 }
 
-export const useStorage = <T extends any>(
+export const useStorage = <T>(
   key: string,
   initialState: T
 ): [T, Dispatch<SetStateAction<T>>] => {

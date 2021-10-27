@@ -1,8 +1,6 @@
-import type ILayout from 'antd/lib/layout'
-import type SelectInterface from 'antd/lib/select'
-import dynamic from 'next/dynamic'
+import { lazy } from 'react'
 
-export const MenuOutlined = dynamic(
+export const MenuOutlined = lazy(
   () =>
     import(
       /* webpackChunkName: "antd-icons-[request]" */
@@ -10,7 +8,7 @@ export const MenuOutlined = dynamic(
     )
 )
 
-export const ReloadOutlined = dynamic(
+export const ReloadOutlined = lazy(
   () =>
     import(
       /* webpackChunkName: "antd-icons-[request]" */
@@ -18,69 +16,16 @@ export const ReloadOutlined = dynamic(
     )
 )
 
-export const Button = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/button')
-)
-export const Result = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/result')
-)
-export const Skeleton = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/skeleton')
-)
-export const Space = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/space')
-)
-export const Spin = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/spin')
-)
-export const Tag = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/tag')
-)
-export const Drawer = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/drawer')
-)
-export const Text = dynamic(
-  () =>
-    import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/typography/Text')
-)
-export const Card = dynamic(
-  () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/card')
-)
+export const Button = lazy(() => import('antd/lib/button'))
+export const Result = lazy(() => import('antd/lib/result'))
 
-export const Layout = new Proxy(
-  dynamic(
-    () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/layout')
-  ),
-  {
-    get(o, k) {
-      if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
-        o[k] = dynamic(() =>
-          import(
-            /* webpackChunkName: "antd-[request]" */ 'antd/lib/layout'
-          ).then(m => m.default[k])
-        )
-      }
+export { default as Layout } from 'antd/lib/layout'
+export { default as Select } from 'antd/lib/select'
+export { default as Skeleton } from 'antd/lib/skeleton'
 
-      return o[k]
-    }
-  }
-) as typeof ILayout
-
-export const Select = new Proxy(
-  dynamic(
-    () => import(/* webpackChunkName: "antd-[request]" */ 'antd/lib/select')
-  ),
-  {
-    get(o, k) {
-      if (typeof k === 'string' && /^[A-Z]/.test(`${k}`)) {
-        o[k] = dynamic(() =>
-          import(
-            /* webpackChunkName: "antd-[request]" */ 'antd/lib/select'
-          ).then(m => m.default[k])
-        )
-      }
-
-      return o[k]
-    }
-  }
-) as typeof SelectInterface
+export const Space = lazy(() => import('antd/lib/space'))
+export const Spin = lazy(() => import('antd/lib/spin'))
+export const Tag = lazy(() => import('antd/lib/tag'))
+export const Drawer = lazy(() => import('antd/lib/drawer'))
+export const Text = lazy(() => import('antd/lib/typography/Text'))
+export const Card = lazy(() => import('antd/lib/card'))

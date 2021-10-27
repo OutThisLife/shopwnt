@@ -1,21 +1,20 @@
-import Image from 'next/image'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { Text } from '~/components/antd'
 import { fetcher, relTime } from '~/lib'
 import StyledItem from './style'
+import { Thumbnail } from './Thumbnail'
 
 const Item = React.forwardRef<
   HTMLElement,
   Partial<Product & { $hide?: boolean; style?: Record<string, any> }>
->(function Item({ $hide, children, handle, style, vendor }, ref) {
-  const suspense = !!(handle && vendor)
+>(function Item({ children, handle, style, vendor }, ref) {
   const url = `//${vendor}.myshopify.com/products/${handle}`
 
   const { data, isValidating } = useSWR<{ product: Product }>(
-    suspense ? `${url}.json` : null,
-    { fetcher, suspense }
+    `${url}.json`,
+    fetcher
   )
 
   const loading = (!!data || isValidating) && !!children
@@ -33,18 +32,10 @@ const Item = React.forwardRef<
   return (
     <figure
       className="item"
-      style={
-        $hide
-          ? {
-              pointerEvents: 'none',
-              position: 'absolute',
-              visibility: 'hidden'
-            }
-          : {
-              padding: 'var(--pad)',
-              ...style
-            }
-      }
+      style={{
+        padding: 'var(--pad)',
+        ...style
+      }}
       {...{ ref }}>
       <StyledItem
         actions={product?.variants
@@ -78,19 +69,15 @@ const Item = React.forwardRef<
             </>
           )
         }
-        hoverable
-        onClick={() => void (loading || window.open(product.url, '_blank'))}
-        title={product?.title}
+        title={
+          <a href={product.url} rel="noreferer noreferrer" target="_blank">
+            {product?.title}
+          </a>
+        }
         {...{ loading }}>
         {children ||
           product?.images?.map(({ id, src }) => (
-            <Image
-              key={id}
-              alt=""
-              height={250 * 1.5}
-              src={`${src}&w=250`}
-              width={250}
-            />
+            <Thumbnail key={id} src={`${src}&height=1000&format=webp`} />
           ))}
       </StyledItem>
     </figure>

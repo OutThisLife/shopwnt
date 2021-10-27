@@ -5,8 +5,14 @@ export default styled(Card)`
   content-visibility: auto;
   user-select: none;
 
+  .ant-card-head-title > a {
+    color: currentColor;
+  }
+
   .ant-card-body {
-    display: flex;
+    display: grid;
+    grid-auto-columns: max-content;
+    grid-auto-flow: column dense;
     max-width: 100%;
     overflow: overlay;
     width: 100%;
@@ -19,10 +25,6 @@ export default styled(Card)`
     ::-webkit-scrollbar {
       height: 2px;
       width: 2px;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: currentColor;
     }
 
     > * {

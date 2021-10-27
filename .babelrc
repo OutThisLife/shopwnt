@@ -1,6 +1,0 @@
-{
-    "presets": [["next/babel", { "preset-react": { "pure": true }}]],
-    "plugins": [
-        ["styled-components", { "ssr": true, "pure": true }]
-    ]
-}

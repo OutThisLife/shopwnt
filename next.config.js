@@ -4,12 +4,15 @@ module.exports = require('next-compose-plugins')(
   ].filter(v => v),
   {
     images: {
-      disableStaticImages: true,
+      // disableStaticImages: true,
       domains: ['cdn.shopify.com'],
-      minimumCacheTTL: 60
+      minimumCacheTTL: 60,
+      formats: ['image/avif', 'image/webp'],
+      deviceSizes: [640, 750, 828, 1080, 1200]
     },
 
     poweredByHeader: false,
-    reactStrictMode: true
+    reactStrictMode: true,
+    swcMinify: true
   }
 )
