@@ -1,6 +1,6 @@
 import styled from 'styled-components'
 
-export default styled.figure`
+export default styled.picture`
   display: block;
   height: 0;
   overflow: hidden;

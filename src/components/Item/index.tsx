@@ -77,7 +77,7 @@ const Item = React.forwardRef<
         {...{ loading }}>
         {children ||
           product?.images?.map(({ id, src }) => (
-            <Thumbnail key={id} src={`${src}&height=1000&format=webp`} />
+            <Thumbnail key={id} {...{ src }} />
           ))}
       </StyledItem>
     </figure>
