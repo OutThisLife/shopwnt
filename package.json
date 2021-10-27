@@ -8,7 +8,8 @@
     "prebuild": "rm -rf .next",
     "dev": "next dev",
     "start": "next start",
-    "lint": "eslint --fix src/**/",
+    "lint": "yarn lint:eslint & yarn lint:types",
+    "lint:eslint": "eslint --fix src/**/",
     "lint:types": "tsc --noEmit",
     "analyze": "npx -y cross-env ANALYZE=1 yarn build"
   },

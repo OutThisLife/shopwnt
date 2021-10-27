@@ -13,7 +13,7 @@ const Page: React.FC = () => {
   const ref = React.useRef<HTMLElement>(null)
   const ctx = React.useContext(BrandContext)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
-  const [height, setHeight] = React.useState(() => 550)
+  const [height, setHeight] = React.useState(() => 400)
 
   const urls = [...state.slugs.entries()]
     .filter(([k, v]) => k && v)
@@ -84,32 +84,39 @@ const Page: React.FC = () => {
     [data]
   )
 
-  const updateHeight = React.useCallback(
-    (el: Element) => {
-      const $items = el.getElementsByClassName('item')
+  const updateHeight = React.useCallback((el: Element) => {
+    if (!(el instanceof HTMLElement)) {
+      return
+    }
 
-      let h = 0
+    const $items = el.getElementsByClassName('item')
 
-      Array.from($items ?? []).forEach(
-        $i => (h = Math.max($i?.firstElementChild?.clientHeight || 0, h))
-      )
+    const h = [...Array.from($items ?? [])].reduce(
+      (acc, $i) =>
+        (acc = Math.max($i?.firstElementChild?.clientHeight || 0, acc)),
+      0
+    )
 
-      console.log(height, h)
-
-      if (h && height !== h) {
-        setHeight(h)
-      }
-    },
-    [height]
-  )
+    if (h && height !== h) {
+      setHeight(h)
+    }
+  }, [])
 
   React.useEffect(() => {
     const ro = new ResizeObserver(([e]) => updateHeight(e.target))
 
-    if (ref.current instanceof HTMLElement) {
-      window.requestAnimationFrame(() => updateHeight(ref.current as Element))
-      ro.observe(ref.current)
-    }
+    ;(async () => {
+      await (async (): Promise<void> => {
+        while (!(ref.current instanceof HTMLElement)) {
+          return new Promise(r => setTimeout(r, 1e3))
+        }
+
+        return Promise.resolve()
+      })()
+
+      updateHeight(ref.current as HTMLElement)
+      ro.observe(ref.current as HTMLElement)
+    })()
 
     return () => ro.disconnect()
   }, [])
