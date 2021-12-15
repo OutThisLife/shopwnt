@@ -1,10 +1,10 @@
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { Text } from '~/components/antd'
 import { fetcher, relTime } from '~/lib'
+import { Skeleton } from '..'
 import StyledItem from './style'
-import { Thumbnail } from './Thumbnail'
+import Thumbnail from './Thumbnail'
 
 const Item = React.forwardRef<
   HTMLElement,
@@ -30,57 +30,63 @@ const Item = React.forwardRef<
   const price = product?.variants?.[0]?.price
 
   return (
-    <figure
-      className="item"
-      style={{
-        padding: 'var(--pad)',
-        ...style
-      }}
-      {...{ ref }}>
-      <StyledItem
-        actions={product?.variants
-          ?.slice(0, 4)
-          .map(
-            v =>
-              `${v.option3 ?? v.option2 ?? v.option1 ?? v.title} (${
-                v.inventory_quantity ?? '∞'
-              })`
-          )}
-        extra={
-          price &&
-          product?.updated_at && (
-            <>
+    <StyledItem className="item" {...{ ref, style }}>
+      <div>
+        {loading ? (
+          <Skeleton />
+        ) : (
+          <>
+            <div />
+
+            <header>
+              <div>
+                <a href={product.url} rel="noopener noreferrer" target="_blank">
+                  {product?.title}
+                </a>
+
+                <em>
+                  {relTime(product?.updated_at)} -{' '}
+                  {relTime(product?.created_at)}
+                </em>
+              </div>
+
               {price && (
-                <Text strong type="success">
+                <strong>
                   {parseFloat(`${price}`).toLocaleString('en-US', {
                     currency: 'USD',
                     style: 'currency'
                   })}
-                </Text>
+                </strong>
               )}
+            </header>
 
-              <br />
+            <section>
+              {children ||
+                product?.images?.map(({ id, src }) => (
+                  <Thumbnail key={id} {...{ src }} />
+                ))}
+            </section>
 
-              <Text style={{ fontSize: 12 }} type="secondary">
-                {relTime(product?.updated_at)}
-                <br />
-                {relTime(product?.created_at)}
-              </Text>
-            </>
-          )
-        }
-        title={
-          <a href={product.url} rel="noreferer noreferrer" target="_blank">
-            {product?.title}
-          </a>
-        }
-        {...{ loading }}>
-        {children ||
-          product?.images?.map(({ id, src }) => (
-            <Thumbnail key={id} {...{ src }} />
-          ))}
-      </StyledItem>
-    </figure>
+            {price && product?.updated_at && (
+              <footer>
+                {product?.variants?.slice(0, 4).map(v => (
+                  <a
+                    key={v.id}
+                    href={product.url}
+                    rel="noopener noreferrer"
+                    target="_blank">
+                    {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
+                    {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
+                  </a>
+                ))}
+              </footer>
+            )}
+
+            <div />
+          </>
+        )}
+      </div>
+    </StyledItem>
   )
 })
 

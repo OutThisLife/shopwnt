@@ -35,7 +35,7 @@ export const useVisibility = (
       }
     }
 
-    return () => null
+    return () => void null
   }, [])
 
   return [ref, st]

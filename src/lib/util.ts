@@ -5,7 +5,9 @@ export const fetcher = async <T extends Record<string, any>>(
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
 
 export const sleep = (ms: number): Promise<void> =>
-  new Promise(y => setTimeout(y, ms))
+  new Promise(y => {
+    setTimeout(y, ms)
+  })
 
 export const filterObj = <T = Record<string, unknown> | undefined>(
   obj: T,
@@ -76,7 +78,6 @@ export const slugify = (str: string, len = 4): string =>
     .toLowerCase()
 
 /** Gets relative time */
-
 const rtf = new Intl.RelativeTimeFormat('en', {
   numeric: 'auto',
   style: 'long'

@@ -1,23 +1,42 @@
 /* eslint-disable no-nested-ternary */
 import * as React from 'react'
+import { areEqual } from 'react-window'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { Form, Item, List } from '~/components'
-import { Layout, Result, Skeleton, Spin } from '~/components/antd'
+import { Form, Item, List, Skeleton, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
-import { omit, pick } from '~/lib'
+import { omit, pick, sleep } from '~/lib'
 
-const Page: React.FC = () => {
-  const ref = React.useRef<HTMLElement>(null)
+const Row = React.memo<{
+  index: number
+  style: Record<string, any>
+  data?: unknown
+}>(
+  ({ index, style, data = [] }) => (
+    <React.Suspense key={index} fallback={<Skeleton />}>
+      <Item {...{ style, ...(data as Product[])?.[index] }} />
+    </React.Suspense>
+  ),
+  areEqual
+)
+
+export default function Page() {
+  const innerRef = React.useRef<HTMLElement>(null)
   const ctx = React.useContext(BrandContext)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
   const [height, setHeight] = React.useState(() => 400)
 
-  const urls = [...state.slugs.entries()]
-    .filter(([k, v]) => k && v)
-    ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
+  const value = React.useMemo(() => ({ ...state, setState }), [state])
+
+  const urls = React.useMemo(
+    () =>
+      [...state.slugs.entries()]
+        .filter(([k, v]) => k && v)
+        ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-')),
+    [state.slugs]
+  )
 
   const { data, isValidating } = useSWR<
     { products: Product[]; vendor: string }[]
@@ -81,7 +100,7 @@ const Page: React.FC = () => {
               return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
           }
         }),
-    [data]
+    [data, state.sortBy]
   )
 
   const updateHeight = React.useCallback((el: Element) => {
@@ -107,62 +126,56 @@ const Page: React.FC = () => {
 
     ;(async () => {
       await (async (): Promise<void> => {
-        while (!(ref.current instanceof HTMLElement)) {
-          return new Promise(r => setTimeout(r, 1e3))
+        // eslint-disable-next-line no-unreachable-loop
+        while (!(innerRef.current instanceof HTMLElement)) {
+          return sleep(1e3)
         }
 
         return Promise.resolve()
       })()
 
-      updateHeight(ref.current as HTMLElement)
-      ro.observe(ref.current as HTMLElement)
+      window.requestAnimationFrame(() => {
+        if (innerRef.current instanceof HTMLElement) {
+          ro.observe(innerRef.current)
+          updateHeight(innerRef.current)
+        }
+      })
     })()
 
     return () => ro.disconnect()
   }, [])
 
-  const Row = React.memo<{ index: number; style: Record<string, any> }>(
-    ({ index, style }) => (
-      <React.Suspense key={index} fallback={<Skeleton />}>
-        <Item {...{ style, ...items?.[index] }} />
-      </React.Suspense>
-    ),
-    (p, n) =>
-      p.index === n.index && JSON.stringify(p.style) === JSON.stringify(n.style)
-  )
-
   return (
-    <BrandContext.Provider value={{ ...state, setState }}>
-      <Layout>
+    <BrandContext.Provider {...{ value }}>
+      <React.Suspense fallback={null}>
         <Form />
+      </React.Suspense>
 
-        <Layout.Content>
-          {(items?.length || 0) > 0 ? (
-            <React.Suspense fallback={null}>
-              <List
-                height={
-                  'browser' in process ? window.visualViewport.height : 768
-                }
-                innerRef={ref}
-                itemCount={items?.length || 0}
-                itemSize={height + 50}
-                width="100%">
-                {Row}
-              </List>
-            </React.Suspense>
-          ) : isValidating ? (
-            <Spin />
-          ) : (
-            <Result
-              status="404"
-              subTitle="Please add slugs from the search menu"
-              title="No products added to watchlist"
-            />
-          )}
-        </Layout.Content>
-      </Layout>
+      <section>
+        {(items?.length || 0) > 0 ? (
+          <React.Suspense fallback={null}>
+            <WindowScroller key={value.sortBy}>
+              {({ onScroll, outerRef, ref, style }) => (
+                <List
+                  height={
+                    'browser' in process ? window.visualViewport.height : 768
+                  }
+                  itemCount={items?.length ?? 1}
+                  itemData={items}
+                  itemSize={height + 50}
+                  width="100%"
+                  {...{ innerRef, onScroll, outerRef, ref, style }}>
+                  {Row}
+                </List>
+              )}
+            </WindowScroller>
+          </React.Suspense>
+        ) : isValidating ? (
+          Array.from(Array(5).keys()).map(i => <Skeleton key={i} />)
+        ) : (
+          <em>Please add slugs from the search mene</em>
+        )}
+      </section>
     </BrandContext.Provider>
   )
 }
-
-export default Page

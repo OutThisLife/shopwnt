@@ -31,7 +31,7 @@ export const useContentVisibility = () => {
 
   return useCallback((elements?: Element[] | HTMLCollectionOf<Element>) => {
     if (!elements?.length) {
-      return () => null
+      return () => void null
     }
 
     Array.from(elements).forEach(e => {

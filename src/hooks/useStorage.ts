@@ -46,7 +46,7 @@ const storage = {
 
     return new Proxy<Storage>({} as Storage, {
       get() {
-        return () => null
+        return () => void null
       }
     })
   }
