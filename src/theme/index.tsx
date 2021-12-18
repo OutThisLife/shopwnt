@@ -84,4 +84,18 @@ export const GlobalStyles = createGlobalStyle`
       calc(var(--bg-l) * var(--bg-lum, 1));
     --bg: hsl(var(--bg-hsl));
   }
+
+  #log {
+    background: #000;
+    bottom: 0;
+    color: #fff;
+    font-size: 0.8rem;
+    max-height: 50vh;
+    max-width: 85vw;
+    overflow: overlay;
+    padding: 1rem;
+    position: fixed;
+    right: 0;
+    z-index: 1000;
+  }
 `

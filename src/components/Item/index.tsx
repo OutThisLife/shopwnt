@@ -7,7 +7,7 @@ import StyledItem from './style'
 import { Thumbnail } from './Thumbnail'
 
 function Inner({ children, handle, vendor }: ItemProps) {
-  const url = `//${vendor}.myshopify.com/products/${handle}`
+  const url = `https://${vendor}.myshopify.com/products/${handle}`
 
   const { data } = useSWR<{ product: Product }>(`${url}.json`, {
     fetcher,
@@ -63,7 +63,7 @@ function Inner({ children, handle, vendor }: ItemProps) {
         </section>
       )}
 
-      {product?.variants?.at(0) && (
+      {!!product?.variants?.length && (
         <footer>
           {product?.variants?.slice(0, 4).map(v => (
             <a

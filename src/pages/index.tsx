@@ -14,7 +14,7 @@ export default function Index({ fallback }: { fallback: Product[] }) {
 
 export async function getStaticProps() {
   const data = await fetcher(
-    `https://loveshackfancy.myshopify.com/products.json?limit=150`
+    `https://fillyboo.myshopify.com/products.json?limit=15`
   )
 
   return { props: { fallback: [{ ...data, vendor: 'loveshackfancy' }] } }

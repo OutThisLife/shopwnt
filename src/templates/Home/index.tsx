@@ -5,7 +5,7 @@ import { Form, List, Skeleton, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
-import { fetcher, omit, pick, sleep } from '~/lib'
+import { fetcher, log, omit, pick, sleep } from '~/lib'
 
 const Row = React.lazy(() => import('./Row'))
 
@@ -32,7 +32,9 @@ export default function View() {
     async (...args: string[]) =>
       Promise.all(
         args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
-          ...(await fetcher(`//${k}.myshopify.com/products.json?limit=150`)),
+          ...(await fetcher(
+            `https://${k}.myshopify.com/products.json?limit=150`
+          )),
           vendor: k
         }))
       )
@@ -43,7 +45,7 @@ export default function View() {
       data
         ?.filter(d => d?.products?.length)
         ?.flatMap(d => d?.products.flatMap(p => ({ ...p, vendor: d.vendor })))
-        ?.filter(p => p?.images?.at(0))
+        ?.filter(p => !!p?.images?.length)
         ?.map(p => ({
           ...omit(
             p,
@@ -64,7 +66,7 @@ export default function View() {
               )
           )
         }))
-        .filter(p => p.variants?.at(0))
+        .filter(p => !!p.variants?.length)
         .sort((a, b) => {
           const k = value.sortBy
           const av = a[k]
@@ -119,17 +121,17 @@ export default function View() {
           return sleep(1e3)
         }
 
-        return Promise.resolve()
-      })()
-
-      if (innerRef.current instanceof HTMLElement) {
         ro.observe(innerRef.current)
         onResize(innerRef.current)
-      }
+
+        return Promise.resolve()
+      })()
     })()
 
     return () => void ro.disconnect()
   }, [])
+
+  log(itemSize)
 
   return (
     <BrandContext.Provider {...{ value }}>

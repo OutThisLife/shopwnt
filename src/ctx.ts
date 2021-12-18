@@ -4,9 +4,9 @@ import { createContext } from 'react'
 export const BrandContext = createContext<CTX>({
   setState: () => null,
   slugs: new Map<string, boolean>([
-    ['loveshackfancy', true],
+    ['loveshackfancy', false],
     ['veronicabeard', false],
-    ['fillyboo', false],
+    ['fillyboo', true],
     ['naked cashmere', false],
     ['stripe stare', false]
   ]),
