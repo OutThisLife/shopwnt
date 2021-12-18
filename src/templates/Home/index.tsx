@@ -5,7 +5,7 @@ import { Form, List, Skeleton, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
-import { fetcher, omit, pick } from '~/lib'
+import { fetcher, omit, pick, sleep } from '~/lib'
 
 const Row = React.lazy(() => import('./Row'))
 
@@ -116,9 +116,7 @@ export default function View() {
       await (async (): Promise<void> => {
         // eslint-disable-next-line no-unreachable-loop
         while (!(innerRef.current instanceof HTMLElement)) {
-          return new Promise(r => {
-            setTimeout(r, 1e3)
-          })
+          return sleep(1e3)
         }
 
         return Promise.resolve()
