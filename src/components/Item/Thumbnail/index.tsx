@@ -1,7 +1,7 @@
 import * as React from 'react'
 import StyledThumbnail from './style'
 
-export default function Thumbnail({ src = '' }): JSX.Element {
+export function Thumbnail({ src = '' }) {
   const getSrc = (h: number) => {
     const u = new URL(src)
     u.searchParams.set('height', `${h}`)
@@ -20,3 +20,7 @@ export default function Thumbnail({ src = '' }): JSX.Element {
     </StyledThumbnail>
   )
 }
+
+Thumbnail.displayName = 'Thumbnail'
+
+export default Thumbnail

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-export default function ReactWindowScroller({ children }: WindowProps) {
+export function WindowScroller({ children }: WindowProps) {
   const ref = React.useRef<HTMLElement>()
   const outerRef = React.useRef<HTMLElement>()
 
@@ -11,17 +11,20 @@ export default function ReactWindowScroller({ children }: WindowProps) {
       }
 
       const top = window.pageYOffset
+      const y = scrollOffset + Math.min(top, outerRef.current?.offsetTop ?? 0)
 
-      scrollOffset += Math.min(top, outerRef.current?.offsetTop ?? 0)
-
-      if (scrollOffset !== top) {
-        window.scrollTo(0, scrollOffset)
+      if (y !== top) {
+        window.scrollTo(0, y)
       }
     },
     []
   )
 
   React.useEffect(() => {
+    if (!('browser' in process)) {
+      return () => void null
+    }
+
     const onSCroll = () =>
       window.requestAnimationFrame(() =>
         ref.current?.scrollTo(
@@ -40,8 +43,8 @@ export default function ReactWindowScroller({ children }: WindowProps) {
     ref,
     style: {
       display: 'inline-block',
-      height: '100%',
-      width: '100%'
+      height: 'min(100%, 100vh)',
+      width: 'min(100%, 100vw)'
     }
   })
 }
@@ -49,3 +52,5 @@ export default function ReactWindowScroller({ children }: WindowProps) {
 export interface WindowProps {
   children(props: Record<string, any>): React.ReactElement
 }
+
+export default WindowScroller

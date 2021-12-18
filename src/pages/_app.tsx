@@ -4,7 +4,7 @@ import 'normalize.css'
 import * as React from 'react'
 import { GlobalStyles } from '~/theme'
 
-export default function MyApp({ Component, pageProps }: AppProps) {
+function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
@@ -12,13 +12,11 @@ export default function MyApp({ Component, pageProps }: AppProps) {
         <meta content="width=device-width, initial-scale=1.0" name="viewport" />
       </Head>
 
-      <GlobalStyles key="global-style" />
+      <main>
+        <Component {...pageProps} />
+      </main>
 
-      <React.Suspense fallback={null}>
-        <main>
-          <Component {...pageProps} />
-        </main>
-      </React.Suspense>
+      <GlobalStyles key="global-style" />
     </>
   )
 }
@@ -28,3 +26,5 @@ export const reportWebVitals = (metric: NextWebVitalsMetric) =>
     metric.name,
     `${metric.startTime?.toFixed(0)} -> ${metric.value?.toFixed(0)}`
   )
+
+export default MyApp

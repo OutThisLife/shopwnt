@@ -69,6 +69,10 @@ export const GlobalStyles = createGlobalStyle`
 
   main {
     min-height: 100vh;
+
+    > section {
+      padding: var(--pad);
+    }
   }
 
   body * {

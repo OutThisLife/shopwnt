@@ -4,92 +4,104 @@ import type { Product } from '~/../types'
 import { fetcher, relTime } from '~/lib'
 import { Skeleton } from '..'
 import StyledItem from './style'
-import Thumbnail from './Thumbnail'
+import { Thumbnail } from './Thumbnail'
 
-const Item = React.forwardRef<
-  HTMLElement,
-  Partial<Product & { $hide?: boolean; style?: Record<string, any> }>
->(function Item({ children, handle, style, vendor }, ref) {
+function Inner({ children, handle, vendor }: ItemProps) {
   const url = `//${vendor}.myshopify.com/products/${handle}`
 
-  const { data, isValidating } = useSWR<{ product: Product }>(
-    `${url}.json`,
-    fetcher
-  )
+  const { data } = useSWR<{ product: Product }>(`${url}.json`, {
+    fetcher,
+    suspense: true
+  })
 
-  const loading = (!!data || isValidating) && !!children
-
-  const product = {
-    ...data?.product,
-    url,
-    variants: data?.product?.variants?.filter(
+  const product = React.useMemo(() => {
+    const variants = data?.product?.variants?.filter(
       v => v.inventory_quantity ?? Infinity
     )
-  }
 
-  const price = product?.variants?.[0]?.price
+    return {
+      ...data?.product,
+      price: variants?.[0]?.price,
+      url,
+      variants
+    }
+  }, [data?.product])
 
   return (
+    <div>
+      <div />
+
+      {product?.title && (
+        <header>
+          <div>
+            <a href={product.url} rel="noopener noreferrer" target="_blank">
+              {product?.title}
+            </a>
+
+            <em>
+              {relTime(product?.updated_at)} &mdash; {vendor}
+            </em>
+          </div>
+
+          {product.price && (
+            <strong>
+              {parseFloat(`${product.price}`).toLocaleString('en-US', {
+                currency: 'USD',
+                style: 'currency'
+              })}
+            </strong>
+          )}
+        </header>
+      )}
+
+      {(!!children || product?.images?.at(0)) && (
+        <section>
+          {children ||
+            product?.images?.map(({ id, src }) => (
+              <Thumbnail key={id} {...{ src }} />
+            ))}
+        </section>
+      )}
+
+      {product?.variants?.at(0) && (
+        <footer>
+          {product?.variants?.slice(0, 4).map(v => (
+            <a
+              key={v.id}
+              href={product.url}
+              rel="noopener noreferrer"
+              target="_blank">
+              {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
+              {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
+            </a>
+          ))}
+        </footer>
+      )}
+
+      <div />
+    </div>
+  )
+}
+
+const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
+  { style, ...props },
+  ref
+) {
+  return (
     <StyledItem className="item" {...{ ref, style }}>
-      <div>
-        {loading ? (
-          <Skeleton />
-        ) : (
-          <>
-            <div />
-
-            <header>
-              <div>
-                <a href={product.url} rel="noopener noreferrer" target="_blank">
-                  {product?.title}
-                </a>
-
-                <em>
-                  {relTime(product?.updated_at)} -{' '}
-                  {relTime(product?.created_at)}
-                </em>
-              </div>
-
-              {price && (
-                <strong>
-                  {parseFloat(`${price}`).toLocaleString('en-US', {
-                    currency: 'USD',
-                    style: 'currency'
-                  })}
-                </strong>
-              )}
-            </header>
-
-            <section>
-              {children ||
-                product?.images?.map(({ id, src }) => (
-                  <Thumbnail key={id} {...{ src }} />
-                ))}
-            </section>
-
-            {price && product?.updated_at && (
-              <footer>
-                {product?.variants?.slice(0, 4).map(v => (
-                  <a
-                    key={v.id}
-                    href={product.url}
-                    rel="noopener noreferrer"
-                    target="_blank">
-                    {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
-                    {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
-                  </a>
-                ))}
-              </footer>
-            )}
-
-            <div />
-          </>
-        )}
-      </div>
+      <React.Suspense fallback={<Skeleton />}>
+        <Inner {...props} />
+      </React.Suspense>
     </StyledItem>
   )
 })
 
 Item.displayName = 'Item'
+
+export interface ItemProps extends Partial<Product> {
+  $hide?: boolean
+  style?: Record<string, any>
+  children?: JSX.Element
+}
 
 export default Item

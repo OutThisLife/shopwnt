@@ -56,8 +56,9 @@ export const useStorage = <T>(
   key: string,
   initialState: T
 ): [T, Dispatch<SetStateAction<T>>] => {
-  const [state, setState] = useState<T>(() => storage.get(key) ?? initialState)
+  const [state, set] = useState<T>(storage.get(key) ?? initialState)
+
   useEffect(() => storage.set(key, state), [state])
 
-  return [state, setState]
+  return [state, set]
 }

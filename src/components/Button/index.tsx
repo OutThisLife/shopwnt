@@ -37,3 +37,5 @@ export const Button = styled.button.attrs<ButtonProps>(p => ({
 export interface ButtonProps {
   as?: string
 }
+
+export default Button

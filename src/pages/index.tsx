@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary */
 import * as React from 'react'
 import { areEqual } from 'react-window'
 import useSWR from 'swr'
@@ -7,7 +6,7 @@ import { Form, Item, List, Skeleton, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
-import { omit, pick, sleep } from '~/lib'
+import { fetcher, omit, pick } from '~/lib'
 
 const Row = React.memo<{
   index: number
@@ -15,28 +14,26 @@ const Row = React.memo<{
   data?: unknown
 }>(
   ({ index, style, data = [] }) => (
-    <React.Suspense key={index} fallback={<Skeleton />}>
-      <Item {...{ style, ...(data as Product[])?.[index] }} />
-    </React.Suspense>
+    <Item {...{ style, ...(data as Product[])?.[index] }} />
   ),
   areEqual
 )
 
-export default function Page() {
-  const innerRef = React.useRef<HTMLElement>(null)
+export default function Index() {
   const ctx = React.useContext(BrandContext)
+  const innerRef = React.useRef<HTMLElement>(null)
+
+  const [itemSize, setItemSize] = React.useState<number>(() => 400)
   const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
-  const [height, setHeight] = React.useState(() => 400)
 
-  const value = React.useMemo(() => ({ ...state, setState }), [state])
-
-  const urls = React.useMemo(
-    () =>
-      [...state.slugs.entries()]
-        .filter(([k, v]) => k && v)
-        ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-')),
-    [state.slugs]
+  const value = React.useMemo(
+    () => ({ ...state, setState, ts: Date.now() }),
+    [state]
   )
+
+  const urls = [...value.slugs.entries()]
+    .filter(([k, v]) => k && v)
+    ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
 
   const { data, isValidating } = useSWR<
     { products: Product[]; vendor: string }[]
@@ -45,9 +42,7 @@ export default function Page() {
     async (...args: string[]) =>
       Promise.all(
         args.map<Promise<{ products: Product[]; vendor: string }>>(async k => ({
-          ...(await (
-            await fetch(`//${k}.myshopify.com/products.json?limit=150`)
-          ).json()),
+          ...(await fetcher(`//${k}.myshopify.com/products.json?limit=150`)),
           vendor: k
         }))
       )
@@ -58,6 +53,7 @@ export default function Page() {
       data
         ?.filter(d => d?.products?.length)
         ?.flatMap(d => d?.products.flatMap(p => ({ ...p, vendor: d.vendor })))
+        ?.filter(p => p?.images?.at(0))
         ?.map(p => ({
           ...omit(
             p,
@@ -78,9 +74,9 @@ export default function Page() {
               )
           )
         }))
-        .filter(p => p.variants?.length)
+        .filter(p => p.variants?.at(0))
         .sort((a, b) => {
-          const k = state.sortBy
+          const k = value.sortBy
           const av = a[k]
           const bv = b[k]
 
@@ -100,49 +96,51 @@ export default function Page() {
               return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
           }
         }),
-    [data, state.sortBy]
+    [data, value.sortBy]
   )
 
-  const updateHeight = React.useCallback((el: Element) => {
-    if (!(el instanceof HTMLElement)) {
-      return
-    }
+  const onResize = React.useCallback((el: Element) => {
+    const h = ([...(el?.getElementsByClassName('item') ?? [])] as HTMLElement[])
+      .map(e => {
+        const ov = e.style.getPropertyValue('height')
+        e.style.removeProperty('height')
 
-    const $items = el.getElementsByClassName('item')
+        const v = e?.scrollHeight
+        e.style.setProperty('height', ov)
 
-    const h = [...Array.from($items ?? [])].reduce(
-      (acc, $i) =>
-        (acc = Math.max($i?.firstElementChild?.clientHeight || 0, acc)),
-      0
-    )
+        return v ?? 0
+      })
+      .reduce((acc, i) => (acc = Math.max(i, acc)), 0)
 
-    if (h && height !== h) {
-      setHeight(h)
-    }
+    setItemSize(st => h || st)
   }, [])
 
   React.useEffect(() => {
-    const ro = new ResizeObserver(([e]) => updateHeight(e.target))
+    if (!('browser' in process)) {
+      return () => void null
+    }
+
+    const ro = new ResizeObserver(([e]) => onResize(e.target))
 
     ;(async () => {
       await (async (): Promise<void> => {
         // eslint-disable-next-line no-unreachable-loop
         while (!(innerRef.current instanceof HTMLElement)) {
-          return sleep(1e3)
+          return new Promise(r => {
+            setTimeout(r, 1e3)
+          })
         }
 
         return Promise.resolve()
       })()
 
-      window.requestAnimationFrame(() => {
-        if (innerRef.current instanceof HTMLElement) {
-          ro.observe(innerRef.current)
-          updateHeight(innerRef.current)
-        }
-      })
+      if (innerRef.current instanceof HTMLElement) {
+        ro.observe(innerRef.current)
+        onResize(innerRef.current)
+      }
     })()
 
-    return () => ro.disconnect()
+    return () => void ro.disconnect()
   }, [])
 
   return (
@@ -152,28 +150,28 @@ export default function Page() {
       </React.Suspense>
 
       <section>
-        {(items?.length || 0) > 0 ? (
+        {items?.length ? (
           <React.Suspense fallback={null}>
-            <WindowScroller key={value.sortBy}>
+            <WindowScroller>
               {({ onScroll, outerRef, ref, style }) => (
                 <List
-                  height={
-                    'browser' in process ? window.visualViewport.height : 768
-                  }
-                  itemCount={items?.length ?? 1}
+                  height={'browser' in process ? window.innerHeight : 768}
+                  itemCount={items?.length ?? 0}
                   itemData={items}
-                  itemSize={height + 50}
+                  onItemsRendered={() =>
+                    itemSize || onResize(outerRef.current ?? innerRef.current)
+                  }
+                  style={{ visibility: itemSize ? '' : 'hidden', ...style }}
                   width="100%"
-                  {...{ innerRef, onScroll, outerRef, ref, style }}>
+                  {...{ innerRef, itemSize, onScroll, outerRef, ref }}>
                   {Row}
                 </List>
               )}
             </WindowScroller>
           </React.Suspense>
-        ) : isValidating ? (
-          Array.from(Array(5).keys()).map(i => <Skeleton key={i} />)
         ) : (
-          <em>Please add slugs from the search mene</em>
+          isValidating &&
+          Array.from(Array(5).keys()).map(i => <Skeleton key={i} />)
         )}
       </section>
     </BrandContext.Provider>

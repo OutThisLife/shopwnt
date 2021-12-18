@@ -3,26 +3,30 @@ import styled from 'styled-components'
 export default styled.figure`
   --gap: calc(var(--vsq) * 2);
 
-  padding: var(--pad) calc(var(--pad) * 2);
+  padding-block: var(--pad);
   user-select: none;
 
+  @media (min-width: 1024px) {
+    padding-inline: calc(var(--pad) * 2);
+  }
+
   > div {
-    --bg-lum: 2;
-
-    background: var(--bg);
-    border-radius: 0.4rem;
-    box-shadow: 0 0.5em 1em -0.4em hsla(0, 0%, 0%, var(--shadow-alpha, 0.1));
-    display: grid;
-    gap: var(--gap);
-    grid-auto-flow: row dense;
-    grid-auto-rows: auto;
-    grid-template-columns: repeat(40, 1fr);
-    transition: 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
-    transition-property: box-shadow;
-
     &:hover {
       --shadow-alpha: 0.2;
     }
+
+    border-radius: 0.4rem;
+    border: 2px solid transparent;
+    box-shadow: 0 0.5em 2em -0.4em hsla(0, 0%, 0%, var(--shadow-alpha, 0.1));
+    display: grid;
+    grid-auto-flow: row dense;
+    grid-auto-rows: auto;
+    grid-template-columns: repeat(40, 1fr);
+    place-content: flex-start;
+    row-gap: var(--gap);
+    transition: 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
+    transition-property: box-shadow;
+    width: 100%;
 
     > * {
       grid-column: 3 / -3;
@@ -39,24 +43,22 @@ export default styled.figure`
         display: flex;
         flex-direction: column;
         gap: 1ch;
-
-        > {
-          a {
-            font-size: 1.7rem;
-            font-weight: 500;
-            line-height: 1;
-          }
-
-          em {
-            font-size: max(12px, 0.7rem);
-            font-style: normal;
-            line-height: 1.5;
-          }
-        }
       }
 
-      > strong {
-        font-size: 1.5rem;
+      a {
+        font-size: 1.7rem;
+        font-weight: 500;
+        line-height: 1;
+      }
+
+      em {
+        font-size: max(12px, 0.7rem);
+        font-style: normal;
+        line-height: 1.5;
+      }
+
+      strong {
+        font-size: 1.25rem;
         font-weight: 600;
       }
     }

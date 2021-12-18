@@ -1,12 +1,14 @@
 import type { IContentLoaderProps } from 'react-content-loader'
 import StyledSkeleton from './style'
 
-export default function Skeleton(props: SkeletonProps) {
+export function Skeleton(props: SkeletonProps) {
   return (
     <StyledSkeleton
       gradientRatio={0.25}
       preserveAspectRatio="xMinYMin meet"
       speed={2}
+      title=""
+      uniqueKey="sk"
       viewBox="0 0 476 124"
       {...props}>
       <rect height="6" rx="3" ry="3" width="88" x="48" y="8" />
@@ -24,3 +26,5 @@ Skeleton.displayName = 'Skeleton'
 export interface SkeletonProps extends IContentLoaderProps {
   a?: boolean
 }
+
+export default Skeleton

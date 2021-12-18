@@ -4,14 +4,14 @@ import { createContext } from 'react'
 export const BrandContext = createContext<CTX>({
   setState: () => null,
   slugs: new Map<string, boolean>([
-    ['loveshackfancy', 'browser' in process],
+    ['loveshackfancy', true],
     ['veronicabeard', false],
     ['fillyboo', false],
     ['naked cashmere', false],
     ['stripe stare', false]
   ]),
   sortBy: 'updated_at',
-  ts: 0
+  ts: Date.now()
 })
 
 export interface State {
