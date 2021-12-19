@@ -14,9 +14,17 @@ export function WindowScroller({ children }: WindowProps) {
         (window.scrollY - (outerRef.current?.offsetTop ?? 0)) as ScrollOptions
       )
 
-    window.addEventListener('scroll', onSCroll, { passive: false })
+    const c = new AbortController()
 
-    return () => window.removeEventListener('scroll', onSCroll)
+    window.addEventListener('scroll', onSCroll, {
+      passive: false,
+      signal: c.signal
+    })
+
+    return () => {
+      c.abort()
+      window.removeEventListener('scroll', onSCroll)
+    }
   }, [])
 
   return children({

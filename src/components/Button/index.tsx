@@ -1,7 +1,7 @@
 import styled, { css } from 'styled-components'
 
 export const Button = styled.button.attrs<ButtonProps>(p => ({
-  type: p.type ?? (p.as === 'button' ? 'button' : undefined)
+  type: p.type ?? (p.as === 'button' ? p.as : undefined)
 }))<ButtonProps>`
   background: var(--bg);
   border: 1px solid hsl(0, 0%, 85%);
@@ -31,7 +31,11 @@ export const Button = styled.button.attrs<ButtonProps>(p => ({
       ? css`
           cursor: pointer;
         `
-      : ``}
+      : css`
+          @media (max-width: 1024px) {
+            font-size: 16px;
+          }
+        `}
 `
 
 export interface ButtonProps {
