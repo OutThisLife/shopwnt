@@ -16,23 +16,18 @@ export function WindowScroller({ children }: WindowProps) {
 
     const c = new AbortController()
 
-    window.addEventListener('scroll', onSCroll, {
-      passive: false,
-      signal: c.signal
-    })
+    window.addEventListener('scroll', onSCroll, { signal: c.signal })
 
-    return () => {
-      c.abort()
-      window.removeEventListener('scroll', onSCroll)
-    }
+    return () => c.abort()
   }, [])
 
   return children({
     outerRef,
     ref,
     style: {
-      display: 'inline-block',
       height: '100%',
+      minHeight: 'calc(100vh - (var(--pad) * 2))',
+      minWidth: 'calc(100vw - (var(--pad) * 2))',
       width: '100%'
     }
   })

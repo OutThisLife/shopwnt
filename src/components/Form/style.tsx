@@ -23,7 +23,7 @@ export default styled.div`
   }
 
   @media (max-width: 1024px) {
-    padding-right: calc(var(--pad) * 3);
+    padding: calc(var(--pad) / 2);
   }
 
   > {
@@ -33,10 +33,24 @@ export default styled.div`
       place-content: flex-start;
       position: relative;
 
+      > div {
+        display: contents;
+      }
+
+      @media (max-width: 1024px) {
+        gap: inherit;
+
+        > div {
+          display: flex;
+          max-width: calc(100% - (var(--pad) * 2));
+          overflow: overlay;
+        }
+      }
+
       span {
         background: var(--accent);
         color: var(--bg);
-        display: inherit;
+        display: flex;
         font-size: 0.9rem;
         place-content: center;
         place-items: center;
@@ -59,7 +73,12 @@ export default styled.div`
 
     .sort {
       display: flex;
-      place-content: space-between;
+      place-content: flex-start;
+
+      > select {
+        flex: auto 1 1;
+        text-transform: capitalize;
+      }
     }
   }
 `

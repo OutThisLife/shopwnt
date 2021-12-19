@@ -15,8 +15,8 @@ export default styled.figure`
       --shadow-alpha: 0.2;
     }
 
-    border-radius: 0.4rem;
     border: 2px solid transparent;
+    border-radius: 0.4rem;
     box-shadow: 0 0.5em 2em -0.4em hsla(0, 0%, 0%, var(--shadow-alpha, 0.1));
     display: grid;
     grid-auto-flow: row dense;

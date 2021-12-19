@@ -26,16 +26,25 @@ export const Button = styled.button.attrs<ButtonProps>(p => ({
     }
   }
 
-  ${p =>
-    /button/i.test(`${p.as ?? 'button'}`)
-      ? css`
-          cursor: pointer;
-        `
-      : css`
-          @media (max-width: 1024px) {
-            font-size: 16px;
-          }
-        `}
+  ${p => {
+    if (p.as === 'button') {
+      return css`
+        cursor: pointer;
+      `
+    }
+
+    return css`
+      @media (max-width: 1024px) {
+        font-size: 16px;
+      }
+
+      ${p.as === 'select' &&
+      css`
+        padding-block: 0.73rem;
+      `}
+    `
+  }}}}
+
 `
 
 export interface ButtonProps {

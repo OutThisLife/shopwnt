@@ -28,7 +28,7 @@ function Inner({ children, handle, vendor }: ItemProps) {
   }, [data?.product])
 
   return (
-    <div>
+    <div className="item">
       <div />
 
       {product?.title && (
@@ -88,7 +88,7 @@ const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
   ref
 ) {
   return (
-    <StyledItem className="item" {...{ ref, style }}>
+    <StyledItem {...{ ref, style }}>
       <React.Suspense fallback={<Skeleton />}>
         <Inner {...props} />
       </React.Suspense>

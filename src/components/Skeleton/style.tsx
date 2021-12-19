@@ -6,7 +6,7 @@ export default styled(ContentLoader)<SkeletonProps>`
   display: block;
   height: auto;
   margin: auto;
-  width: 80%;
+  width: 100%;
 
   stop {
     --fg-lum: 90;
