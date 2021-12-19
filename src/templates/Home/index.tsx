@@ -169,19 +169,14 @@ export default function View() {
         {!!sortedItems?.length && (
           <React.Suspense fallback={null}>
             <WindowScroller>
-              {({ outerRef, ref, style }) => (
+              {p => (
                 <List
                   className="list"
                   height={'browser' in process ? window.innerHeight : 768}
                   itemCount={sortedItems?.length ?? 0}
                   itemData={sortedItems}
                   width="100%"
-                  {...{
-                    itemSize,
-                    outerRef,
-                    ref,
-                    style
-                  }}>
+                  {...{ itemSize, ...p }}>
                   {Row}
                 </List>
               )}
