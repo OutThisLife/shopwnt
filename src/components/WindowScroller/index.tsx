@@ -4,47 +4,28 @@ export function WindowScroller({ children }: WindowProps) {
   const ref = React.useRef<HTMLElement>()
   const outerRef = React.useRef<HTMLElement>()
 
-  const onScroll = React.useCallback(
-    ({ scrollOffset, scrollUpdateWasRequested }) => {
-      if (!scrollUpdateWasRequested) {
-        return
-      }
-
-      const top = window.pageYOffset
-      const y = scrollOffset + Math.min(top, outerRef.current?.offsetTop ?? 0)
-
-      if (y !== top) {
-        window.scrollTo(0, y)
-      }
-    },
-    []
-  )
-
   React.useEffect(() => {
     if (!('browser' in process)) {
       return () => void null
     }
 
     const onSCroll = () =>
-      window.requestAnimationFrame(() =>
-        ref.current?.scrollTo(
-          (window.scrollY - (outerRef.current?.offsetTop ?? 0)) as any
-        )
+      ref.current?.scrollTo(
+        (window.scrollY - (outerRef.current?.offsetTop ?? 0)) as ScrollOptions
       )
 
-    window.addEventListener('scroll', onSCroll)
+    window.addEventListener('scroll', onSCroll, { passive: false })
 
     return () => window.removeEventListener('scroll', onSCroll)
   }, [])
 
   return children({
-    onScroll,
     outerRef,
     ref,
     style: {
       display: 'inline-block',
-      height: 'min(100%, 100vh)',
-      width: 'min(100%, 100vw)'
+      height: '100%',
+      width: '100%'
     }
   })
 }

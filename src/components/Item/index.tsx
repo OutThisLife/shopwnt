@@ -54,7 +54,7 @@ function Inner({ children, handle, vendor }: ItemProps) {
         </header>
       )}
 
-      {(!!children || product?.images?.at(0)) && (
+      {(!!children || product?.images?.length) && (
         <section>
           {children ||
             product?.images?.map(({ id, src }) => (
