@@ -13,7 +13,7 @@ export const Button = styled.button.attrs<ButtonProps>(p => ({
   outline: none !important;
   padding: 0.5rem 1rem;
   touch-action: manipulation;
-  transition: 0.2s cubic-bezier(0.215, 0.61, 0.355, 1);
+  transition: 0.4s cubic-bezier(0.215, 0.61, 0.355, 1);
   user-select: none;
 
   &:hover,

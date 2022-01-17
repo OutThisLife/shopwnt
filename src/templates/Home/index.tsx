@@ -1,7 +1,8 @@
+import Fuse from 'fuse.js'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { Form, List, Skeleton, WindowScroller } from '~/components'
+import { Form, List, Search, Skeleton, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
@@ -14,8 +15,12 @@ export default function View() {
   const ref = React.useRef<HTMLElement>(null)
 
   const [itemSize, setItemSize] = React.useState<number>(() => 5e2)
-  const [state, setState] = useStorage<State>('ctx', omit(ctx, 'setState'))
   const [items, setItems] = React.useState<Record<string, Result>>(() => ({}))
+
+  const [state, setState] = useStorage<State>(
+    'ctx',
+    omit(ctx, 'setState', 'search')
+  )
 
   const value = React.useMemo(
     () => ({ ...state, setState, ts: Date.now() }),
@@ -79,34 +84,14 @@ export default function View() {
     }
   }, [])
 
-  React.useEffect(() => {
-    if (!('browser' in process)) {
-      return () => void null
-    }
-
-    const el = ref.current
-
-    const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
-
-    const mo = new MutationObserver(
-      ([e]) =>
-        el instanceof HTMLElement &&
-        e.removedNodes.length &&
-        e.target instanceof HTMLElement &&
-        e.target.tagName === 'FIGURE' &&
-        onResize(el)
-    )
-
-    if (el instanceof HTMLElement) {
-      ro.observe(el)
-      mo.observe(el, { childList: true, subtree: true })
-    }
-
-    return () => {
-      mo.disconnect()
-      ro.disconnect()
-    }
-  }, [])
+  const fuse = React.useRef(
+    new Fuse<Product>([], {
+      includeMatches: false,
+      includeScore: false,
+      keys: ['title'],
+      shouldSort: false
+    })
+  ).current
 
   const sortedItems = React.useMemo(
     () =>
@@ -159,22 +144,64 @@ export default function View() {
     [vendors, items]
   )
 
+  React.useEffect(() => {
+    if (!('browser' in process)) {
+      return () => void null
+    }
+
+    const el = ref.current
+
+    const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
+
+    const mo = new MutationObserver(
+      ([e]) =>
+        el instanceof HTMLElement &&
+        e.removedNodes.length &&
+        e.target instanceof HTMLElement &&
+        e.target.tagName === 'FIGURE' &&
+        onResize(el)
+    )
+
+    if (el instanceof HTMLElement) {
+      ro.observe(el)
+      mo.observe(el, { childList: true, subtree: true })
+    }
+
+    return () => {
+      mo.disconnect()
+      ro.disconnect()
+    }
+  }, [])
+
+  React.useEffect(() => void fuse?.setCollection(sortedItems), [sortedItems])
+
+  const res = React.useMemo(() => {
+    const s = fuse?.search(value.search ?? '')
+
+    return s.length ? s : sortedItems
+  }, [value.search, sortedItems])
+
+  React.useEffect(() => {
+    console.log(value.search, res)
+  }, [res, value])
+
   return (
     <BrandContext.Provider {...{ value }}>
       <React.Suspense fallback={null}>
         <Form />
+        <Search />
       </React.Suspense>
 
       <section {...{ ref }}>
-        {!!sortedItems?.length && (
+        {!!res?.length && (
           <React.Suspense fallback={null}>
             <WindowScroller>
               {p => (
                 <List
                   className="list"
                   height={'browser' in process ? window.innerHeight : 768}
-                  itemCount={sortedItems?.length ?? 0}
-                  itemData={sortedItems}
+                  itemCount={res?.length ?? 0}
+                  itemData={res}
                   width="100%"
                   {...{ itemSize, ...p }}>
                   {Row}

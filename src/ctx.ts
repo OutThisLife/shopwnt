@@ -8,7 +8,9 @@ export const BrandContext = createContext<CTX>({
     ['veronicabeard', false],
     ['fillyboo', true],
     ['naked cashmere', false],
-    ['stripe stare', false]
+    ['stripe stare', false],
+    ['frame-denim', false],
+    ['selkicollection', false]
   ]),
   sortBy: 'updated_at',
   ts: Date.now()
@@ -17,6 +19,7 @@ export const BrandContext = createContext<CTX>({
 export interface State {
   sortBy: string
   slugs: Map<string, boolean>
+  search?: string
   ts: number
 }
 

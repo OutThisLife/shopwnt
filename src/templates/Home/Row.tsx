@@ -7,11 +7,10 @@ export const Row = React.memo<{
   index: number
   style: Record<string, any>
   data?: unknown
-}>(
-  ({ index, style, data = [] }) => (
-    <Item {...{ style, ...(data as Product[])?.[index] }} />
-  ),
-  areEqual
-)
+}>(({ index, style, data = [] }) => {
+  const o = (data as any[])?.[index]
+
+  return <Item {...{ style, ...((o?.item ?? o) as Product) }} />
+}, areEqual)
 
 export default Row
