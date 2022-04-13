@@ -8,7 +8,28 @@ function Inner(props: FormProps) {
   const slugs = [...ctx.slugs.entries()]
 
   return (
-    <Card as="form" css={{ inset: '0 0 auto 0', position: 'fixed' }} {...props}>
+    <Card css={{ inset: 'auto 0 0', position: 'fixed' }} shadow {...props}>
+      <Card.Header>
+        <Radio.Group
+          css={{ textAlign: 'center', w: '100%' }}
+          initialValue={ctx?.sortBy}
+          onChange={e => ctx.setState(s => ({ ...s, sortBy: `${e}` }))}
+          row
+          size="xs">
+          {['price', 'updated_at', 'created_at', 'published_at'].map(i => (
+            <Radio key={i} size="xs" value={i}>
+              <Text size={10} transform="uppercase" weight="semibold">
+                {`${i}`
+                  .toLocaleLowerCase()
+                  .replace(/_|-/g, ' ')
+                  .split(' ')
+                  .shift()}
+              </Text>
+            </Radio>
+          ))}
+        </Radio.Group>
+      </Card.Header>
+
       <Card.Body>
         <Grid.Container css={{ w: '90%' }} gap={1} justify="center">
           {slugs.map(([k, v]) => (
@@ -43,24 +64,6 @@ function Inner(props: FormProps) {
           ))}
         </Grid.Container>
       </Card.Body>
-
-      <Card.Footer>
-        <Radio.Group
-          initialValue={ctx?.sortBy}
-          onChange={e => ctx.setState(s => ({ ...s, sortBy: `${e}` }))}
-          row
-          size="xs">
-          {['price', 'updated_at', 'created_at', 'published_at'].map(i => (
-            <Radio key={i} size="xs" value={i}>
-              {`${i}`
-                .toLocaleLowerCase()
-                .replace(/_|-/g, ' ')
-                .split(' ')
-                .shift()}
-            </Radio>
-          ))}
-        </Radio.Group>
-      </Card.Footer>
     </Card>
   )
 }
@@ -75,7 +78,7 @@ export function Form() {
         auto
         color="gradient"
         css={{
-          inset: '1rem 1rem auto auto',
+          inset: 'auto 1rem 1rem auto',
           position: 'fixed',
           zIndex: 1e3 + 1
         }}
