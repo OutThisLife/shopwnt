@@ -12,10 +12,6 @@ module.exports = require('next-compose-plugins')(
     },
 
     poweredByHeader: false,
-    reactStrictMode: true,
-    swcMinify: true,
-    compiler: {
-      styledComponents: true
-    }
+    reactStrictMode: true
   }
 )

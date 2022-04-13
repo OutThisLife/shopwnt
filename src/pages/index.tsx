@@ -194,7 +194,7 @@ export default function Index() {
 
   return (
     <BrandContext.Provider {...{ value }}>
-      <React.Suspense fallback={<div>Loading...</div>}>
+      <React.Suspense fallback={null}>
         <Form />
       </React.Suspense>
 
