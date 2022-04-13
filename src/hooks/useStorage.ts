@@ -10,7 +10,7 @@ const storage = {
           [k0]: Array.isArray(v) && v[0].length === 2 ? new Map(v) : v
         }),
         {}
-      ) as T
+      ) as any as T
     }
 
     return undefined

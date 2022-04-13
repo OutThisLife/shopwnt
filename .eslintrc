@@ -1,6 +1,6 @@
  {
   "extends": ["airbnb-typescript-prettier"],
-  "ignorePatterns": [".eslintrc.js", "next.config.js", "postcss.config.js"],
+  "ignorePatterns": [".eslintrc.js", "next.config.js"],
   "parser": "@typescript-eslint/parser",
   "plugins": [
     "import",
@@ -14,7 +14,6 @@
       ],
       "files": ["**/*.{ts,tsx}"],
       "parser": "@typescript-eslint/parser",
-      "plugins": ["better-styled-components"],
       "parserOptions": {
         "project": "tsconfig.json"
       },
@@ -23,7 +22,6 @@
         "@typescript-eslint/explicit-module-boundary-types": 0,
         "@typescript-eslint/no-explicit-any": 0,
         "@typescript-eslint/no-shadow": 1,
-        "better-styled-components/sort-declarations-alphabetically": 2,
         "no-shadow": 0,
         "react-hooks/exhaustive-deps": 0,
         "react-hooks/rules-of-hooks": 2,
@@ -32,6 +30,7 @@
         "react/no-array-index-key": 0,
         "react/no-danger": 0,
         "react/react-in-jsx-scope": 0,
+        "react/require-default-props": 0,
         "react/function-component-definition":  [2, { "namedComponents": "function-declaration" }]
       }
     },
@@ -118,6 +117,6 @@
   },
   "settings": {
     "import/parsers": { "@typescript-eslint/parser": [".ts", ".tsx"] },
-    "import/resolver": { "typescript": { "project": "tsconfig.json" }} 
+    "import/resolver": { "typescript": { "project": "./tsconfig.json" }} 
   }
 }

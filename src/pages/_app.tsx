@@ -1,10 +1,10 @@
+import { NextUIProvider } from '@nextui-org/react'
 import type { AppProps, NextWebVitalsMetric } from 'next/app'
 import Head from 'next/head'
 import 'normalize.css'
-import * as React from 'react'
-import { GlobalStyles } from '~/theme'
+import { Suspense } from 'react'
 
-function MyApp({ Component, pageProps }: AppProps) {
+export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
@@ -13,10 +13,12 @@ function MyApp({ Component, pageProps }: AppProps) {
       </Head>
 
       <main>
-        <Component {...pageProps} />
+        <Suspense fallback={<div>Loading...</div>}>
+          <NextUIProvider>
+            <Component {...pageProps} />
+          </NextUIProvider>
+        </Suspense>
       </main>
-
-      <GlobalStyles key="global-style" />
     </>
   )
 }
@@ -26,5 +28,3 @@ export const reportWebVitals = (metric: NextWebVitalsMetric) =>
     metric.name,
     `${metric.startTime?.toFixed(0)} -> ${metric.value?.toFixed(0)}`
   )
-
-export default MyApp

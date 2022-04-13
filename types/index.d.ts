@@ -51,7 +51,7 @@ export interface Product {
   created_at: Date
   handle: string
   url: string
-  id: number
+  id: string
   images: Image[]
   options: Option[]
   product_type: string

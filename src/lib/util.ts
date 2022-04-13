@@ -13,14 +13,14 @@ export const filterObj = <T = Record<string, unknown> | undefined>(
   obj: T,
   fn: (v: [string, unknown]) => boolean
 ): T =>
-  Object.entries(obj ?? {})
+  Object.entries(obj ?? ({} as any))
     .filter(fn)
     .reduce(
       (acc, [k, v]) => ({
         ...acc,
         [k]: v
       }),
-      {} as T
+      {} as any as T
     )
 
 export const pick = <T = Record<string, unknown>>(
