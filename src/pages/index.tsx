@@ -33,8 +33,6 @@ export default function Index() {
     omit(ctx, 'setState', 'search')
   )
 
-  console.log(ctx.slugs)
-
   const value = React.useMemo(
     () => ({ ...state, setState, ts: Date.now() }),
     [state]

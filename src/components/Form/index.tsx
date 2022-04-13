@@ -6,9 +6,6 @@ import { BrandContext } from '~/ctx'
 function Inner(props: FormProps) {
   const ctx = React.useContext(BrandContext)
   const slugs = [...ctx.slugs.entries()]
-  const active = slugs.map<string>(([k, v]) => (v ? k : '')).filter(v => v)
-
-  console.log(active, slugs)
 
   return (
     <Card as="form" css={{ inset: '0 0 auto 0', position: 'fixed' }} {...props}>
