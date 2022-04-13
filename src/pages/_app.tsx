@@ -2,6 +2,7 @@ import { NextUIProvider } from '@nextui-org/react'
 import type { AppProps, NextWebVitalsMetric } from 'next/app'
 import Head from 'next/head'
 import 'normalize.css'
+import { Suspense } from 'react'
 
 export default function App({ Component, pageProps }: AppProps) {
   return (
@@ -12,9 +13,11 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
 
       <main>
-        <NextUIProvider>
-          <Component {...pageProps} />
-        </NextUIProvider>
+        <Suspense fallback={<div>Loading...</div>}>
+          <NextUIProvider>
+            <Component {...pageProps} />
+          </NextUIProvider>
+        </Suspense>
       </main>
     </>
   )
