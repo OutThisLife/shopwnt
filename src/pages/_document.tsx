@@ -1,32 +1,15 @@
+import { CssBaseline } from '@nextui-org/react'
 import type { DocumentContext } from 'next/document'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 import Script from 'next/script'
 
-class MyDocument extends Document {
+export default class extends Document {
   static async getInitialProps(ctx: DocumentContext) {
-    const { ServerStyleSheet } = await import('styled-components')
-    const sheet = new ServerStyleSheet()
-    const originalRenderPage = ctx.renderPage
+    const initialProps = await Document.getInitialProps(ctx)
 
-    try {
-      ctx.renderPage = () =>
-        originalRenderPage({
-          enhanceApp: App => props => sheet.collectStyles(<App {...props} />)
-        })
-
-      const initialProps = await Document.getInitialProps(ctx)
-
-      return {
-        ...initialProps,
-        styles: (
-          <>
-            {initialProps.styles}
-            {sheet.getStyleElement()}
-          </>
-        )
-      }
-    } finally {
-      sheet.seal()
+    return {
+      ...initialProps,
+      styles: initialProps.styles
     }
   }
 
@@ -49,6 +32,8 @@ class MyDocument extends Document {
             }}
             strategy="beforeInteractive"
           />
+
+          {CssBaseline.flush()}
         </Head>
 
         <body>
@@ -59,5 +44,3 @@ class MyDocument extends Document {
     )
   }
 }
-
-export default MyDocument

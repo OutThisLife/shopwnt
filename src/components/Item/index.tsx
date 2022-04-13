@@ -1,12 +1,12 @@
+import { Card, Col, Row, styled, Text } from '@nextui-org/react'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { fetcher, relTime } from '~/lib'
-import { Skeleton } from '..'
-import StyledItem from './style'
-import { Thumbnail } from './Thumbnail'
 
-function Inner({ children, handle, vendor }: ItemProps) {
+const StyledImage = styled(Card.Image, { flex: 'auto 0 0', m: 0 } as any)
+
+function Inner({ children, handle, vendor, ...props }: ItemProps) {
   const url = `https://${vendor}.myshopify.com/products/${handle}`
 
   const { data } = useSWR<{ product: Product }>(`${url}.json`, {
@@ -28,58 +28,73 @@ function Inner({ children, handle, vendor }: ItemProps) {
   }, [data?.product])
 
   return (
-    <div className="item">
-      <div />
-
+    <Card
+      className="item"
+      css={{ h: '100%', margin: 'auto', w: '95%' }}
+      role="listitem"
+      {...props}>
       {product?.title && (
-        <header>
-          <div>
-            <a href={product.url} rel="noopener noreferrer" target="_blank">
-              {product?.title}
-            </a>
+        <Card.Header as="hgroup">
+          <Col>
+            <Text h2>{product?.title}</Text>
 
-            <em>
-              {relTime(product?.updated_at)} &mdash; {vendor}
-            </em>
-          </div>
+            <Text
+              css={{ color: '$accents3' }}
+              h5
+              size={12}
+              transform="uppercase">
+              {vendor} &mdash; {relTime(product?.updated_at)}
+            </Text>
+          </Col>
+        </Card.Header>
+      )}
 
-          {product.price && (
-            <strong>
+      {(!!children || product?.images?.length) && (
+        <Card.Body
+          css={{
+            display: 'flex',
+            flexDirection: 'row',
+            flexWrap: 'nowrap',
+            maxWidth: '100%',
+            overflow: 'overlay',
+            placeContent: 'flex-start',
+            placeItems: 'stretch',
+            py: 0
+          }}>
+          {children ||
+            product?.images?.map(({ id, src }) => (
+              <StyledImage
+                key={id}
+                height="auto"
+                objectFit="cover"
+                width="33.33%"
+                {...{ src }}
+              />
+            ))}
+        </Card.Body>
+      )}
+
+      {product.price && (
+        <Card.Footer>
+          <Row align="center" justify="space-between" wrap="wrap">
+            {!!product?.variants?.length &&
+              product?.variants?.slice(0, 4).map(v => (
+                <Text key={v.id} b css={{ color: '$accents5' }}>
+                  {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
+                  {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
+                </Text>
+              ))}
+
+            <Text css={{ color: '$green900', fontWeight: '$semibold' }}>
               {parseFloat(`${product.price}`).toLocaleString('en-US', {
                 currency: 'USD',
                 style: 'currency'
               })}
-            </strong>
-          )}
-        </header>
+            </Text>
+          </Row>
+        </Card.Footer>
       )}
-
-      {(!!children || product?.images?.length) && (
-        <section>
-          {children ||
-            product?.images?.map(({ id, src }) => (
-              <Thumbnail key={id} {...{ src }} />
-            ))}
-        </section>
-      )}
-
-      {!!product?.variants?.length && (
-        <footer>
-          {product?.variants?.slice(0, 4).map(v => (
-            <a
-              key={v.id}
-              href={product.url}
-              rel="noopener noreferrer"
-              target="_blank">
-              {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
-              {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
-            </a>
-          ))}
-        </footer>
-      )}
-
-      <div />
-    </div>
+    </Card>
   )
 }
 
@@ -88,11 +103,18 @@ const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
   ref
 ) {
   return (
-    <StyledItem {...{ ref, style }}>
-      <React.Suspense fallback={<Skeleton />}>
+    <figure
+      style={{
+        ...style,
+        margin: '0 auto',
+        paddingBottom: '2rem',
+        width: '100%'
+      }}
+      {...{ ref }}>
+      <React.Suspense fallback={null}>
         <Inner {...props} />
       </React.Suspense>
-    </StyledItem>
+    </figure>
   )
 })
 

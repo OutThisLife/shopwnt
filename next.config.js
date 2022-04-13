@@ -14,7 +14,7 @@ module.exports = require('next-compose-plugins')(
     poweredByHeader: false,
     reactStrictMode: true,
     swcMinify: true,
-    experimental: {
+    compiler: {
       styledComponents: true
     }
   }
