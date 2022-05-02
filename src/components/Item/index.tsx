@@ -27,12 +27,18 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
     }
   }, [data?.product])
 
+  const onClick = React.useCallback(
+    () => window.open(product.url, '_blank'),
+    [product]
+  )
+
   return (
     <Card
       className="item"
+      clickable
       css={{ h: '100%', margin: 'auto', w: '95%' }}
       role="listitem"
-      {...props}>
+      {...{ onClick, ...props }}>
       {product?.title && (
         <Card.Header as="hgroup">
           <Col>
