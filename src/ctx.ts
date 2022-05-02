@@ -12,7 +12,8 @@ export const BrandContext = createContext<CTX>({
     ['frame-denim', false],
     ['selkicollection', false],
     ['for love lemons', true],
-    ['lunamoth jewelry', false]
+    ['lunamoth jewelry', false],
+    ['spelldev2', false]
   ]),
   sortBy: 'updated_at',
   ts: Date.now()
