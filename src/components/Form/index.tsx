@@ -69,10 +69,10 @@ function Inner(props: FormProps) {
 
   return (
     <Card
-      css={{ inset: 'auto 0 0', pb: 20, position: 'fixed' }}
+      css={{ inset: 'auto 0 0', pb: '5em', position: 'fixed' }}
       shadow
       {...props}>
-      <Card.Body css={{ textAlign: 'center' }}>
+      <Card.Body key={ctx.ts} css={{ textAlign: 'center' }}>
         <Grid.Container alignItems="center" gap={2} justify="center">
           <Grid>
             <Button
@@ -88,33 +88,27 @@ function Inner(props: FormProps) {
             </Button>
           </Grid>
 
-          <React.Fragment key={ctx.ts}>
-            {slugs.map(([k, v]) => (
-              <StyledRadioGrid key={k}>
-                <Switch
-                  initialChecked={!!v}
-                  onChange={toggleVendor(k)}
-                  shadow
-                />
+          {slugs.map(([k, v]) => (
+            <StyledRadioGrid key={k}>
+              <Switch initialChecked={!!v} onChange={toggleVendor(k)} shadow />
 
-                <StyledLabel>
-                  <svg
-                    fill="#ffffff"
-                    onClick={handleDelete(k)}
-                    viewBox="0 0 24 24"
-                    width={12}
-                    xmlns="http://www.w3.org/2000/svg">
-                    <path
-                      d="M5.72 5.72a.75.75 0 0 1 1.06 0L12 10.94l5.22-5.22a.75.75 0 1 1 1.06 1.06L13.06 12l5.22 5.22a.75.75 0 1 1-1.06 1.06L12 13.06l-5.22 5.22a.75.75 0 0 1-1.06-1.06L10.94 12 5.72 6.78a.75.75 0 0 1 0-1.06z"
-                      fillRule="evenodd"
-                    />
-                  </svg>
+              <StyledLabel>
+                <svg
+                  fill="#ffffff"
+                  onClick={handleDelete(k)}
+                  viewBox="0 0 24 24"
+                  width={12}
+                  xmlns="http://www.w3.org/2000/svg">
+                  <path
+                    d="M5.72 5.72a.75.75 0 0 1 1.06 0L12 10.94l5.22-5.22a.75.75 0 1 1 1.06 1.06L13.06 12l5.22 5.22a.75.75 0 1 1-1.06 1.06L12 13.06l-5.22 5.22a.75.75 0 0 1-1.06-1.06L10.94 12 5.72 6.78a.75.75 0 0 1 0-1.06z"
+                    fillRule="evenodd"
+                  />
+                </svg>
 
-                  <span>{k}</span>
-                </StyledLabel>
-              </StyledRadioGrid>
-            ))}
-          </React.Fragment>
+                <span>{k}</span>
+              </StyledLabel>
+            </StyledRadioGrid>
+          ))}
         </Grid.Container>
       </Card.Body>
 

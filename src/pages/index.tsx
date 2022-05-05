@@ -56,7 +56,7 @@ function Inner() {
       data
         ?.flatMap(({ products = [], vendor }) =>
           products
-            .filter(p => p.images.length)
+            .filter(p => !!p.images.length)
             .map(p => ({
               ...omit(
                 p,
