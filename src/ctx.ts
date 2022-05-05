@@ -3,17 +3,15 @@ import { createContext } from 'react'
 
 export const BrandContext = createContext<CTX>({
   setState: () => null,
-  slugs: new Map<string, boolean>([
+  slugs: new Map([
     ['loveshackfancy', true],
     ['veronicabeard', false],
     ['fillyboo', false],
-    ['naked cashmere', false],
-    ['stripe stare', false],
+    ['naked-cashmere', false],
+    ['stripe-stare', false],
     ['frame-denim', false],
     ['selkicollection', false],
-    ['for love lemons', true],
-    ['lunamoth jewelry', false],
-    ['spelldev2', false]
+    ['for-love-lemons', false]
   ]),
   sortBy: 'updated_at',
   ts: Date.now()

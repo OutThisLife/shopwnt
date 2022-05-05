@@ -2,14 +2,20 @@ import { Card, Col, Row, styled, Text } from '@nextui-org/react'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { fetcher, relTime } from '~/lib'
+import { fetcher, pick, relTime } from '~/lib'
 
 const StyledImage = styled(Card.Image, { flex: 'auto 0 0', m: 0 } as any)
 
 function Inner({ children, handle, vendor, ...props }: ItemProps) {
-  const url = `https://${vendor}.myshopify.com/products/${handle}`
+  const url = React.useMemo(
+    () =>
+      `https://${vendor
+        ?.toLocaleLowerCase()
+        .replace(/\s/g, '')}.myshopify.com/products/${handle}`,
+    [vendor, handle]
+  )
 
-  const { data } = useSWR<{ product: Product }>(`${url}.json`, {
+  const { data, error } = useSWR<{ product: Product }>(() => `${url}.json`, {
     fetcher,
     suspense: true
   })
@@ -31,6 +37,10 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
     () => window.open(product.url, '_blank'),
     [product]
   )
+
+  if (error) {
+    return null
+  }
 
   return (
     <Card
@@ -83,15 +93,27 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
       {product.price && (
         <Card.Footer>
           <Row align="center" justify="space-between" wrap="wrap">
-            {!!product?.variants?.length &&
-              product?.variants?.slice(0, 4).map(v => (
+            {product?.variants
+              ?.slice(0, 4)
+              ?.filter(v =>
+                ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
+                  .flatMap(s => s.toLocaleLowerCase())
+                  .some(s =>
+                    Object.values(pick(v, 'option1', 'option2', 'option3'))
+                      .filter(i => i)
+                      .flatMap(i => i.toLocaleLowerCase())
+                      .includes(s)
+                  )
+              )
+              .map(v => (
                 <Text key={v.id} b css={{ color: '$accents5' }}>
                   {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
                   {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
                 </Text>
               ))}
 
-            <Text css={{ color: '$green900', fontWeight: '$semibold' }}>
+            <Text
+              css={{ color: '$success', fontWeight: '$semibold', ml: 'auto' }}>
               {parseFloat(`${product.price}`).toLocaleString('en-US', {
                 currency: 'USD',
                 style: 'currency'
@@ -104,17 +126,17 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
   )
 }
 
-const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
+export const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
   { style, ...props },
   ref
 ) {
   return (
     <figure
       style={{
-        ...style,
         margin: '0 auto',
         paddingBottom: '2rem',
-        width: '100%'
+        width: '100%',
+        ...style
       }}
       {...{ ref }}>
       <React.Suspense fallback={null}>

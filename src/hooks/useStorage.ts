@@ -1,64 +1,14 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { useEffect, useState } from 'react'
+import { storage } from '~/lib'
 
-const storage = {
-  get<T>(k: string): T | undefined {
-    if (storage.has(k)) {
-      return Object.entries(JSON.parse(this.store.getItem(k) ?? '{}')).reduce(
-        (acc, [k0, v]) => ({
-          ...acc,
-          [k0]: Array.isArray(v) && v[0].length === 2 ? new Map(v) : v
-        }),
-        {}
-      ) as any as T
-    }
-
-    return undefined
-  },
-
-  has(k: string) {
-    return !!this.store.getItem(k)
-  },
-
-  set<T>(k: string, v: T): void {
-    if (v && typeof v === 'object') {
-      this.store.setItem(
-        k,
-        JSON.stringify(
-          Object.entries(v as Record<string, any>).reduce(
-            (acc, [k0, v0]) => ({
-              ...acc,
-              [k0]: v0 instanceof Map ? [...v0] : v0
-            }),
-            {}
-          )
-        )
-      )
-    } else {
-      this.store.setItem(k, JSON.stringify(v))
-    }
-  },
-
-  get store(): Storage {
-    if ('browser' in process) {
-      return window.self.localStorage
-    }
-
-    return new Proxy<Storage>({} as Storage, {
-      get() {
-        return () => void null
-      }
-    })
-  }
-}
-
-export const useStorage = <T>(
+export const useStorage = <T = unknown>(
   key: string,
-  initialState: T
+  initialState: T | (() => T)
 ): [T, Dispatch<SetStateAction<T>>] => {
   const [state, set] = useState<T>(storage.get(key) ?? initialState)
 
-  useEffect(() => storage.set(key, state), [state])
+  useEffect(() => void storage.set(key, state), [state])
 
   return [state, set]
 }

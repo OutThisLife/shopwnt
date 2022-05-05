@@ -1,13 +1,9 @@
+/* eslint-disable no-alert */
 export const fetcher = async <T extends Record<string, any>>(
   k: string
 ): Promise<T> => (await fetch(k)).json() as Promise<T>
 
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
-
-export const sleep = (ms: number): Promise<void> =>
-  new Promise(y => {
-    setTimeout(y, ms)
-  })
 
 export const filterObj = <T = Record<string, unknown> | undefined>(
   obj: T,
@@ -99,3 +95,30 @@ export const relTime = (
 
   return rtf.format(Math.round(diff / (60 * 60 * 1e3)), 'hour')
 }
+
+export const sleep = (ms: number): Promise<void> =>
+  new Promise(y => {
+    setTimeout(y, ms)
+  })
+
+export const prompt = (str: string): Promise<string> =>
+  new Promise((y, n) => {
+    const r = window.prompt(str)
+
+    if (r) {
+      y(r)
+    } else {
+      n()
+    }
+  })
+
+export const confirm = (str: string): Promise<boolean> =>
+  new Promise((y, n) => {
+    const r = window.confirm(str)
+
+    if (r) {
+      y(r)
+    } else {
+      n()
+    }
+  })

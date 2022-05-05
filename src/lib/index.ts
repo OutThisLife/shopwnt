@@ -1,3 +1,4 @@
+export { default as storage } from './storage'
 export * from './util'
 
 export const log = (...args: any[]) => {

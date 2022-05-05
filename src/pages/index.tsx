@@ -1,5 +1,5 @@
+/* eslint-disable no-nested-ternary */
 import { Card, Container, Loading, Spacer } from '@nextui-org/react'
-import Fuse from 'fuse.js'
 import * as React from 'react'
 import { areEqual } from 'react-window'
 import useSWR from 'swr'
@@ -8,25 +8,20 @@ import { Form, Item, List, WindowScroller } from '~/components'
 import type { State } from '~/ctx'
 import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
-import { fetcher, omit, pick } from '~/lib'
+import { fetcher, omit } from '~/lib'
 
-const Row = React.memo<{
-  index: number
-  style: Record<string, any>
-  data?: unknown
-}>(
+const Row = React.memo<RowProps>(
   ({ index, style, data = [] }) => (
     <Item {...{ style, ...(data as any[])?.[index] }} />
   ),
   areEqual
 )
 
-export default function Index() {
+function Inner() {
   const ctx = React.useContext(BrandContext)
   const ref = React.useRef<HTMLElement>(null)
 
   const [itemSize, setItemSize] = React.useState<number>(() => 5e2)
-  const [items, setItems] = React.useState<Record<string, Result>>(() => ({}))
 
   const [state, setState] = useStorage<State>(
     'ctx',
@@ -38,69 +33,46 @@ export default function Index() {
     [state]
   )
 
-  const vendors = [...value.slugs.entries()]
-    .filter(([k, v]) => k && v)
-    ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
-
-  const { isValidating } = useSWR<{ products: Product[]; vendor: string }[]>(
-    () => (vendors.length ? vendors : null),
-    async (...args: string[]) =>
+  const { data } = useSWR<{ products: Product[]; vendor: string }[]>(
+    () =>
+      value.slugs.size
+        ? [...value.slugs.entries()]
+            .filter(([k, v]) => k && v)
+            ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
+        : null,
+    async (...s: string[]) =>
       Promise.all(
-        args.map<Promise<Result>>(async k => {
-          const v: Result = {
-            ...(await fetcher(
-              `https://${k}.myshopify.com/products.json?limit=150`
-            )),
-            vendor: k
-          }
-
-          setItems(st => ({ ...st, [k]: v }))
-
-          return v
-        })
+        s.map<Promise<Result>>(async vendor => ({
+          ...(await fetcher(
+            `https://${vendor}.myshopify.com/products.json?limit=150`
+          )),
+          vendor
+        }))
       )
   )
 
-  const fuse = React.useRef(
-    new Fuse<Product>([], {
-      includeMatches: false,
-      includeScore: false,
-      keys: ['title'],
-      shouldSort: false
-    })
-  ).current
-
-  const sortedItems = React.useMemo(
+  const res = React.useMemo(
     () =>
-      [...Object.values(items)]
-        ?.filter(i => i?.products?.length && vendors.includes(i?.vendor))
-        ?.flatMap(i => i?.products.flatMap(p => ({ ...p, vendor: i.vendor })))
-        ?.filter(p => !!p?.images?.length)
-        ?.map(p => ({
-          ...omit(
-            p,
-            'images',
-            'body_html',
-            'options',
-            'tags',
-            'originalVariants'
-          ),
-          variants: p.variants?.filter(v =>
-            ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
-              .flatMap(s => s.toLocaleLowerCase())
-              .some(s =>
-                Object.values(pick(v, 'option1', 'option2', 'option3'))
-                  .filter(i => i)
-                  .flatMap(i => i.toLocaleLowerCase())
-                  .includes(s)
-              )
-          )
-        }))
-        .filter(p => !!p.variants?.length)
+      data
+        ?.flatMap(({ products = [], vendor }) =>
+          products
+            .filter(p => p.images.length)
+            .map(p => ({
+              ...omit(
+                p,
+                'images',
+                'body_html',
+                'options',
+                'tags',
+                'originalVariants'
+              ),
+              vendor
+            }))
+        )
         .sort((a, b) => {
           const k = value.sortBy
-          const av: string = a[k]
-          const bv: string = b[k]
+          const av = `${a[k]}`
+          const bv = `${b[k]}`
 
           switch (k) {
             case 'price':
@@ -117,8 +89,8 @@ export default function Index() {
             default:
               return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
           }
-        }),
-    [vendors, items]
+        }) ?? [],
+    [data, value.sortBy]
   )
 
   const onResize = React.useCallback(async (el: HTMLElement) => {
@@ -161,7 +133,6 @@ export default function Index() {
     }
 
     const el = ref.current
-
     const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
 
     const mo = new MutationObserver(
@@ -184,43 +155,33 @@ export default function Index() {
     }
   }, [])
 
-  React.useEffect(() => void fuse?.setCollection(sortedItems), [sortedItems])
-
-  const res = React.useMemo(() => {
-    const s = fuse?.search(value.search ?? '')
-
-    return s.length ? s : sortedItems
-  }, [value.search, sortedItems])
-
   return (
     <BrandContext.Provider {...{ value }}>
-      <React.Suspense fallback={null}>
-        <Form />
-      </React.Suspense>
+      <Form />
 
-      <Container as="section" css={{ padding: 10 }}>
+      <Container as="section" css={{ p: 10 }}>
         <Spacer y={1} />
 
-        {isValidating || !res.length ? (
+        {![...value.slugs.values()].filter(i => i)?.length ? (
+          <Card>No vendors selected.</Card>
+        ) : !res?.length ? (
           <Card>
             <Loading size="xl" type="spinner" />
           </Card>
         ) : (
-          <React.Suspense fallback={null}>
-            <WindowScroller>
-              {p => (
-                <List
-                  className="list"
-                  height={'browser' in process ? window.innerHeight : 768}
-                  itemCount={res?.length ?? 0}
-                  itemData={res}
-                  width="100%"
-                  {...{ itemSize, ...p }}>
-                  {Row}
-                </List>
-              )}
-            </WindowScroller>
-          </React.Suspense>
+          <WindowScroller>
+            {p => (
+              <List
+                className="list"
+                height={'browser' in process ? window.innerHeight : 768}
+                itemCount={res?.length ?? 0}
+                itemData={res}
+                width="100%"
+                {...{ itemSize, ...p }}>
+                {Row}
+              </List>
+            )}
+          </WindowScroller>
         )}
 
         <Spacer y={1} />
@@ -229,7 +190,21 @@ export default function Index() {
   )
 }
 
+export default function Index() {
+  return (
+    <React.Suspense fallback={<Loading size="xl" type="spinner" />}>
+      <Inner />
+    </React.Suspense>
+  )
+}
+
 interface Result {
   products: Product[]
   vendor: string
+}
+
+interface RowProps {
+  index: number
+  style: Record<string, any>
+  data?: unknown
 }
