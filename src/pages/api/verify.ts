@@ -17,7 +17,7 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
       throw new Error('Not a valid shopify site')
     }
 
-    res.status(200).json({ slug: m?.[1] })
+    res.status(200).json({ slug: m?.at(1) })
   } catch (err: any) {
     res.status(500).end()
   }

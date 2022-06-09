@@ -1,12 +1,10 @@
-import { Card, Col, Row, styled, Text } from '@nextui-org/react'
+import { Card, Col, Container, Row, Table, Text } from '@nextui-org/react'
 import * as React from 'react'
 import useSWR from 'swr'
 import type { Product } from '~/../types'
-import { fetcher, pick, relTime } from '~/lib'
+import { pick, relTime } from '~/lib'
 
-const StyledImage = styled(Card.Image, { flex: 'auto 0 0', m: 0 } as any)
-
-function Inner({ children, handle, vendor, ...props }: ItemProps) {
+export function Item({ children, handle, vendor, ...props }: ItemProps) {
   const url = React.useMemo(
     () =>
       `https://${vendor
@@ -15,28 +13,18 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
     [vendor, handle]
   )
 
-  const { data, error } = useSWR<{ product: Product }>(() => `${url}.json`, {
-    fetcher,
-    suspense: true
-  })
+  const { data, error } = useSWR<{ product: Product }>(
+    () => (vendor && handle ? `${url}.json` : null),
+    { suspense: true }
+  )
 
   const product = React.useMemo(() => {
     const variants = data?.product?.variants?.filter(
       v => v.inventory_quantity ?? Infinity
     )
 
-    return {
-      ...data?.product,
-      price: variants?.[0]?.price,
-      url,
-      variants
-    }
+    return { ...data?.product, price: variants?.at(0)?.price, url, variants }
   }, [data?.product])
-
-  const onClick = React.useCallback(
-    () => window.open(product.url, '_blank'),
-    [product]
-  )
 
   if (error) {
     return null
@@ -45,25 +33,27 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
   return (
     <Card
       className="item"
-      clickable
       css={{ h: '100%', margin: 'auto', w: '95%' }}
       role="listitem"
-      {...{ onClick, ...props }}>
-      {product?.title && (
-        <Card.Header as="hgroup">
-          <Col>
-            <Text h2>{product?.title}</Text>
-
+      {...props}>
+      <Card.Header>
+        <Col>
+          <a href={product.url} rel="noopener noreferrer" target="_blank">
             <Text
-              css={{ color: '$accents3' }}
-              h5
-              size={12}
-              transform="uppercase">
-              {vendor} &mdash; {relTime(product?.updated_at)}
+              css={{
+                '&:hover': { textDecoration: 'underline' },
+                lineHeight: 1.1
+              }}
+              h2>
+              {product?.title}
             </Text>
-          </Col>
-        </Card.Header>
-      )}
+          </a>
+
+          <Text css={{ color: '$accents3' }} h5 size={12} transform="uppercase">
+            {vendor} &mdash; {relTime(product?.updated_at)}
+          </Text>
+        </Col>
+      </Card.Header>
 
       {(!!children || product?.images?.length) && (
         <Card.Body
@@ -76,44 +66,112 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
             placeContent: 'flex-start',
             placeItems: 'stretch',
             py: 0
-          }}>
+          }}
+          onClick={e => e.stopPropagation()}>
           {children ||
             product?.images?.map(({ id, src }) => (
-              <StyledImage
+              <Container
                 key={id}
-                height="auto"
-                objectFit="cover"
-                width="33.33%"
-                {...{ src }}
-              />
+                css={{
+                  '@lg': { width: '25% !important' },
+                  '@smMax': { width: '66.66% !important' },
+                  flex: 'auto 0 0',
+                  height: '100%',
+                  m: 0,
+                  p: 0,
+                  width: '33.33%'
+                }}>
+                <Card.Image
+                  css={{ objectPosition: 'center top' }}
+                  height="100%"
+                  loading="lazy"
+                  objectFit="cover"
+                  width="100%"
+                  {...{ src }}
+                />
+              </Container>
             ))}
         </Card.Body>
       )}
 
       {product.price && (
         <Card.Footer>
-          <Row align="center" justify="space-between" wrap="wrap">
-            {product?.variants
-              ?.slice(0, 4)
-              ?.filter(v =>
-                ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
-                  .flatMap(s => s.toLocaleLowerCase())
-                  .some(s =>
-                    Object.values(pick(v, 'option1', 'option2', 'option3'))
-                      .filter(i => i)
-                      .flatMap(i => i.toLocaleLowerCase())
-                      .includes(s)
+          <Row align="center" justify="space-between">
+            <Row
+              align="center"
+              css={{
+                gap: '1.5em',
+                maxWidth: '100%',
+                overflow: 'overlay',
+                pr: '2rem',
+                py: '1rem',
+                whiteSpace: 'nowrap'
+              }}>
+              {Object.entries(
+                (product?.variants ?? [])
+                  .filter(v =>
+                    ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
+                      .flatMap(s => s.toLocaleLowerCase())
+                      .some(s =>
+                        Object.values(pick(v, 'option1', 'option2', 'option3'))
+                          .flatMap(i => i?.toLocaleLowerCase())
+                          .includes(s)
+                      )
                   )
-              )
-              .map(v => (
-                <Text key={v.id} b css={{ color: '$accents5' }}>
-                  {v.option3 ?? v.option2 ?? v.option1 ?? v.title}
-                  {v.inventory_quantity ? ` (${v.inventory_quantity})` : ''}
-                </Text>
-              ))}
+                  .reduce<Record<string, Record<string, number>>>((acc, v) => {
+                    const k = `${(v?.option1 ?? v.title).split(' / ').shift()}`
 
-            <Text
-              css={{ color: '$success', fontWeight: '$semibold', ml: 'auto' }}>
+                    return {
+                      ...acc,
+                      [k]: {
+                        ...acc[k],
+                        [`${v.option3 ?? v.option2 ?? v.option1 ?? v.title}`]:
+                          v?.inventory_quantity
+                      }
+                    }
+                  }, {})
+              ).map(([k, v], i) => (
+                <Container
+                  key={`${k}.${i}`}
+                  css={{ flex: 'max-content 0 1', m: 0, p: 0 }}>
+                  <Text css={{ flex: '100% 1 1', fontWeight: 600 }}>{k}</Text>
+
+                  <Table
+                    aria-label="Size/variants table"
+                    css={{
+                      height: 'auto',
+                      p: 0,
+                      td: {
+                        '&:last-child': {
+                          color: '$accents5',
+                          pl: '.55em !important'
+                        },
+                        color: '$accents9',
+                        p: '0 !important',
+                        textAlign: 'right'
+                      },
+                      th: { fontSize: 0, h: 0, p: '0 !important' },
+                      width: 'fit-content'
+                    }}>
+                    <Table.Header>
+                      <Table.Column>Size</Table.Column>
+                      <Table.Column>Qty</Table.Column>
+                    </Table.Header>
+
+                    <Table.Body>
+                      {Object.entries(v).map(([k1, v1]) => (
+                        <Table.Row key={`${k}.${i}.${k1}`}>
+                          <Table.Cell>{k1}</Table.Cell>
+                          <Table.Cell>({v1})</Table.Cell>
+                        </Table.Row>
+                      ))}
+                    </Table.Body>
+                  </Table>
+                </Container>
+              ))}
+            </Row>
+
+            <Text css={{ color: '$success', fontWeight: '$semibold' }}>
               {parseFloat(`${product.price}`).toLocaleString('en-US', {
                 currency: 'USD',
                 style: 'currency'
@@ -125,26 +183,6 @@ function Inner({ children, handle, vendor, ...props }: ItemProps) {
     </Card>
   )
 }
-
-export const Item = React.forwardRef<HTMLElement, ItemProps>(function Item(
-  { style, ...props },
-  ref
-) {
-  return (
-    <figure
-      style={{
-        margin: '0 auto',
-        paddingBottom: '2rem',
-        width: '100%',
-        ...style
-      }}
-      {...{ ref }}>
-      <React.Suspense fallback={null}>
-        <Inner {...props} />
-      </React.Suspense>
-    </figure>
-  )
-})
 
 Item.displayName = 'Item'
 

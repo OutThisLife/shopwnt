@@ -10,14 +10,32 @@ import { BrandContext } from '~/ctx'
 import { useStorage } from '~/hooks'
 import { fetcher, omit } from '~/lib'
 
+function Loader() {
+  return (
+    <Card>
+      <Loading size="xl" type="spinner" />
+    </Card>
+  )
+}
+
 const Row = React.memo<RowProps>(
   ({ index, style, data = [] }) => (
-    <Item {...{ style, ...(data as any[])?.[index] }} />
+    <figure
+      style={{
+        margin: '0 auto',
+        paddingBottom: '2rem',
+        width: '100%',
+        ...style
+      }}>
+      <React.Suspense>
+        <Item {...(data as Product[])?.[index]} />
+      </React.Suspense>
+    </figure>
   ),
   areEqual
 )
 
-function Inner() {
+export default function Index() {
   const ctx = React.useContext(BrandContext)
   const ref = React.useRef<HTMLElement>(null)
 
@@ -35,11 +53,11 @@ function Inner() {
 
   const { data } = useSWR<{ products: Product[]; vendor: string }[]>(
     () =>
-      value.slugs.size
-        ? [...value.slugs.entries()]
+      !value.slugs.size
+        ? null
+        : [...value.slugs.entries()]
             .filter(([k, v]) => k && v)
-            ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
-        : null,
+            ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-')),
     async (...s: string[]) =>
       Promise.all(
         s.map<Promise<Result>>(async vendor => ({
@@ -53,7 +71,7 @@ function Inner() {
 
   const res = React.useMemo(
     () =>
-      data
+      Array.from(data ?? [])
         ?.flatMap(({ products = [], vendor }) =>
           products
             .filter(p => !!p.images.length)
@@ -157,7 +175,9 @@ function Inner() {
 
   return (
     <BrandContext.Provider {...{ value }}>
-      <Form />
+      <React.Suspense>
+        <Form />
+      </React.Suspense>
 
       <Container as="section" css={{ p: 10 }}>
         <Spacer y={1} />
@@ -165,36 +185,28 @@ function Inner() {
         {![...value.slugs.values()].filter(i => i)?.length ? (
           <Card>No vendors selected.</Card>
         ) : !res?.length ? (
-          <Card>
-            <Loading size="xl" type="spinner" />
-          </Card>
+          <Loader />
         ) : (
-          <WindowScroller>
-            {p => (
-              <List
-                className="list"
-                height={'browser' in process ? window.innerHeight : 768}
-                itemCount={res?.length ?? 0}
-                itemData={res}
-                width="100%"
-                {...{ itemSize, ...p }}>
-                {Row}
-              </List>
-            )}
-          </WindowScroller>
+          <React.Suspense fallback={<Loader />}>
+            <WindowScroller>
+              {p => (
+                <List
+                  className="list"
+                  height={'browser' in process ? window.innerHeight : 768}
+                  itemCount={res?.length ?? 0}
+                  itemData={res}
+                  width="100%"
+                  {...{ itemSize, ...p }}>
+                  {Row}
+                </List>
+              )}
+            </WindowScroller>
+          </React.Suspense>
         )}
 
         <Spacer y={1} />
       </Container>
     </BrandContext.Provider>
-  )
-}
-
-export default function Index() {
-  return (
-    <React.Suspense fallback={<Loading size="xl" type="spinner" />}>
-      <Inner />
-    </React.Suspense>
   )
 }
 

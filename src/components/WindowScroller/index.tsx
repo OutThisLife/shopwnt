@@ -5,10 +5,6 @@ export function WindowScroller({ children }: WindowProps) {
   const outerRef = React.useRef<HTMLElement>()
 
   React.useEffect(() => {
-    if (!('browser' in process)) {
-      return () => void null
-    }
-
     const onSCroll = () =>
       ref.current?.scrollTo(
         (window.scrollY - (outerRef.current?.offsetTop ?? 0)) as ScrollOptions

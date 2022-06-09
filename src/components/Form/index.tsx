@@ -1,10 +1,8 @@
-/* eslint-disable no-alert */
 import type { SwitchEvent } from '@nextui-org/react'
 import { Button, Card, Grid, Loading, Radio, Switch } from '@nextui-org/react'
 import * as React from 'react'
 import { createPortal } from 'react-dom'
 import { BrandContext } from '~/ctx'
-import { useStorage } from '~/hooks'
 import { confirm, prompt } from '~/lib'
 import { StyledLabel, StyledRadioGrid } from './style'
 
@@ -20,11 +18,11 @@ function Inner(props: FormProps) {
       setLoading(true)
 
       const { slug: k } = await (await fetch(`/api/verify?u=${vendor}`)).json()
+
       ctx.setState(s => ({ ...s, slugs: s.slugs.set(k, true), ts: Date.now() }))
     } catch (err) {
-      if (err) {
-        alert('Store not found')
-      }
+      // eslint-disable-next-line no-alert
+      alert('Store not found')
     } finally {
       setLoading(false)
     }
@@ -137,7 +135,7 @@ function Inner(props: FormProps) {
 }
 
 export function Form() {
-  const [visible, set] = useStorage<boolean>('form-visible', () => false)
+  const [visible, set] = React.useState<boolean>(() => false)
   const onPointerDown = React.useCallback(() => set(st => !st), [])
 
   return (
@@ -164,9 +162,7 @@ export function Form() {
         {...{ onPointerDown }}
       />
 
-      {'browser' in process &&
-        visible &&
-        createPortal(<Inner />, document.body)}
+      {visible && createPortal(<Inner />, document.body)}
     </>
   )
 }

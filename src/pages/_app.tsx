@@ -2,7 +2,8 @@ import { createTheme, NextUIProvider } from '@nextui-org/react'
 import type { AppProps, NextWebVitalsMetric } from 'next/app'
 import Head from 'next/head'
 import 'normalize.css'
-import React from 'react'
+import { SWRConfig } from 'swr'
+import { fetcher } from '~/lib'
 
 const theme = createTheme({
   type:
@@ -30,11 +31,11 @@ export default function App({ Component, pageProps }: AppProps) {
       </Head>
 
       <main>
-        <NextUIProvider {...{ theme }}>
-          <React.Suspense fallback={null}>
+        <SWRConfig value={{ fetcher }}>
+          <NextUIProvider {...{ theme }}>
             <Component {...pageProps} />
-          </React.Suspense>
-        </NextUIProvider>
+          </NextUIProvider>
+        </SWRConfig>
       </main>
     </>
   )

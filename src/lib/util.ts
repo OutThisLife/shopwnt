@@ -11,13 +11,7 @@ export const filterObj = <T = Record<string, unknown> | undefined>(
 ): T =>
   Object.entries(obj ?? ({} as any))
     .filter(fn)
-    .reduce(
-      (acc, [k, v]) => ({
-        ...acc,
-        [k]: v
-      }),
-      {} as any as T
-    )
+    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {} as any as T)
 
 export const pick = <T = Record<string, unknown>>(
   obj: T,
@@ -31,11 +25,11 @@ export const omit = <T = Record<string, unknown>>(
 
 /** Uppercase first letter */
 export const ucfirst = (str: string): string =>
-  str[0].toUpperCase() + str.slice(1)
+  `${str.at(0)}`.toUpperCase() + str.slice(1)
 
 /** Lowercase first letter */
 export const lcfirst = (str: string): string =>
-  str[0].toLowerCase() + str.slice(1)
+  `${str.at(0)}`.toLowerCase() + str.slice(1)
 
 /** Transform a string to camelCase */
 export const camelize = (str: string): string =>

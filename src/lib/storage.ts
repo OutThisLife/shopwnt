@@ -4,7 +4,7 @@ export default {
       return Object.entries(JSON.parse(this.store.getItem(k) ?? '{}')).reduce(
         (acc, [k0, v]) => ({
           ...acc,
-          [k0]: Array.isArray(v) && v[0].length === 2 ? new Map(v) : v
+          [k0]: Array.isArray(v) && v?.at(0)?.length === 2 ? new Map(v) : v
         }),
         {}
       ) as any as T
