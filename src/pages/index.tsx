@@ -6,8 +6,7 @@ import { useQueries } from 'react-query'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
-import { fetcher, omit } from '~/lib'
-import { slugsAtom, sortAtom } from '~/lib/atoms'
+import { fetcher, omit, slugsAtom, sortAtom } from '~/lib'
 
 function Loader() {
   return (
@@ -19,36 +18,33 @@ function Loader() {
 
 const Row = React.memo<RowProps>(
   ({ index, style, data = [] }) => (
-    <figure
-      style={{
-        margin: '0 auto',
-        paddingBottom: '2rem',
-        width: '100%',
-        ...style
-      }}>
-      <React.Suspense fallback={<Loader />}>
+    <React.Suspense fallback={<Loader />}>
+      <figure
+        style={{
+          margin: '0 auto',
+          paddingBottom: '2rem',
+          width: '100%',
+          ...style
+        }}>
         <Item {...(data as Product[])?.[index]} />
-      </React.Suspense>
-    </figure>
+      </figure>
+    </React.Suspense>
   ),
   areEqual
 )
 
 export default function Index() {
   const ref = React.useRef<HTMLElement>(null)
-
   const [itemSize, setItemSize] = React.useState<number>(() => 5e2)
 
   const sortBy = useAtomValue(sortAtom)
   const slugs = useAtomValue(slugsAtom)
-  console.log({ slugs })
-  React.useEffect(() => void console.log({ slugs }), [slugs])
 
   const entries = useQueries(
     [...Object.entries(slugs)]
-      .filter(([k, v]) => k && v)
       .map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
       .map(k => ({
+        enabled: !!slugs[k],
         queryFn: () =>
           fetcher<Result>(`https://${k}.myshopify.com/products.json?limit=150`),
         queryKey: ['products', k],
@@ -65,7 +61,8 @@ export default function Index() {
                 'originalVariants'
               ),
               vendor: k
-            }))
+            })),
+        suspense: true
       }))
   )
 
@@ -174,7 +171,7 @@ export default function Index() {
         ) : !res?.length ? (
           <Loader />
         ) : (
-          <React.Suspense>
+          <React.Suspense fallback={<Loader />}>
             <WindowScroller>
               {p => (
                 <List

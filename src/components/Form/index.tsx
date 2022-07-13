@@ -2,8 +2,7 @@ import { Button, Card, Grid, Loading, Radio, Switch } from '@nextui-org/react'
 import { useAtom } from 'jotai'
 import * as React from 'react'
 import { createPortal } from 'react-dom'
-import { confirm, prompt } from '~/lib'
-import { slugsAtom, sortAtom } from '~/lib/atoms'
+import { confirm, prompt, slugsAtom, sortAtom } from '~/lib'
 import { StyledLabel, StyledRadioGrid } from './style'
 
 function Inner(props: FormProps) {
@@ -64,6 +63,7 @@ function Inner(props: FormProps) {
                   onClick={async () => {
                     try {
                       await confirm(`Do you want to delete "${k}"?`)
+
                       updateSlugs(s => {
                         delete s[k]
 

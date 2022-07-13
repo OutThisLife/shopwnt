@@ -1,8 +1,5 @@
 import { QueryClient } from 'react-query'
 
-export { default as storage } from './storage'
-export * from './util'
-
 export const client = new QueryClient()
 
 export const log = (...args: any[]) => {
@@ -23,3 +20,7 @@ export const log = (...args: any[]) => {
     }
   }
 }
+
+export * from './atoms'
+export { default as storage } from './storage'
+export * from './util'

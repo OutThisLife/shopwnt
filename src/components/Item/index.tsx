@@ -29,7 +29,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
         return {
           product: {
             ...product,
-            price: variants?.at(0)?.price,
+            price: variants?.[0]?.price,
             url,
             variants
           }
