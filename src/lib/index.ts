@@ -1,5 +1,9 @@
+import { QueryClient } from 'react-query'
+
 export { default as storage } from './storage'
 export * from './util'
+
+export const client = new QueryClient()
 
 export const log = (...args: any[]) => {
   if (!('browser' in process)) {

@@ -1,14 +1,13 @@
 /* eslint-disable no-nested-ternary */
 import { Card, Container, Loading, Spacer } from '@nextui-org/react'
+import { useAtomValue } from 'jotai'
 import * as React from 'react'
+import { useQueries } from 'react-query'
 import { areEqual } from 'react-window'
-import useSWR from 'swr'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
-import type { State } from '~/ctx'
-import { BrandContext } from '~/ctx'
-import { useStorage } from '~/hooks'
 import { fetcher, omit } from '~/lib'
+import { slugsAtom, sortAtom } from '~/lib/atoms'
 
 function Loader() {
   return (
@@ -27,7 +26,7 @@ const Row = React.memo<RowProps>(
         width: '100%',
         ...style
       }}>
-      <React.Suspense>
+      <React.Suspense fallback={<Loader />}>
         <Item {...(data as Product[])?.[index]} />
       </React.Suspense>
     </figure>
@@ -36,43 +35,24 @@ const Row = React.memo<RowProps>(
 )
 
 export default function Index() {
-  const ctx = React.useContext(BrandContext)
   const ref = React.useRef<HTMLElement>(null)
 
   const [itemSize, setItemSize] = React.useState<number>(() => 5e2)
 
-  const [state, setState] = useStorage<State>(
-    'ctx',
-    omit(ctx, 'setState', 'search')
-  )
+  const sortBy = useAtomValue(sortAtom)
+  const slugs = useAtomValue(slugsAtom)
+  console.log({ slugs })
+  React.useEffect(() => void console.log({ slugs }), [slugs])
 
-  const value = React.useMemo(
-    () => ({ ...state, setState, ts: Date.now() }),
-    [state]
-  )
-
-  const { data } = useSWR<{ products: Product[]; vendor: string }[]>(
-    () =>
-      !value.slugs.size
-        ? null
-        : [...value.slugs.entries()]
-            .filter(([k, v]) => k && v)
-            ?.map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-')),
-    async (...s: string[]) =>
-      Promise.all(
-        s.map<Promise<Result>>(async vendor => ({
-          ...(await fetcher(
-            `https://${vendor}.myshopify.com/products.json?limit=150`
-          )),
-          vendor
-        }))
-      )
-  )
-
-  const res = React.useMemo(
-    () =>
-      Array.from(data ?? [])
-        ?.flatMap(({ products = [], vendor }) =>
+  const entries = useQueries(
+    [...Object.entries(slugs)]
+      .filter(([k, v]) => k && v)
+      .map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
+      .map(k => ({
+        queryFn: () =>
+          fetcher<Result>(`https://${k}.myshopify.com/products.json?limit=150`),
+        queryKey: ['products', k],
+        select: ({ products = [] }: Result): Product[] =>
           products
             .filter(p => !!p.images.length)
             .map(p => ({
@@ -84,11 +64,17 @@ export default function Index() {
                 'tags',
                 'originalVariants'
               ),
-              vendor
+              vendor: k
             }))
-        )
+      }))
+  )
+
+  const res = React.useMemo(
+    () =>
+      (entries ?? [])
+        .flatMap(e => e?.data ?? [])
         .sort((a, b) => {
-          const k = value.sortBy
+          const k = sortBy
           const av = `${a[k]}`
           const bv = `${b[k]}`
 
@@ -107,8 +93,8 @@ export default function Index() {
             default:
               return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
           }
-        }) ?? [],
-    [data, value.sortBy]
+        }),
+    [entries, sortBy]
   )
 
   const onResize = React.useCallback(async (el: HTMLElement) => {
@@ -151,6 +137,7 @@ export default function Index() {
     }
 
     const el = ref.current
+
     const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
 
     const mo = new MutationObserver(
@@ -168,13 +155,13 @@ export default function Index() {
     }
 
     return () => {
-      mo.disconnect()
-      ro.disconnect()
+      mo?.disconnect()
+      ro?.disconnect()
     }
   }, [])
 
   return (
-    <BrandContext.Provider {...{ value }}>
+    <>
       <React.Suspense>
         <Form />
       </React.Suspense>
@@ -182,12 +169,12 @@ export default function Index() {
       <Container as="section" css={{ p: 10 }}>
         <Spacer y={1} />
 
-        {![...value.slugs.values()].filter(i => i)?.length ? (
+        {![...Object.values(slugs)].filter(i => i)?.length ? (
           <Card>No vendors selected.</Card>
         ) : !res?.length ? (
           <Loader />
         ) : (
-          <React.Suspense fallback={<Loader />}>
+          <React.Suspense>
             <WindowScroller>
               {p => (
                 <List
@@ -206,7 +193,7 @@ export default function Index() {
 
         <Spacer y={1} />
       </Container>
-    </BrandContext.Provider>
+    </>
   )
 }
 

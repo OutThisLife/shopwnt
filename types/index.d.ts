@@ -54,6 +54,7 @@ export interface Product {
   id: string
   images: Image[]
   options: Option[]
+  price?: string
   product_type: string
   published_at: Date
   tags: string[]

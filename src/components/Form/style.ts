@@ -2,13 +2,10 @@ import { Grid, styled, Text } from '@nextui-org/react'
 
 export const StyledRadioGrid = styled(Grid, {
   '&:not(:hover) svg': { opacity: 0 },
-  '> [data-state="checked"] + p': {
-    color: '$primary'
-  },
+  '> [data-state="checked"] + p': { color: '$primary' },
   '> label': { order: 1 },
   '> p': { order: 0 },
   display: 'flex',
-  flex: 'auto 1 0',
   flexDirection: 'column',
   gap: '2px',
   placeContent: 'center',
@@ -31,9 +28,3 @@ export const StyledLabel = styled(Text, {
   position: 'relative',
   width: 'max-content'
 } as any)
-
-StyledLabel.defaultProps = {
-  size: 10,
-  transform: 'uppercase',
-  weight: 'semibold'
-}

@@ -1,8 +1,8 @@
 import { Card, Col, Container, Row, Table, Text } from '@nextui-org/react'
 import * as React from 'react'
-import useSWR from 'swr'
-import type { Product } from '~/../types'
-import { pick, relTime } from '~/lib'
+import { useQuery } from 'react-query'
+import type { Product, Variant } from '~/../types'
+import { fetcher, pick, relTime } from '~/lib'
 
 export function Item({ children, handle, vendor, ...props }: ItemProps) {
   const url = React.useMemo(
@@ -13,18 +13,31 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
     [vendor, handle]
   )
 
-  const { data, error } = useSWR<{ product: Product }>(
-    () => (vendor && handle ? `${url}.json` : null),
-    { suspense: true }
+  const { data, error } = useQuery<Result>(
+    ['product', url],
+    async ({ queryKey: [, v] }) => fetcher<Result>(`${v}.json`),
+    {
+      enabled: !!(vendor && handle),
+      refetchInterval: false,
+      refetchOnMount: false,
+      refetchOnWindowFocus: false,
+      select: ({ product }: Result) => {
+        const variants = (data?.product?.variants?.filter(
+          v => v.inventory_quantity ?? Infinity
+        ) ?? []) as Variant[]
+
+        return {
+          product: {
+            ...product,
+            price: variants?.at(0)?.price,
+            url,
+            variants
+          }
+        }
+      },
+      suspense: true
+    }
   )
-
-  const product = React.useMemo(() => {
-    const variants = data?.product?.variants?.filter(
-      v => v.inventory_quantity ?? Infinity
-    )
-
-    return { ...data?.product, price: variants?.at(0)?.price, url, variants }
-  }, [data?.product])
 
   if (error) {
     return null
@@ -38,24 +51,27 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
       {...props}>
       <Card.Header>
         <Col>
-          <a href={product.url} rel="noopener noreferrer" target="_blank">
+          <a
+            href={data?.product?.url}
+            rel="noopener noreferrer"
+            target="_blank">
             <Text
               css={{
                 '&:hover': { textDecoration: 'underline' },
                 lineHeight: 1.1
               }}
               h2>
-              {product?.title}
+              {data?.product?.title}
             </Text>
           </a>
 
           <Text css={{ color: '$accents3' }} h5 size={12} transform="uppercase">
-            {vendor} &mdash; {relTime(product?.updated_at)}
+            {vendor} &mdash; {relTime(data?.product?.updated_at)}
           </Text>
         </Col>
       </Card.Header>
 
-      {(!!children || product?.images?.length) && (
+      {(!!children || data?.product?.images?.length) && (
         <Card.Body
           css={{
             display: 'flex',
@@ -69,7 +85,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
           }}
           onClick={e => e.stopPropagation()}>
           {children ||
-            product?.images?.map(({ id, src }) => (
+            data?.product?.images?.map(({ id, src }) => (
               <Container
                 key={id}
                 css={{
@@ -94,7 +110,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
         </Card.Body>
       )}
 
-      {product.price && (
+      {data?.product?.price && (
         <Card.Footer>
           <Row align="center" justify="space-between">
             <Row
@@ -108,7 +124,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
                 whiteSpace: 'nowrap'
               }}>
               {Object.entries(
-                (product?.variants ?? [])
+                (data?.product?.variants ?? [])
                   .filter(v =>
                     ['00', 'xs', 'petite', '0', '23', 'xxs', 'o/s']
                       .flatMap(s => s.toLocaleLowerCase())
@@ -172,7 +188,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
             </Row>
 
             <Text css={{ color: '$success', fontWeight: '$semibold' }}>
-              {parseFloat(`${product.price}`).toLocaleString('en-US', {
+              {parseFloat(`${data?.product?.price}`).toLocaleString('en-US', {
                 currency: 'USD',
                 style: 'currency'
               })}
@@ -190,6 +206,10 @@ export interface ItemProps extends Partial<Product> {
   $hide?: boolean
   style?: Record<string, any>
   children?: JSX.Element
+}
+
+interface Result {
+  product: Product
 }
 
 export default Item

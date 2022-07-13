@@ -1,83 +1,45 @@
-import type { SwitchEvent } from '@nextui-org/react'
 import { Button, Card, Grid, Loading, Radio, Switch } from '@nextui-org/react'
+import { useAtom } from 'jotai'
 import * as React from 'react'
 import { createPortal } from 'react-dom'
-import { BrandContext } from '~/ctx'
 import { confirm, prompt } from '~/lib'
+import { slugsAtom, sortAtom } from '~/lib/atoms'
 import { StyledLabel, StyledRadioGrid } from './style'
 
 function Inner(props: FormProps) {
   const [loading, setLoading] = React.useState(() => false)
-  const ctx = React.useContext(BrandContext)
-  const slugs = [...ctx.slugs.entries()]
-
-  const handleAdd = React.useCallback(async () => {
-    try {
-      const vendor = await prompt('Enter a store URL')
-
-      setLoading(true)
-
-      const { slug: k } = await (await fetch(`/api/verify?u=${vendor}`)).json()
-
-      ctx.setState(s => ({ ...s, slugs: s.slugs.set(k, true), ts: Date.now() }))
-    } catch (err) {
-      // eslint-disable-next-line no-alert
-      alert('Store not found')
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const toggleVendor = React.useCallback(
-    (k: string) =>
-      ({ target: { checked: v } }: SwitchEvent) => {
-        setTimeout(
-          () =>
-            ctx.setState(s => ({
-              ...s,
-              slugs: s.slugs.set(k, v),
-              ts: Date.now()
-            })),
-          200
-        )
-      },
-    []
-  )
-
-  const handleDelete = React.useCallback(
-    (k: string) => async () => {
-      try {
-        await confirm(`Do you want to delete "${k}"?`)
-
-        ctx.setState(s => {
-          s.slugs.delete(k)
-
-          return { ...s, ts: Date.now() }
-        })
-      } catch (_) {}
-    },
-    []
-  )
-
-  const handleSort = React.useCallback(
-    (e: string | number) =>
-      ctx.setState(s => ({ ...s, sortBy: `${e}`, ts: Date.now() })),
-    []
-  )
+  const [sortBy, updateSort] = useAtom(sortAtom)
+  const [slugs, updateSlugs] = useAtom(slugsAtom)
 
   return (
     <Card
       css={{ inset: 'auto 0 0', pb: '5em', position: 'fixed' }}
       shadow
       {...props}>
-      <Card.Body key={ctx.ts} css={{ textAlign: 'center' }}>
+      <Card.Body css={{ textAlign: 'center' }}>
         <Grid.Container alignItems="center" gap={2} justify="center">
           <Grid>
             <Button
               auto
-              css={{ w: 100 }}
               disabled={loading}
-              onPointerDown={handleAdd}>
+              onPointerDown={async () => {
+                try {
+                  const vendor = await prompt('Enter a store URL')
+
+                  setLoading(true)
+
+                  const { slug: k } = await (
+                    await fetch(`/api/verify?u=${vendor}`)
+                  ).json()
+
+                  updateSlugs(s => ({ ...s, [k]: true }))
+                } catch (err) {
+                  // eslint-disable-next-line no-alert
+                  alert('Store not found')
+                } finally {
+                  setLoading(false)
+                }
+              }}>
               {!loading ? (
                 <StyledLabel size={11}>Add New</StyledLabel>
               ) : (
@@ -86,14 +48,29 @@ function Inner(props: FormProps) {
             </Button>
           </Grid>
 
-          {slugs.map(([k, v]) => (
+          {[...Object.entries(slugs)].map(([k, v]) => (
             <StyledRadioGrid key={k}>
-              <Switch initialChecked={!!v} onChange={toggleVendor(k)} shadow />
+              <Switch
+                initialChecked={!!v}
+                onChange={({ target: { checked } }) =>
+                  updateSlugs(s => ({ ...s, [k]: checked }))
+                }
+                shadow
+              />
 
-              <StyledLabel>
+              <StyledLabel size={10} transform="uppercase" weight="semibold">
                 <svg
                   fill="#ffffff"
-                  onClick={handleDelete(k)}
+                  onClick={async () => {
+                    try {
+                      await confirm(`Do you want to delete "${k}"?`)
+                      updateSlugs(s => {
+                        delete s[k]
+
+                        return s
+                      })
+                    } catch (_) {}
+                  }}
                   viewBox="0 0 24 24"
                   width={12}
                   xmlns="http://www.w3.org/2000/svg">
@@ -113,8 +90,8 @@ function Inner(props: FormProps) {
       <Card.Footer>
         <Radio.Group
           css={{ gap: 10, placeContent: 'center', w: '100%' }}
-          initialValue={ctx?.sortBy}
-          onChange={handleSort}
+          initialValue={sortBy}
+          onChange={e => updateSort(`${e}`)}
           row
           size="xs">
           {['price', 'updated_at', 'created_at', 'published_at'].map(i => (
