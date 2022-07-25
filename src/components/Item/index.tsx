@@ -79,7 +79,7 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
             flexDirection: 'row',
             flexWrap: 'nowrap',
             maxWidth: '100%',
-            overflow: 'overlay',
+            overflow: 'overlay hidden',
             placeContent: 'flex-start',
             placeItems: 'stretch',
             py: 0
