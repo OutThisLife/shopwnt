@@ -1,6 +1,7 @@
 import { Card, Col, Container, Row, Table, Text } from '@nextui-org/react'
+import { useQuery } from '@tanstack/react-query'
+import Image from 'next/future/image'
 import * as React from 'react'
-import { useQuery } from 'react-query'
 import type { Product, Variant } from '~/../types'
 import { fetcher, pick, relTime } from '~/lib'
 
@@ -85,24 +86,27 @@ export function Item({ children, handle, vendor, ...props }: ItemProps) {
           }}
           onClick={e => e.stopPropagation()}>
           {children ||
-            data?.product?.images?.map(({ id, src }) => (
+            data?.product?.images?.map(({ height, id, src, width }) => (
               <Container
                 key={id}
                 css={{
-                  '@lg': { width: '25% !important' },
-                  '@smMax': { width: '66.66% !important' },
+                  '@smMax': { width: '66% !important' },
                   flex: 'auto 0 0',
                   height: '100%',
+                  img: {
+                    height: '100%',
+                    objectFit: 'cover',
+                    objectPosition: 'center top',
+                    width: '100%'
+                  },
                   m: 0,
                   p: 0,
                   width: '33.33%'
                 }}>
-                <Card.Image
-                  css={{ objectPosition: 'center top' }}
-                  height="100%"
+                <Image
+                  height={Math.min(500, height ?? 500)}
                   loading="lazy"
-                  objectFit="cover"
-                  width="100%"
+                  width={Math.min(300, width ?? 300)}
                   {...{ src }}
                 />
               </Container>

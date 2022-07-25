@@ -1,5 +1,5 @@
  {
-  "extends": ["airbnb-typescript-prettier"],
+  "extends": ["next", "airbnb-typescript-prettier"],
   "ignorePatterns": [".eslintrc.js", "next.config.js"],
   "parser": "@typescript-eslint/parser",
   "plugins": [
@@ -46,7 +46,7 @@
     "sourceType": "module",
     "parserOptions": {
       "project": "tsconfig.json"
-    },
+    }
   },
   "root": true,
   "rules": {

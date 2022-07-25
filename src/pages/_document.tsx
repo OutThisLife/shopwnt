@@ -19,10 +19,10 @@ export default class extends Document {
         <Head>
           <meta charSet="UTF-8" />
 
-          <link href="//fonts.googleapis.com" rel="preconnect" />
+          <link href="https://fonts.googleapis.com" rel="preconnect" />
 
           <link
-            href="//fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap"
             rel="stylesheet"
           />
 
@@ -30,6 +30,7 @@ export default class extends Document {
             dangerouslySetInnerHTML={{
               __html: `navigator.serviceWorker.register('/worker.js', { scope: '/' })`
             }}
+            id="server-worker"
             strategy="beforeInteractive"
           />
 

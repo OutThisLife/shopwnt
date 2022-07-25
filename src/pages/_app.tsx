@@ -1,8 +1,8 @@
 import { createTheme, NextUIProvider } from '@nextui-org/react'
+import { QueryClientProvider } from '@tanstack/react-query'
 import type { AppProps, NextWebVitalsMetric } from 'next/app'
 import Head from 'next/head'
 import 'normalize.css'
-import { QueryClientProvider } from 'react-query'
 import { client } from '~/lib'
 
 const theme = createTheme({

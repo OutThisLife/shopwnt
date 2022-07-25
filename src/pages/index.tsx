@@ -1,8 +1,8 @@
 /* eslint-disable no-nested-ternary */
 import { Card, Container, Loading, Spacer } from '@nextui-org/react'
+import { useQueries } from '@tanstack/react-query'
 import { useAtomValue } from 'jotai'
 import * as React from 'react'
-import { useQueries } from 'react-query'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
@@ -40,8 +40,8 @@ export default function Index() {
   const sortBy = useAtomValue(sortAtom)
   const slugs = useAtomValue(slugsAtom)
 
-  const entries = useQueries(
-    [...Object.entries(slugs)]
+  const entries = useQueries({
+    queries: [...Object.entries(slugs)]
       .map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
       .map(k => ({
         enabled: !!slugs[k],
@@ -64,7 +64,7 @@ export default function Index() {
             })),
         suspense: true
       }))
-  )
+  })
 
   const res = React.useMemo(
     () =>
