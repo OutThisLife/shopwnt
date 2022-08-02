@@ -1,16 +1,20 @@
 import {
   ActionIcon,
   Drawer,
+  Group,
   LoadingOverlay,
   MultiSelect,
-  Select
+  Select,
+  useMantineColorScheme
 } from '@mantine/core'
-import { IconAdjustments } from '@tabler/icons'
+import { IconAdjustments, IconMoon, IconSun } from '@tabler/icons'
 import { useAtom } from 'jotai'
 import { useState } from 'react'
 import { slugsAtom, sortAtom } from '~/lib'
 
 export default function Form() {
+  const { colorScheme, toggleColorScheme } = useMantineColorScheme()
+
   const [opened, toggle] = useState<boolean>(() => false)
   const [loading, setLoading] = useState<boolean>(() => false)
 
@@ -19,18 +23,29 @@ export default function Form() {
 
   return (
     <>
-      <ActionIcon
-        onClick={() => toggle(s => !s)}
-        radius="lg"
-        size="lg"
+      <Group
+        spacing="xs"
         sx={{
           inset: '1rem 1rem auto auto',
           position: 'fixed',
           zIndex: 1e3 + 1
-        }}
-        variant="default">
-        <IconAdjustments />
-      </ActionIcon>
+        }}>
+        <ActionIcon
+          onClick={() => toggle(s => !s)}
+          radius="lg"
+          size="lg"
+          variant="default">
+          <IconAdjustments />
+        </ActionIcon>
+
+        <ActionIcon
+          onClick={() => toggleColorScheme()}
+          radius="lg"
+          size="lg"
+          variant="default">
+          {colorScheme === 'light' ? <IconMoon /> : <IconSun />}
+        </ActionIcon>
+      </Group>
 
       <Drawer
         onClose={() => toggle(false)}
