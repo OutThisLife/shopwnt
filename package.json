@@ -14,8 +14,16 @@
     "analyze": "npx -y cross-env ANALYZE=1 yarn build"
   },
   "dependencies": {
+    "@emotion/react": "^11.10.0",
+    "@emotion/server": "^11.10.0",
+    "@mantine/carousel": "^5.0.2",
+    "@mantine/core": "^5.0.2",
+    "@mantine/hooks": "^5.0.2",
+    "@mantine/next": "^5.0.2",
     "@nextui-org/react": "^1.0.8-beta.5",
+    "@tabler/icons": "^1.78.1",
     "@tanstack/react-query": "^4.0.10",
+    "embla-carousel-react": "^7.0.0",
     "fuse.js": "^6.6.2",
     "jotai": "^1.7.6",
     "next": "12.2.3",

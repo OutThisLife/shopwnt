@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+/* eslint-disable no-promise-executor-return */
 /* eslint-disable no-nested-ternary */
-import { Card, Container, Loading, Spacer } from '@nextui-org/react'
+import { Card, Container, Paper, Skeleton } from '@mantine/core'
 import { useQueries } from '@tanstack/react-query'
 import { useAtomValue } from 'jotai'
-import * as React from 'react'
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
@@ -10,33 +12,36 @@ import { fetcher, omit, slugsAtom, sortAtom } from '~/lib'
 
 function Loader() {
   return (
-    <Card>
-      <Loading size="xl" type="spinner" />
-    </Card>
+    <Paper p="lg" radius="md" shadow="xl">
+      <Skeleton height={15} mb={2} />
+      <Skeleton height={15} />
+      <Skeleton height={200} mt={10} />
+    </Paper>
   )
 }
 
-const Row = React.memo<RowProps>(
+const Row = memo<RowProps>(
   ({ index, style, data = [] }) => (
-    <React.Suspense fallback={<Loader />}>
-      <figure
-        style={{
-          margin: '0 auto',
-          paddingBottom: '2rem',
-          width: '100%',
-          ...style
-        }}>
+    <figure
+      role="listitem"
+      style={{
+        margin: '0 auto',
+        paddingBlock: '2rem',
+        width: '100%',
+        ...style
+      }}>
+      <Suspense fallback={<Loader />}>
         <Item {...(data as Product[])?.[index]} />
-      </figure>
-    </React.Suspense>
+      </Suspense>
+    </figure>
   ),
   areEqual
 )
 
-export default function Index() {
-  const ref = React.useRef<HTMLElement>(null)
-  const [itemSize, setItemSize] = React.useState<number>(() => 5e2)
+function Inner() {
+  const ref = useRef<HTMLDivElement>(null!)
 
+  const [itemSize, set] = useState(() => 5e2)
   const sortBy = useAtomValue(sortAtom)
   const slugs = useAtomValue(slugsAtom)
 
@@ -66,7 +71,7 @@ export default function Index() {
       }))
   })
 
-  const res = React.useMemo(
+  const res = useMemo(
     () =>
       (entries ?? [])
         .flatMap(e => e?.data ?? [])
@@ -94,46 +99,40 @@ export default function Index() {
     [entries, sortBy]
   )
 
-  const onResize = React.useCallback(async (el: HTMLElement) => {
-    const $items = (
-      [...(el?.getElementsByClassName('item') ?? [])] as HTMLElement[]
-    ).map($item => ({
-      $item,
-      images: [
-        ...($item?.getElementsByTagName('img') ?? [])
-      ] as HTMLImageElement[]
-    }))
-
-    if ($items.length) {
-      const h = await $items.reduce(async (acc, { $item, images = [] }) => {
-        await Promise.all(
-          images
-            .filter(i => !i.complete)
-            .map(
-              i =>
-                new Promise(r => {
-                  i.onload = r
-                })
-            )
-        )
-
-        const v = ($item?.clientHeight || 0) + ($item?.offsetTop || 0)
-
-        return Math.max(await acc, v)
-      }, Promise.resolve(0))
-
-      if (h) {
-        setItemSize(h)
-      }
-    }
-  }, [])
-
-  React.useEffect(() => {
+  useEffect(() => {
     if (!('browser' in process)) {
       return () => void null
     }
 
     const el = ref.current
+
+    const onResize = async (e: HTMLElement) => {
+      const $items = [
+        ...(e?.querySelectorAll('[role="listitem"] > div') ?? [])
+      ] as HTMLElement[]
+
+      if ($items.length) {
+        set(
+          await $items.reduce(async (acc, $item) => {
+            await Promise.all(
+              [...($item?.querySelectorAll('img') ?? [])]
+                ?.filter(i => !i.complete)
+                .map(
+                  i =>
+                    new Promise(r => {
+                      i.onload = r
+                    })
+                )
+            )
+
+            return Math.max(
+              await acc,
+              ($item?.clientHeight || 0) + ($item?.offsetTop || 0)
+            )
+          }, Promise.resolve(0))
+        )
+      }
+    }
 
     const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
 
@@ -147,7 +146,7 @@ export default function Index() {
     )
 
     if (el instanceof HTMLElement) {
-      ro.observe(el)
+      ro.observe(document.body)
       mo.observe(el, { childList: true, subtree: true })
     }
 
@@ -155,42 +154,41 @@ export default function Index() {
       mo?.disconnect()
       ro?.disconnect()
     }
-  }, [])
+  }, [res])
 
   return (
-    <>
-      <React.Suspense>
-        <Form />
-      </React.Suspense>
+    <Container {...{ ref }}>
+      {![...Object.values(slugs)].filter(i => i)?.length ? (
+        <Card>No vendors selected.</Card>
+      ) : !res?.length ? (
+        <Loader />
+      ) : (
+        <WindowScroller>
+          {p => (
+            <List
+              itemCount={res?.length ?? 0}
+              itemData={res}
+              width="100%"
+              {...{
+                height: 'browser' in process ? window.innerHeight : 787,
+                itemSize,
+                ...p
+              }}>
+              {Row}
+            </List>
+          )}
+        </WindowScroller>
+      )}
+    </Container>
+  )
+}
 
-      <Container as="section" css={{ p: 10 }}>
-        <Spacer y={1} />
-
-        {![...Object.values(slugs)].filter(i => i)?.length ? (
-          <Card>No vendors selected.</Card>
-        ) : !res?.length ? (
-          <Loader />
-        ) : (
-          <React.Suspense fallback={<Loader />}>
-            <WindowScroller>
-              {p => (
-                <List
-                  className="list"
-                  height={'browser' in process ? window.innerHeight : 768}
-                  itemCount={res?.length ?? 0}
-                  itemData={res}
-                  width="100%"
-                  {...{ itemSize, ...p }}>
-                  {Row}
-                </List>
-              )}
-            </WindowScroller>
-          </React.Suspense>
-        )}
-
-        <Spacer y={1} />
-      </Container>
-    </>
+export default function Index() {
+  return (
+    <Suspense fallback={null}>
+      <Form />
+      <Inner />
+    </Suspense>
   )
 }
 

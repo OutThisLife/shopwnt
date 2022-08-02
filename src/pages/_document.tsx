@@ -1,17 +1,11 @@
-import { CssBaseline } from '@nextui-org/react'
-import type { DocumentContext } from 'next/document'
+import { createGetInitialProps } from '@mantine/next'
 import Document, { Head, Html, Main, NextScript } from 'next/document'
 import Script from 'next/script'
 
-export default class extends Document {
-  static async getInitialProps(ctx: DocumentContext) {
-    const initialProps = await Document.getInitialProps(ctx)
+const getInitialProps = createGetInitialProps()
 
-    return {
-      ...initialProps,
-      styles: initialProps.styles
-    }
-  }
+export default class extends Document {
+  static getInitialProps = getInitialProps
 
   render() {
     return (
@@ -33,8 +27,6 @@ export default class extends Document {
             id="server-worker"
             strategy="beforeInteractive"
           />
-
-          {CssBaseline.flush()}
         </Head>
 
         <body>

@@ -1,20 +1,26 @@
-import * as React from 'react'
+import type { ReactElement } from 'react'
+import { useEffect, useRef } from 'react'
 
 export function WindowScroller({ children }: WindowProps) {
-  const ref = React.useRef<HTMLElement>()
-  const outerRef = React.useRef<HTMLElement>()
+  const ref = useRef<HTMLElement>()
+  const outerRef = useRef<HTMLElement>()
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (!('browser' in process)) {
+      return () => void null
+    }
+
+    const ac = new AbortController()
+    const { signal } = ac
+
     const onSCroll = () =>
       ref.current?.scrollTo(
         (window.scrollY - (outerRef.current?.offsetTop ?? 0)) as ScrollOptions
       )
 
-    const c = new AbortController()
+    window.addEventListener('scroll', onSCroll, { signal })
 
-    window.addEventListener('scroll', onSCroll, { signal: c.signal })
-
-    return () => c.abort()
+    return () => ac?.abort()
   }, [])
 
   return children({
@@ -30,7 +36,7 @@ export function WindowScroller({ children }: WindowProps) {
 }
 
 export interface WindowProps {
-  children(props: Record<string, any>): React.ReactElement
+  children(props: Record<string, any>): ReactElement
 }
 
 export default WindowScroller
