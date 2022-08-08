@@ -89,11 +89,10 @@ export default function Item({ handle, vendor }: Partial<Product>) {
                 }
               }}>
               <Image
-                blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8b5xWDwAF6gIZWJ1OJQAAAABJRU5ErkJggg=="
                 height={Math.min(500, i?.height ?? 500)}
                 loading="lazy"
-                placeholder="blur"
                 src={i.src}
+                unoptimized
                 width={Math.min(300, i?.width ?? 300)}
               />
             </Carousel.Slide>
