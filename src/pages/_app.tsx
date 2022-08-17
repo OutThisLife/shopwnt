@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
 import 'normalize.css'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { client } from '~/lib'
 
 export default function App({ Component, pageProps }: AppProps) {
@@ -15,14 +15,20 @@ export default function App({ Component, pageProps }: AppProps) {
       : 'light'
   )
 
-  const toggleColorScheme = (value?: ColorScheme) =>
-    setColorScheme(value || (colorScheme === 'dark' ? 'light' : 'dark'))
+  const toggleColorScheme = useCallback(
+    (value?: ColorScheme) =>
+      setColorScheme(st => value || (st === 'dark' ? 'light' : 'dark')),
+    []
+  )
 
   return (
     <>
       <Head>
         <title>shopwnt</title>
-        <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+        <meta
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0"
+          name="viewport"
+        />
       </Head>
 
       <main>

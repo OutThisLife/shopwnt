@@ -1,10 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
-/* eslint-disable no-promise-executor-return */
-/* eslint-disable no-nested-ternary */
+/* eslint-disable @typescript-eslint/no-non-null-assertion, no-promise-executor-return, no-nested-ternary */
 import { Card, Container, Paper, Skeleton } from '@mantine/core'
 import { useQueries } from '@tanstack/react-query'
 import { useAtomValue } from 'jotai'
-import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, Suspense, useEffect, useMemo, useState } from 'react'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
@@ -39,8 +37,6 @@ const Row = memo<RowProps>(
 )
 
 function Inner() {
-  const ref = useRef<HTMLDivElement>(null!)
-
   const [itemSize, set] = useState(() => 5e2)
   const sortBy = useAtomValue(sortAtom)
   const slugs = useAtomValue(slugsAtom)
@@ -104,7 +100,7 @@ function Inner() {
       return () => void null
     }
 
-    const el = ref.current
+    const el = document.querySelector('.list')
 
     const onResize = async (e: HTMLElement) => {
       const $items = [
@@ -117,12 +113,7 @@ function Inner() {
             await Promise.all(
               [...($item?.querySelectorAll('img') ?? [])]
                 ?.filter(i => !i.complete)
-                .map(
-                  i =>
-                    new Promise(r => {
-                      i.onload = r
-                    })
-                )
+                .map(i => new Promise(r => void (i.onload = r)))
             )
 
             return Math.max(
@@ -134,30 +125,31 @@ function Inner() {
       }
     }
 
-    const ro = new ResizeObserver(([e]) => onResize(e.target as HTMLElement))
+    const ro = new ResizeObserver(
+      () => el instanceof HTMLElement && onResize(el)
+    )
 
     const mo = new MutationObserver(
-      ([e]) =>
-        el instanceof HTMLElement &&
-        e.removedNodes.length &&
-        e.target instanceof HTMLElement &&
-        e.target.tagName === 'FIGURE' &&
-        onResize(el)
+      () => el instanceof HTMLElement && onResize(el)
     )
 
     if (el instanceof HTMLElement) {
-      ro.observe(document.body)
-      mo.observe(el, { childList: true, subtree: true })
+      ro.observe(el)
+      mo.observe(el, {
+        attributeFilter: ['role'],
+        childList: true,
+        subtree: true
+      })
     }
 
     return () => {
       mo?.disconnect()
       ro?.disconnect()
     }
-  }, [res])
+  }, [])
 
   return (
-    <Container {...{ ref }}>
+    <Container>
       {![...Object.values(slugs)].filter(i => i)?.length ? (
         <Card>No vendors selected.</Card>
       ) : !res?.length ? (
@@ -166,6 +158,7 @@ function Inner() {
         <WindowScroller>
           {p => (
             <List
+              className="list"
               itemCount={res?.length ?? 0}
               itemData={res}
               width="100%"

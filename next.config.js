@@ -83,15 +83,6 @@ module.exports = {
           }
         ],
         source: '/'
-      },
-      {
-        headers: [
-          {
-            key: 'Service-Worker-Allowed',
-            value: '/'
-          }
-        ],
-        source: '/service-worker.js'
       }
     ]
   },

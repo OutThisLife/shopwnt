@@ -65,7 +65,7 @@ export default function Form() {
           getCreateLabel={k => `+ Create ${k}`}
           label="Brands"
           mb="md"
-          onChange={e => {
+          onChange={e =>
             updateSlugs(s =>
               Object.keys(s).reduce(
                 (acc, k) => ({
@@ -75,7 +75,7 @@ export default function Form() {
                 {}
               )
             )
-          }}
+          }
           onCreate={v => {
             ;(async () => {
               try {
@@ -115,7 +115,7 @@ export default function Form() {
           )}
           dropdownPosition="flip"
           label="Sort By"
-          onChange={e => e && updateSort(e)}
+          onChange={e => e && (updateSort(e), toggle(false))}
           value={sortBy}
         />
       </Drawer>

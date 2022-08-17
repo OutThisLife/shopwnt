@@ -24,4 +24,4 @@ export const slugsAtom = atom(
   }
 )
 
-export const sortAtom = atom('updated_at')
+export const sortAtom = atom('created_at')

@@ -69,25 +69,24 @@ export default function Item({ handle, vendor }: Partial<Product>) {
 
       <Card.Section>
         <Carousel
-          align="start"
+          align={(data?.product?.images?.length ?? 0) > 1 ? 'start' : 'center'}
           breakpoints={[
             { minWidth: 'md', slideGap: 'sm', slideSize: '33.33%' },
             { maxWidth: 'sm', slideGap: 0, slideSize: '100%' }
           ]}
           height={400}
           loop
+          sx={{
+            img: {
+              height: '100%',
+              objectFit: 'cover',
+              width: '100%'
+            }
+          }}
           withControls
           withIndicators>
           {data?.product?.images?.map(i => (
-            <Carousel.Slide
-              key={i.src}
-              sx={{
-                img: {
-                  height: '100%',
-                  objectFit: 'cover',
-                  width: '100%'
-                }
-              }}>
+            <Carousel.Slide key={i.src}>
               <Image
                 height={Math.min(500, i?.height ?? 500)}
                 loading="lazy"
