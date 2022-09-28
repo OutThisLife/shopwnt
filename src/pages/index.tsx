@@ -1,12 +1,13 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion, no-promise-executor-return, no-nested-ternary */
 import { Card, Container, Paper, Skeleton } from '@mantine/core'
-import { useQueries } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
+import type { Variables } from 'graphql-request'
+import { gql, request } from 'graphql-request'
 import { useAtomValue } from 'jotai'
 import { memo, Suspense, useEffect, useMemo, useState } from 'react'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
-import { fetcher, omit, slugsAtom, sortAtom } from '~/lib'
+import { activeSlugsAtom, sortAtom } from '~/lib'
 
 function Loader() {
   return (
@@ -39,60 +40,58 @@ const Row = memo<RowProps>(
 function Inner() {
   const [itemSize, set] = useState(() => 5e2)
   const sortBy = useAtomValue(sortAtom)
-  const slugs = useAtomValue(slugsAtom)
+  const slugs = useAtomValue(activeSlugsAtom)
 
-  const entries = useQueries({
-    queries: [...Object.entries(slugs)]
-      .map(([k]) => k.toLocaleLowerCase().replace(/\s/g, '-'))
-      .map(k => ({
-        enabled: !!slugs[k],
-        queryFn: () =>
-          fetcher<Result>(`https://${k}.myshopify.com/products.json?limit=150`),
-        queryKey: ['products', k],
-        select: ({ products = [] }: Result): Product[] =>
-          products
-            .filter(p => !!p.images.length)
-            .map(p => ({
-              ...omit(
-                p,
-                'images',
-                'body_html',
-                'options',
-                'tags',
-                'originalVariants'
-              ),
-              vendor: k
-            })),
-        suspense: true
-      }))
+  const { data } = useQuery({
+    enabled: 'browser' in process,
+    queryFn: ({ queryKey: [, args] }) =>
+      request<Product[]>(
+        '/api/graphql',
+        gql`
+          query GetProducts($slugs: [ID!]!) {
+            getProducts(slugs: $slugs) {
+              id
+              created_at
+              handle
+              price
+              published_at
+              title
+              updated_at
+              vendor
+            }
+          }
+        `,
+        args as Variables
+      ),
+    queryKey: ['products', { slugs }],
+    select: (i: any): Product[] => i?.getProducts,
+    suspense: true
   })
 
   const res = useMemo(
     () =>
-      (entries ?? [])
-        .flatMap(e => e?.data ?? [])
-        .sort((a, b) => {
-          const k = sortBy
-          const av = `${a[k]}`
-          const bv = `${b[k]}`
+      data?.sort((a, b) => {
+        const k = sortBy
+        const av = `${a[k]}`
+        const bv = `${b[k]}`
 
-          switch (k) {
-            case 'price':
-              return (
-                parseFloat(b.variants?.[0]?.price) -
-                parseFloat(a?.variants?.[0]?.price)
-              )
+        switch (k) {
+          case 'price':
+            return (
+              parseFloat(b.variants?.[0]?.price) -
+              parseFloat(a?.variants?.[0]?.price)
+            )
 
-            case 'updated_at':
-            case 'created_at': {
-              return +new Date(bv) - +new Date(av)
-            }
-
-            default:
-              return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
+          case 'updated_at':
+          case 'created_at': {
+            return +new Date(bv) - +new Date(av)
           }
-        }),
-    [entries, sortBy]
+
+          default:
+            return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
+        }
+      }),
+    [data, sortBy]
   )
 
   useEffect(() => {
@@ -113,7 +112,12 @@ function Inner() {
             await Promise.all(
               [...($item?.querySelectorAll('img') ?? [])]
                 ?.filter(i => !i.complete)
-                .map(i => new Promise(r => void (i.onload = r)))
+                .map(
+                  i =>
+                    new Promise(r => {
+                      i.onload = r
+                    })
+                )
             )
 
             return Math.max(
@@ -148,46 +152,42 @@ function Inner() {
     }
   }, [])
 
+  if (!slugs?.length) {
+    return <Card>No vendors selected.</Card>
+  }
+
   return (
-    <Container>
-      {![...Object.values(slugs)].filter(i => i)?.length ? (
-        <Card>No vendors selected.</Card>
-      ) : !res?.length ? (
-        <Loader />
-      ) : (
-        <WindowScroller>
-          {p => (
-            <List
-              className="list"
-              itemCount={res?.length ?? 0}
-              itemData={res}
-              width="100%"
-              {...{
-                height: 'browser' in process ? window.innerHeight : 787,
-                itemSize,
-                ...p
-              }}>
-              {Row}
-            </List>
-          )}
-        </WindowScroller>
+    <WindowScroller>
+      {p => (
+        <List
+          className="list"
+          itemCount={res?.length ?? 0}
+          itemData={res}
+          width="100%"
+          {...{
+            height: 'browser' in process ? window.innerHeight : 787,
+            itemSize,
+            ...p
+          }}>
+          {Row}
+        </List>
       )}
-    </Container>
+    </WindowScroller>
   )
 }
 
 export default function Index() {
   return (
-    <Suspense fallback={null}>
-      <Form />
-      <Inner />
-    </Suspense>
-  )
-}
+    <Container>
+      <Suspense>
+        <Form />
+      </Suspense>
 
-interface Result {
-  products: Product[]
-  vendor: string
+      <Suspense fallback={<Loader />}>
+        <Inner />
+      </Suspense>
+    </Container>
+  )
 }
 
 interface RowProps {

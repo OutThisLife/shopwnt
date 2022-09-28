@@ -95,6 +95,10 @@ module.exports = {
 
   webpack: cfg => ({
     ...cfg,
+    experiments: {
+      ...cfg.experiments,
+      topLevelAwait: true
+    },
     resolve: {
       ...cfg.resolve,
       alias: {
