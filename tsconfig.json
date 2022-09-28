@@ -38,7 +38,7 @@
         "./src/*"
       ]
     },
-    "incremental": true
+    "incremental": true,
   },
   "include": [
     "src",
