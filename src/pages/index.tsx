@@ -43,7 +43,7 @@ function Inner() {
   const slugs = useAtomValue(activeSlugsAtom)
 
   const { data } = useQuery({
-    enabled: 'browser' in process,
+    enabled: !!slugs.length,
     queryFn: ({ queryKey: [, args] }) =>
       request<Product[]>(
         '/api/graphql',
