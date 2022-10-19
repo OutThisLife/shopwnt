@@ -5,7 +5,7 @@ import type { Variables } from 'graphql-request'
 import request, { gql } from 'graphql-request'
 import Image from 'next/future/image'
 import type { Product } from '~/../types'
-import { relTime } from '~/lib'
+import { clean, relTime } from '~/lib'
 
 export default function Item({ handle, vendor }: Partial<Product>) {
   const { data } = useQuery<Product>({
@@ -14,8 +14,11 @@ export default function Item({ handle, vendor }: Partial<Product>) {
       request<Product>(
         '/api/graphql',
         gql`
-          query GetProduct($slug: ID!, $handle: ID!) {
-            getProduct(slug: $slug, handle: $handle) {
+          query GetProduct($id: [ID!], $handle: [ID!]!) {
+            products(
+              where: { id_IN: $id, handle_IN: $handle }
+              options: { limit: 1 }
+            ) {
               price
               title
               updated_at
@@ -30,11 +33,11 @@ export default function Item({ handle, vendor }: Partial<Product>) {
         `,
         args as Variables
       ),
-    queryKey: ['product', { handle, slug: vendor }],
+    queryKey: ['product', { handle: [clean(vendor as string)], id: [handle] }],
     refetchInterval: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
-    select: (i: any): Product => i?.getProduct,
+    select: (i: any): Product => i?.products?.[0],
     suspense: true
   })
 

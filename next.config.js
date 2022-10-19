@@ -8,19 +8,10 @@ const {
 
 const nonProd = `${NON_PROD}` === 'true'
 
+/**
+ * @type {import('next').NextConfig}
+ */
 module.exports = {
-  experimental: {
-    images: {
-      allowFutureImage: true,
-      remotePatterns: [
-        {
-          hostname: '*.shopify.com',
-          protocol: 'https'
-        }
-      ]
-    }
-  },
-
   async headers() {
     const baseHeaders = [
       {
@@ -87,7 +78,15 @@ module.exports = {
     ]
   },
 
-  images: { formats: ['image/avif', 'image/webp'] },
+  images: {
+    formats: ['image/avif', 'image/webp'],
+    remotePatterns: [
+      {
+        hostname: '*.shopify.com',
+        protocol: 'https'
+      }
+    ]
+  },
   poweredByHeader: false,
   reactStrictMode: true,
   swcMinify: true,
