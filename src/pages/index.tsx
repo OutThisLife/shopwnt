@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import type { Variables } from 'graphql-request'
 import { gql, request } from 'graphql-request'
 import { useAtomValue } from 'jotai'
-import { memo, Suspense, useEffect, useMemo, useState } from 'react'
+import { memo, Suspense, useEffect, useState } from 'react'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
 import { Form, Item, List, WindowScroller } from '~/components'
@@ -43,13 +43,16 @@ function Inner() {
   const slugs = useAtomValue(activeSlugsAtom)
 
   const { data } = useQuery({
-    enabled: !!slugs.length,
+    enabled: 'browser' in process && !!slugs.length,
     queryFn: ({ queryKey: [, args] }) =>
       request<Product[]>(
         '/api/graphql',
         gql`
-          query GetProducts($slugs: [ID!]!) {
-            getProducts(slugs: $slugs) {
+          query GetProducts($slugs: [ID!]!, $sort: [ProductSort!]) {
+            products(
+              where: { handle_IN: $slugs }
+              options: { limit: 25, offset: 0, sort: $sort }
+            ) {
               id
               created_at
               handle
@@ -63,94 +66,51 @@ function Inner() {
         `,
         args as Variables
       ),
-    queryKey: ['products', { slugs }],
-    select: (i: any): Product[] => i?.getProducts,
+    queryKey: ['products', { slugs, sort: { [sortBy]: 'ASC' } }],
+    select: (i: any): Product[] => i?.products,
     suspense: true
   })
-
-  const res = useMemo(
-    () =>
-      data?.sort((a, b) => {
-        const k = sortBy
-        const av = `${a[k]}`
-        const bv = `${b[k]}`
-
-        switch (k) {
-          case 'price':
-            return (
-              parseFloat(b.variants?.[0]?.price) -
-              parseFloat(a?.variants?.[0]?.price)
-            )
-
-          case 'updated_at':
-          case 'created_at': {
-            return +new Date(bv) - +new Date(av)
-          }
-
-          default:
-            return `${av}`.toLowerCase().localeCompare(`${bv}`.toLowerCase())
-        }
-      }),
-    [data, sortBy]
-  )
 
   useEffect(() => {
     if (!('browser' in process)) {
       return () => void null
     }
 
-    const el = document.querySelector('.list')
+    const handle = async () => {
+      await Promise.all(
+        [...(document.querySelectorAll('img') ?? [])]
+          .filter(i => !i.complete)
+          .map(
+            i =>
+              new Promise(r => {
+                i.onload = r
+              })
+          )
+      )
 
-    const onResize = async (e: HTMLElement) => {
-      const $items = [
-        ...(e?.querySelectorAll('[role="listitem"] > div') ?? [])
-      ] as HTMLElement[]
-
-      if ($items.length) {
-        set(
-          await $items.reduce(async (acc, $item) => {
-            await Promise.all(
-              [...($item?.querySelectorAll('img') ?? [])]
-                ?.filter(i => !i.complete)
-                .map(
-                  i =>
-                    new Promise(r => {
-                      i.onload = r
-                    })
-                )
-            )
-
-            return Math.max(
-              await acc,
-              ($item?.clientHeight || 0) + ($item?.offsetTop || 0)
-            )
-          }, Promise.resolve(0))
+      set(
+        await [...(document.getElementsByTagName('figure') ?? [])].reduce(
+          async (acc, $item) =>
+            Math.max(await acc, $item.getBoundingClientRect().height),
+          Promise.resolve(0)
         )
-      }
+      )
     }
 
-    const ro = new ResizeObserver(
-      () => el instanceof HTMLElement && onResize(el)
-    )
-
-    const mo = new MutationObserver(
-      () => el instanceof HTMLElement && onResize(el)
-    )
+    const el = document.querySelector('.list')
+    const ro = new ResizeObserver(handle)
+    const mo = new MutationObserver(handle)
 
     if (el instanceof HTMLElement) {
       ro.observe(el)
-      mo.observe(el, {
-        attributeFilter: ['role'],
-        childList: true,
-        subtree: true
-      })
+      mo.observe(el, { childList: true, subtree: true })
     }
 
     return () => {
       mo?.disconnect()
       ro?.disconnect()
     }
-  }, [])
+  }, [data])
 
   if (!slugs?.length) {
     return <Card>No vendors selected.</Card>
@@ -161,8 +121,8 @@ function Inner() {
       {p => (
         <List
           className="list"
-          itemCount={res?.length ?? 0}
-          itemData={res}
+          itemCount={data?.length ?? 0}
+          itemData={data}
           width="100%"
           {...{
             height: 'browser' in process ? window.innerHeight : 787,

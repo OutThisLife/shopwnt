@@ -2,11 +2,38 @@ import { gql } from 'apollo-server-micro'
 
 export default gql`
   type Query {
-    getProducts(slugs: [ID!]!): [Product]
-    getProduct(slug: ID!, handle: ID!): Product
+    products(where: ProductWhere, options: Options): [Product!]!
   }
 
-  type Product @exclude(operations: [CREATE, UPDATE, DELETE]) {
+  scalar Date
+
+  enum SortDirection {
+    ASC
+    DESC
+  }
+
+  input ProductWhere {
+    OR: [ProductWhere!]
+    AND: [ProductWhere!]
+    handle_IN: [ID!]!
+    id_IN: [ID!]
+  }
+
+  input Options {
+    sort: [ProductSort!]
+    limit: Int
+    offset: Int
+  }
+
+  input ProductSort {
+    id: SortDirection
+    price: SortDirection
+    created_at: SortDirection
+    published_at: SortDirection
+    updated_at: SortDirection
+  }
+
+  type Product {
     id: ID!
     availability: Variant
     body_html: String
@@ -23,10 +50,10 @@ export default gql`
     updated_at: Date
     variants: [Variant]
     originalVariants: [Variant]
-    vendor: String
+    vendor: String!
   }
 
-  type Variant @exclude(operations: [CREATE, UPDATE, DELETE]) {
+  type Variant {
     id: ID!
     available: Boolean
     barcode: String
@@ -53,7 +80,7 @@ export default gql`
     weight: Int
   }
 
-  type Image @exclude(operations: [CREATE, UPDATE, DELETE]) {
+  type Image {
     id: ID!
     created_at: Date
     position: Int
@@ -65,7 +92,7 @@ export default gql`
     height: Int
   }
 
-  type Option @exclude(operations: [CREATE, UPDATE, DELETE]) {
+  type Option {
     name: String
     position: Int
     values: [String]

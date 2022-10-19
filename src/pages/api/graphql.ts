@@ -1,19 +1,13 @@
-import { Neo4jGraphQL } from '@neo4j/graphql'
+import { makeExecutableSchema } from '@graphql-tools/schema'
 import { ApolloServerPluginLandingPageGraphQLPlayground } from 'apollo-server-core'
 import { ApolloServer } from 'apollo-server-micro'
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { driver, resolvers, typeDefs } from '~/server'
-
-const schema = await new Neo4jGraphQL({
-  driver,
-  resolvers,
-  typeDefs
-}).getSchema()
+import { resolvers, typeDefs } from '~/server'
 
 const server = new ApolloServer({
   introspection: true,
   plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
-  schema
+  schema: makeExecutableSchema({ resolvers, typeDefs })
 })
 
 const startServer = server.start()
