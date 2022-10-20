@@ -1,11 +1,12 @@
 import type { ColorScheme } from '@mantine/core'
 import { ColorSchemeProvider, MantineProvider } from '@mantine/core'
+import { NotificationsProvider } from '@mantine/notifications'
 import { QueryClientProvider } from '@tanstack/react-query'
 import type { AppProps } from 'next/app'
 import Head from 'next/head'
-import 'normalize.css'
 import { useCallback, useState } from 'react'
 import { client } from '~/lib'
+import { theme } from '~/theme'
 
 export default function App({ Component, pageProps }: AppProps) {
   const [colorScheme, setColorScheme] = useState<ColorScheme>(() =>
@@ -31,32 +32,18 @@ export default function App({ Component, pageProps }: AppProps) {
         />
       </Head>
 
-      <main>
-        <QueryClientProvider {...{ client }}>
-          <ColorSchemeProvider {...{ colorScheme, toggleColorScheme }}>
-            <MantineProvider
-              theme={{
-                colorScheme,
-                components: {
-                  Button: {
-                    defaultProps: {
-                      color: 'pink'
-                    }
-                  },
-                  Switch: {
-                    defaultProps: {
-                      color: 'pink'
-                    }
-                  }
-                }
-              }}
-              withGlobalStyles
-              withNormalizeCSS>
+      <QueryClientProvider {...{ client }}>
+        <ColorSchemeProvider {...{ colorScheme, toggleColorScheme }}>
+          <MantineProvider
+            theme={{ colorScheme, ...theme }}
+            withGlobalStyles
+            withNormalizeCSS>
+            <NotificationsProvider>
               <Component {...pageProps} />
-            </MantineProvider>
-          </ColorSchemeProvider>
-        </QueryClientProvider>
-      </main>
+            </NotificationsProvider>
+          </MantineProvider>
+        </ColorSchemeProvider>
+      </QueryClientProvider>
     </>
   )
 }

@@ -1,4 +1,4 @@
-import { Card, Container, Paper, Skeleton } from '@mantine/core'
+import { AppShell, Card, Container, Paper, Skeleton } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import type { Variables } from 'graphql-request'
 import { gql, request } from 'graphql-request'
@@ -138,15 +138,23 @@ function Inner() {
 
 export default function Index() {
   return (
-    <Container>
-      <Suspense>
-        <Form />
-      </Suspense>
+    <AppShell
+      styles={t => ({
+        main: {
+          backgroundColor:
+            t.colorScheme === 'dark' ? t.colors.dark[8] : t.colors.gray[0]
+        }
+      })}>
+      <Container>
+        <Suspense>
+          <Form />
+        </Suspense>
 
-      <Suspense fallback={<Loader />}>
-        <Inner />
-      </Suspense>
-    </Container>
+        <Suspense fallback={<Loader />}>
+          <Inner />
+        </Suspense>
+      </Container>
+    </AppShell>
   )
 }
 

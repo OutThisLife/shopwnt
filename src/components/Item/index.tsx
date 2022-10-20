@@ -1,9 +1,11 @@
 import { Carousel } from '@mantine/carousel'
-import { Badge, Card, Group, Text, Title } from '@mantine/core'
+import { Anchor, Badge, Card, Group, Text } from '@mantine/core'
+import { IconExternalLink } from '@tabler/icons'
 import { useQuery } from '@tanstack/react-query'
 import type { Variables } from 'graphql-request'
 import request, { gql } from 'graphql-request'
 import Image from 'next/future/image'
+import { useMemo } from 'react'
 import type { Product } from '~/../types'
 import { clean, relTime } from '~/lib'
 
@@ -41,23 +43,21 @@ export default function Item({ handle, vendor }: Partial<Product>) {
     suspense: true
   })
 
-  if (!data) {
-    return null
-  }
+  const multi = useMemo(() => Number(data?.images?.length) > 1, [data])
 
   return (
-    <Card p="md" radius="md" shadow="sm" withBorder>
+    <Card p="lg" radius="md" shadow="sm">
       <Group mb="sm" position="apart">
         <div>
-          <Title order={3}>
-            <a
-              href={data?.url}
-              rel="noopener noreferrer"
-              style={{ color: 'inherit' }}
-              target="_blank">
-              {data?.title}
-            </a>
-          </Title>
+          <Anchor<'a'>
+            color="primary"
+            href={data?.url}
+            rel="noopener noreferrer"
+            size="xl"
+            sx={{ fontWeight: 500 }}
+            target="_blank">
+            {data?.title} <IconExternalLink size={14} />
+          </Anchor>
 
           <Text color="dimmed" size="xs" transform="uppercase">
             {vendor} &mdash; {relTime(data?.updated_at)}
@@ -79,18 +79,11 @@ export default function Item({ handle, vendor }: Partial<Product>) {
             { minWidth: 'md', slideGap: 'sm', slideSize: '33.33%' },
             { maxWidth: 'sm', slideGap: 0, slideSize: '100%' }
           ]}
-          draggable={data?.images?.length > 1}
+          draggable={multi}
           height={400}
           loop
-          sx={{
-            img: {
-              height: '100%',
-              objectFit: 'cover',
-              width: '100%'
-            }
-          }}
-          withControls={data?.images?.length > 1}
-          withIndicators={data?.images?.length > 1}>
+          withControls={multi}
+          withIndicators={multi}>
           {data?.images?.map(i => (
             <Carousel.Slide key={i.src}>
               <Image
@@ -98,6 +91,12 @@ export default function Item({ handle, vendor }: Partial<Product>) {
                 height={Math.min(500, i?.height ?? 500)}
                 loading="lazy"
                 src={i.src}
+                style={{
+                  aspectRatio: '1 / 2',
+                  height: '100%',
+                  objectFit: 'cover',
+                  width: '100%'
+                }}
                 unoptimized
                 width={Math.min(300, i?.width ?? 300)}
               />
