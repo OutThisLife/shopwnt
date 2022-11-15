@@ -1,3 +1,5 @@
+'use client'
+
 import { lazy } from 'react'
 
 export { FixedSizeList as List } from 'react-window'

@@ -4,7 +4,7 @@ import { IconExternalLink } from '@tabler/icons'
 import { useQuery } from '@tanstack/react-query'
 import type { Variables } from 'graphql-request'
 import request, { gql } from 'graphql-request'
-import Image from 'next/future/image'
+import Image from 'next/image'
 import { useMemo } from 'react'
 import type { Product } from '~/../types'
 import { clean, relTime } from '~/lib'
@@ -74,10 +74,10 @@ export default function Item({ handle, vendor }: Partial<Product>) {
 
       <Card.Section>
         <Carousel
-          align={(data?.images?.length ?? 0) > 1 ? 'start' : 'center'}
+          align={multi ? 'start' : 'center'}
           breakpoints={[
-            { minWidth: 'md', slideGap: 'sm', slideSize: '33.33%' },
-            { maxWidth: 'sm', slideGap: 0, slideSize: '100%' }
+            { minWidth: 'md', slideGap: 'xs', slideSize: '33.33%' },
+            { maxWidth: 'sm', slideGap: 0, slideSize: '100%%' }
           ]}
           draggable={multi}
           height={400}
@@ -92,9 +92,9 @@ export default function Item({ handle, vendor }: Partial<Product>) {
                 loading="lazy"
                 src={i.src}
                 style={{
-                  aspectRatio: '1 / 2',
                   height: '100%',
-                  objectFit: 'cover',
+                  objectFit: 'contain',
+                  objectPosition: 'center top',
                   width: '100%'
                 }}
                 unoptimized

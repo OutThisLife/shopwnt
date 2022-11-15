@@ -8,10 +8,18 @@ const {
 
 const nonProd = `${NON_PROD}` === 'true'
 
-/**
- * @type {import('next').NextConfig}
- */
+/** @type {import('next').NextConfig} */
 module.exports = {
+  experimental: {
+    appDir: true,
+    serverComponentsExternalPackages: [
+      'next-seo',
+      'typescript',
+      'prettier',
+      'webpack'
+    ]
+  },
+
   async headers() {
     const baseHeaders = [
       {
