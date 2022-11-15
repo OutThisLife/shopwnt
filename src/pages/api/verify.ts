@@ -3,7 +3,12 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 export default async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const t = await (
-      await fetch(`https://${req.query?.u?.replace(/^(https?:\/\/|\/\/)/, '')}`)
+      await fetch(
+        `https://${(req.query?.u as string)?.replace(
+          /^(https?:\/\/|\/\/)/,
+          ''
+        )}`
+      )
     ).text()
 
     const m = t.match(/([A-z0-9-_]+)\.myshopify\.com/)
