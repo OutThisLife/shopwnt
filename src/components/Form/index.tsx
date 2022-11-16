@@ -25,7 +25,6 @@ export default function Form() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme()
 
   const [opened, toggle] = useState<boolean>(() => false)
-
   const [sortBy, updateSort] = useAtom(sortAtom)
   const [slugs, updateSlugs] = useAtom(slugsAtom)
 
