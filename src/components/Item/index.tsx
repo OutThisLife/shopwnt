@@ -36,7 +36,6 @@ export default function Item({ handle, vendor }: Partial<Product>) {
         args as Variables
       ),
     queryKey: ['product', { handle: [clean(vendor as string)], id: [handle] }],
-    refetchInterval: false,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     select: (i: any): Product => i?.products?.[0],

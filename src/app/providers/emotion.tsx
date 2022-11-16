@@ -9,13 +9,14 @@ import {
 } from '@mantine/core'
 import { NotificationsProvider } from '@mantine/notifications'
 import { useServerInsertedHTML } from 'next/navigation'
+import type { ReactNode } from 'react'
 import { useCallback, useState } from 'react'
 import { theme } from '~/theme'
 
 export default function RootStyleRegistry({
   children
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   const cache = useEmotionCache()
   cache.compat = true

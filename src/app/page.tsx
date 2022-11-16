@@ -1,6 +1,6 @@
 'use client'
 
-import { AppShell, Card, Container } from '@mantine/core'
+import { Card } from '@mantine/core'
 import { useQuery } from '@tanstack/react-query'
 import type { Variables } from 'graphql-request'
 import { gql, request } from 'graphql-request'
@@ -8,7 +8,7 @@ import { useAtomValue } from 'jotai'
 import { memo, Suspense } from 'react'
 import { areEqual } from 'react-window'
 import type { Product } from '~/../types'
-import { Form, Item, List, WindowScroller } from '~/components'
+import { Item, List, WindowScroller } from '~/components'
 import { activeSlugsAtom, sortAtom } from '~/lib'
 import Loading from './loading'
 
@@ -64,38 +64,26 @@ export default function Index() {
   })
 
   if (!slugs?.length) {
-    return <Card>No vendors selected.</Card>
+    return <Card>No vendors selected</Card>
   }
 
   return (
-    <AppShell
-      styles={t => ({
-        main: {
-          backgroundColor:
-            t.colorScheme === 'dark' ? t.colors.dark[8] : t.colors.gray[0]
-        }
-      })}>
-      <Container>
-        <Form />
-
-        <WindowScroller>
-          {p => (
-            <List
-              className="list"
-              width="100%"
-              {...{
-                height: 'browser' in process ? window.innerHeight : 787,
-                itemCount: data?.length ?? 0,
-                itemData: data,
-                itemSize: 500,
-                ...p
-              }}>
-              {Row}
-            </List>
-          )}
-        </WindowScroller>
-      </Container>
-    </AppShell>
+    <WindowScroller>
+      {p => (
+        <List
+          className="list"
+          width="100%"
+          {...{
+            height: 'browser' in process ? window.innerHeight : 787,
+            itemCount: data?.length ?? 0,
+            itemData: data,
+            itemSize: 500,
+            ...p
+          }}>
+          {Row}
+        </List>
+      )}
+    </WindowScroller>
   )
 }
 
