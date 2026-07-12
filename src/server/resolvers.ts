@@ -1,6 +1,10 @@
 import type { Product as IProduct } from '~/../types'
 import { clean, fetcher } from '~/lib'
 
+const PER_PAGE = 250
+const MAX_PAGES = 20
+const TTL = 5 * 60_000
+
 const shopify = (slug: string, path: string) =>
   new URL(path, `https://${slug}.myshopify.com`).toString()
 
@@ -12,6 +16,47 @@ const cmp: Record<string, (a: any, b: any) => number> = {
   created_at: (a, b) => timeOf(a, 'created_at') - timeOf(b, 'created_at'),
   updated_at: (a, b) => timeOf(a, 'updated_at') - timeOf(b, 'updated_at'),
   published_at: (a, b) => timeOf(a, 'published_at') - timeOf(b, 'published_at')
+}
+
+// products.json only supports limit/page — sorting must be done here, over the
+// full catalog. Cache the walk so infinite-scroll pages don't re-fetch it all.
+const cache = new Map<string, { at: number; items: IProduct[] }>()
+
+const catalog = async (slug: string): Promise<IProduct[]> => {
+  const hit = cache.get(slug)
+
+  if (hit && Date.now() - hit.at < TTL) {
+    return hit.items
+  }
+
+  const items: IProduct[] = []
+
+  for (let page = 1; page <= MAX_PAGES; page++) {
+    const u = new URL(shopify(slug, 'products.json'))
+
+    u.searchParams.set('limit', `${PER_PAGE}`)
+    u.searchParams.set('page', `${page}`)
+
+    try {
+      const { products } = await fetcher<{ products?: IProduct[] }>(u.toString())
+
+      if (!products?.length) {
+        break
+      }
+
+      items.push(...products)
+
+      if (products.length < PER_PAGE) {
+        break
+      }
+    } catch {
+      break
+    }
+  }
+
+  cache.set(slug, { at: Date.now(), items })
+
+  return items
 }
 
 export const Query = {
@@ -31,30 +76,24 @@ export const Query = {
       )
     }
 
-    const { limit = 250, offset = 0, sort } = options
-    const [field, dir] = Object.entries(sort?.[0] ?? { updated_at: 'ASC' })[0]
+    const { limit = 24, offset = 0, sort } = options
+    const [field, dir] = Object.entries(sort?.[0] ?? { created_at: 'DESC' })[0]
     const by =
-      cmp[field] ??
-      ((a, b) => `${a?.[field]}`.localeCompare(`${b?.[field]}`))
+      cmp[field] ?? ((a, b) => `${a?.[field]}`.localeCompare(`${b?.[field]}`))
 
-    const pages = await Promise.all(
-      handles.map(k => {
-        const u = new URL(shopify(k, 'products.json'))
-
-        u.searchParams.set('limit', `${limit}`)
-        u.searchParams.set('page', `${offset}`)
-
-        return fetcher<{ products?: IProduct[] }>(u.toString())
-      })
-    )
-
-    return pages
-      .flatMap(({ products }, n) =>
-        (products ?? [])
-          .filter(i => i?.variants?.length)
-          .map(i => ({ ...i, vendor: handles[n] }))
+    const merged = (
+      await Promise.all(
+        handles.map(async k =>
+          (await catalog(k))
+            .filter(i => i?.variants?.length)
+            .map(i => ({ ...i, vendor: k }))
+        )
       )
-      .sort((a, b) => (dir === 'ASC' ? by(a, b) : by(b, a)))
+    ).flat()
+
+    merged.sort((a, b) => (dir === 'ASC' ? by(a, b) : by(b, a)))
+
+    return merged.slice(offset, offset + limit)
   }
 }
 

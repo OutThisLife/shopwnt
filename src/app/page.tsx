@@ -72,7 +72,7 @@ export default function Index() {
   } = useInfiniteQuery({
     enabled: slugs.length > 0,
     queryKey: ['products', { slugs, sort: sortArg }],
-    initialPageParam: 1,
+    initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       gqlFetch<{ products: Product[] }>(QUERY, {
         slugs,
@@ -81,7 +81,7 @@ export default function Index() {
         offset: pageParam
       }).then(r => r.products ?? []),
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length ? allPages.length + 1 : undefined
+      lastPage.length < PAGE_SIZE ? undefined : allPages.flat().length
   })
 
   const products = data?.pages.flat() ?? []
