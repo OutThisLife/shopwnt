@@ -6,7 +6,14 @@ import { Loader2, PackageOpen, Store, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { Product } from '~/../types'
 import { Item } from '~/components'
-import { activeSlugsAtom, getSortOption, gql, gqlFetch, sortAtom } from '~/lib'
+import {
+  activeSlugsAtom,
+  getSortOption,
+  gql,
+  gqlFetch,
+  searchAtom,
+  sortAtom
+} from '~/lib'
 import Loading from './loading'
 
 const PAGE_SIZE = 24
@@ -16,12 +23,13 @@ const GRID = 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'
 const QUERY = gql`
   query GetProducts(
     $slugs: [ID!]!
+    $q: String
     $sort: [ProductSort!]
     $limit: Int
     $offset: Int
   ) {
     products(
-      where: { handle_IN: $slugs }
+      where: { handle_IN: $slugs, q: $q }
       options: { limit: $limit, offset: $offset, sort: $sort }
     ) {
       id
@@ -59,6 +67,7 @@ function EmptyState({
 export default function Index() {
   const sortId = useAtomValue(sortAtom)
   const slugs = useAtomValue(activeSlugsAtom)
+  const q = useAtomValue(searchAtom)
   const sort = getSortOption(sortId)
   const sortArg = { [sort.field]: sort.dir }
 
@@ -71,11 +80,12 @@ export default function Index() {
     fetchNextPage
   } = useInfiniteQuery({
     enabled: slugs.length > 0,
-    queryKey: ['products', { slugs, sort: sortArg }],
+    queryKey: ['products', { slugs, sort: sortArg, q }],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       gqlFetch<{ products: Product[] }>(QUERY, {
         slugs,
+        q,
         sort: sortArg,
         limit: PAGE_SIZE,
         offset: pageParam
@@ -142,9 +152,13 @@ export default function Index() {
   if (!products.length) {
     return (
       <EmptyState
-        description="No products came back for the selected brands."
+        description={
+          q
+            ? `Nothing matched “${q}”. Try a different term.`
+            : 'No products came back for the selected brands.'
+        }
         icon={<PackageOpen className="size-6" />}
-        title="Nothing here yet"
+        title={q ? 'No matches' : 'Nothing here yet'}
       />
     )
   }

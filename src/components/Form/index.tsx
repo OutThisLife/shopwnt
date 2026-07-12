@@ -5,6 +5,7 @@ import { X } from 'lucide-react'
 import { slugsAtom } from '~/lib'
 import { BrandFilter } from '../brand-filter'
 import { ModeToggle } from '../mode-toggle'
+import { SearchBox } from '../search-box'
 import { SortSelect } from '../sort-select'
 import { Badge } from '../ui/badge'
 
@@ -20,11 +21,11 @@ export default function Toolbar() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/75 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
-        <span className="text-lg font-semibold tracking-tight">
-          shopwnt
-        </span>
+        <span className="text-lg font-semibold tracking-tight">shopwnt</span>
 
-        <div className="ml-auto flex items-center gap-2">
+        <SearchBox className="mx-1 max-w-xs flex-1 sm:mx-3" />
+
+        <div className="flex items-center gap-2">
           <SortSelect className="hidden sm:flex" />
           <BrandFilter />
           <ModeToggle />

@@ -66,3 +66,5 @@ export const activeSlugsAtom = atom(get =>
 )
 
 export const sortAtom = atomWithStorage<SortId>('shopwnt:sort', 'newest')
+
+export const searchAtom = atom('')

@@ -11,6 +11,30 @@ const shopify = (slug: string, path: string) =>
 const priceOf = (i: IProduct) => parseFloat(i?.variants?.[0]?.price) || 0
 const timeOf = (i: any, k: string) => +new Date(i?.[k]) || 0
 
+const norm = (s: string) =>
+  `${s ?? ''}`
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+
+const haystack = (i: any) =>
+  norm(
+    [i?.title, i?.product_type, i?.vendor, [i?.tags].flat().join(' ')]
+      .filter(Boolean)
+      .join(' ')
+  )
+
+const matches = (q: string) => {
+  const tokens = norm(q).split(/\s+/).filter(Boolean)
+
+  return (i: IProduct) => {
+    const hay = haystack(i)
+
+    return tokens.every(t => hay.includes(t))
+  }
+}
+
 const cmp: Record<string, (a: any, b: any) => number> = {
   price: (a, b) => priceOf(a) - priceOf(b),
   created_at: (a, b) => timeOf(a, 'created_at') - timeOf(b, 'created_at'),
@@ -77,6 +101,7 @@ export const Query = {
     }
 
     const { limit = 24, offset = 0, sort } = options
+    const q: string = where.q ?? ''
     const [field, dir] = Object.entries(sort?.[0] ?? { created_at: 'DESC' })[0]
     const by =
       cmp[field] ?? ((a, b) => `${a?.[field]}`.localeCompare(`${b?.[field]}`))
@@ -91,9 +116,11 @@ export const Query = {
       )
     ).flat()
 
-    merged.sort((a, b) => (dir === 'ASC' ? by(a, b) : by(b, a)))
+    const found = q.trim() ? merged.filter(matches(q)) : merged
 
-    return merged.slice(offset, offset + limit)
+    found.sort((a, b) => (dir === 'ASC' ? by(a, b) : by(b, a)))
+
+    return found.slice(offset, offset + limit)
   }
 }
 

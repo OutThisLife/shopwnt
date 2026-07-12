@@ -15,6 +15,7 @@ const typeDefs = /* GraphQL */ `
     AND: [ProductWhere!]
     handle_IN: [ID!]!
     id_IN: [ID!]
+    q: String
   }
 
   input Options {
