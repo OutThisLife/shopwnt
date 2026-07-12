@@ -33,7 +33,6 @@ export const getSortOption = (id: SortId): SortOption =>
   SORT_OPTIONS.find(o => o.value === id) ?? SORT_OPTIONS[0]
 
 const DEFAULT_BRANDS: Record<string, boolean> = {
-  fillyboo: false,
   'for-love-lemons': false,
   'frame-denim': false,
   loveshackfancy: true,

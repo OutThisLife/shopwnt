@@ -21,7 +21,11 @@ export default function Toolbar() {
     <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
         <span className="shrink-0 text-lg font-semibold tracking-tight">
-          shop<span className="text-primary">wnt</span>
+          sho
+          <span className="bg-gradient-to-r from-foreground from-50% to-primary to-50% bg-clip-text text-transparent">
+            p
+          </span>
+          <span className="text-primary">wnt</span>
         </span>
 
         <div className="flex min-w-0 flex-1 justify-center px-1 sm:px-3">
