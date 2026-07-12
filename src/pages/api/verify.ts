@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 
-export default async (req: NextApiRequest, res: NextApiResponse) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   try {
     const t = await (
       await fetch(
@@ -18,7 +18,9 @@ export default async (req: NextApiRequest, res: NextApiResponse) => {
     }
 
     res.status(200).json({ slug: m?.at(1) })
-  } catch (err: any) {
+  } catch {
     res.status(500).end()
   }
 }
+
+export default handler

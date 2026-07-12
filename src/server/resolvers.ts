@@ -1,74 +1,65 @@
-import type { IResolvers } from '@graphql-tools/utils'
 import type { Product as IProduct } from '~/../types'
 import { clean, fetcher } from '~/lib'
 
-export const Query: IResolvers<any, any, any> = {
-  products: async (_, args) => {
-    const ids: string[] = args?.where?.id_IN ?? []
-    const handles: string[] = args?.where?.handle_IN ?? []
+const shopify = (slug: string, path: string) =>
+  new URL(path, `https://${slug}.myshopify.com`).toString()
 
-    if (ids?.length && handles?.length) {
-      return (
-        await Promise.all(
-          ids?.map(async id => {
-            const u = new URL(
-              `products/${id}.json`,
-              `https://${handles?.[0]}.myshopify.com`
-            )
+const priceOf = (i: IProduct) => parseFloat(i?.variants?.[0]?.price) || 0
+const timeOf = (i: any, k: string) => +new Date(i?.[k]) || 0
 
-            return fetcher<{ product?: IProduct }>(u.toString())
-          })
+const cmp: Record<string, (a: any, b: any) => number> = {
+  price: (a, b) => priceOf(a) - priceOf(b),
+  created_at: (a, b) => timeOf(a, 'created_at') - timeOf(b, 'created_at'),
+  updated_at: (a, b) => timeOf(a, 'updated_at') - timeOf(b, 'updated_at'),
+  published_at: (a, b) => timeOf(a, 'published_at') - timeOf(b, 'published_at')
+}
+
+export const Query = {
+  products: async (_: unknown, { where = {}, options = {} }: any) => {
+    const ids: string[] = where.id_IN ?? []
+    const handles: string[] = where.handle_IN ?? []
+
+    if (ids.length && handles.length) {
+      const res = await Promise.all(
+        ids.map(id =>
+          fetcher<{ product?: IProduct }>(shopify(handles[0], `products/${id}.json`))
         )
-      )?.flatMap(({ product }) => product)
+      )
+
+      return res.flatMap(({ product }) =>
+        product ? [{ ...product, vendor: handles[0] }] : []
+      )
     }
 
-    return (
-      await Promise.all(
-        handles?.flatMap(async k => {
-          const u = new URL('products.json', `https://${k}.myshopify.com`)
+    const { limit = 250, offset = 0, sort } = options
+    const [field, dir] = Object.entries(sort?.[0] ?? { updated_at: 'ASC' })[0]
+    const by =
+      cmp[field] ??
+      ((a, b) => `${a?.[field]}`.localeCompare(`${b?.[field]}`))
 
-          u.searchParams.append('limit', `${args?.options?.limit ?? 250}`)
-          u.searchParams.append('page', `${args?.options?.offset ?? 0}`)
+    const pages = await Promise.all(
+      handles.map(k => {
+        const u = new URL(shopify(k, 'products.json'))
 
-          return fetcher<{ products?: IProduct[] }>(u.toString())
-        })
-      )
-    )
-      ?.flatMap(({ products }, n) =>
-        [...(products ?? [])]
-          .map(i => ({ ...i, vendor: handles[n] }))
-          .filter(i => !!i?.variants?.length)
-      )
-      ?.sort((prev, next) => {
-        const [k, v] = Object.entries(
-          args?.options?.sort?.[0] ?? { updated_at: 'ASC' }
-        )[0]
+        u.searchParams.set('limit', `${limit}`)
+        u.searchParams.set('page', `${offset}`)
 
-        const a = v === 'ASC' ? prev : next
-        const b = v === 'ASC' ? next : prev
-
-        switch (k) {
-          case 'price':
-            return (
-              parseFloat(a?.variants?.[0]?.price) -
-              parseFloat(b?.variants?.[0]?.price)
-            )
-
-          case 'updated_at':
-          case 'created_at': {
-            return +new Date(a[k]) - +new Date(b[k])
-          }
-
-          default:
-            return `${a[k]}`
-              .toLowerCase()
-              .localeCompare(`${b[k]}`.toLowerCase())
-        }
+        return fetcher<{ products?: IProduct[] }>(u.toString())
       })
+    )
+
+    return pages
+      .flatMap(({ products }, n) =>
+        (products ?? [])
+          .filter(i => i?.variants?.length)
+          .map(i => ({ ...i, vendor: handles[n] }))
+      )
+      .sort((a, b) => (dir === 'ASC' ? by(a, b) : by(b, a)))
   }
 }
 
-export const Product: IResolvers<IProduct, any, never> = {
-  price: i => i?.price ?? i?.variants?.[0]?.price,
-  url: i => `https://${clean(i?.vendor)}.myshopify.com/products/${i?.handle}`
+export const Product = {
+  price: (i: IProduct) => i?.variants?.[0]?.price ?? i?.price,
+  url: (i: IProduct) =>
+    `https://${clean(i?.vendor)}.myshopify.com/products/${i?.handle}`
 }

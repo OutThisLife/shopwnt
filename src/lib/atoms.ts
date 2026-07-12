@@ -1,8 +1,38 @@
 import { atom } from 'jotai'
+import { atomWithStorage } from 'jotai/utils'
 import type { SetStateAction } from 'react'
 import { clean, client } from '.'
 
-const slugs = atom<Record<string, boolean>>({
+export type SortField = 'price' | 'updated_at' | 'created_at' | 'published_at'
+export type SortDir = 'ASC' | 'DESC'
+export type SortId =
+  | 'newest'
+  | 'oldest'
+  | 'updated'
+  | 'published'
+  | 'price_asc'
+  | 'price_desc'
+
+export interface SortOption {
+  value: SortId
+  label: string
+  field: SortField
+  dir: SortDir
+}
+
+export const SORT_OPTIONS: SortOption[] = [
+  { value: 'newest', label: 'Newest', field: 'created_at', dir: 'DESC' },
+  { value: 'oldest', label: 'Oldest', field: 'created_at', dir: 'ASC' },
+  { value: 'updated', label: 'Recently updated', field: 'updated_at', dir: 'DESC' },
+  { value: 'published', label: 'Recently published', field: 'published_at', dir: 'DESC' },
+  { value: 'price_asc', label: 'Price: Low to High', field: 'price', dir: 'ASC' },
+  { value: 'price_desc', label: 'Price: High to Low', field: 'price', dir: 'DESC' }
+]
+
+export const getSortOption = (id: SortId): SortOption =>
+  SORT_OPTIONS.find(o => o.value === id) ?? SORT_OPTIONS[0]
+
+const DEFAULT_BRANDS: Record<string, boolean> = {
   fillyboo: false,
   'for-love-lemons': false,
   'frame-denim': false,
@@ -11,7 +41,12 @@ const slugs = atom<Record<string, boolean>>({
   selkiecollection: false,
   'stripe-stare': false,
   veronicabeard: false
-})
+}
+
+const slugs = atomWithStorage<Record<string, boolean>>(
+  'shopwnt:brands',
+  DEFAULT_BRANDS
+)
 
 export const slugsAtom = atom(
   get => get(slugs),
@@ -20,7 +55,7 @@ export const slugsAtom = atom(
 
     Object.entries(get(slugs))
       .filter(([, v]) => !v)
-      .forEach(async ([k]) => client.removeQueries(['products', k]))
+      .forEach(([k]) => client.removeQueries({ queryKey: ['products', k] }))
   }
 )
 
@@ -30,4 +65,4 @@ export const activeSlugsAtom = atom(get =>
     .map(([k]) => clean(k))
 )
 
-export const sortAtom = atom('created_at')
+export const sortAtom = atomWithStorage<SortId>('shopwnt:sort', 'newest')

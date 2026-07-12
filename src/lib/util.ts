@@ -1,7 +1,34 @@
-/* eslint-disable no-alert */
 export const fetcher = async <T extends Record<string, any>>(
   k: string
 ): Promise<T> => (await fetch(k)).json() as Promise<T>
+
+/** Passthrough tag for editor highlighting / prettier formatting. */
+export const gql = (strings: TemplateStringsArray, ...values: unknown[]): string =>
+  strings.reduce((acc, s, i) => acc + s + (i < values.length ? `${values[i]}` : ''), '')
+
+/** Minimal GraphQL over fetch against the local API route. */
+export const gqlFetch = async <T>(
+  query: string,
+  variables?: Record<string, unknown>
+): Promise<T> => {
+  const res = await fetch('/api/graphql', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ query, variables })
+  })
+
+  const json = (await res.json()) as { data?: T; errors?: { message: string }[] }
+
+  if (json.errors?.length) {
+    throw new Error(json.errors.map(e => e.message).join('; '))
+  }
+
+  if (!res.ok || !json.data) {
+    throw new Error(`Request failed with status ${res.status}`)
+  }
+
+  return json.data
+}
 
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
 

@@ -1,108 +1,137 @@
-import { Carousel } from '@mantine/carousel'
-import { Anchor, Badge, Card, Group, Text } from '@mantine/core'
-import { IconExternalLink } from '@tabler/icons'
-import { useQuery } from '@tanstack/react-query'
-import type { Variables } from 'graphql-request'
-import request, { gql } from 'graphql-request'
-import Image from 'next/image'
-import { useMemo } from 'react'
-import type { Product } from '~/../types'
-import { clean, relTime } from '~/lib'
+'use client'
 
-export default function Item({ handle, vendor }: Partial<Product>) {
-  const { data } = useQuery<Product>({
+import { useQuery } from '@tanstack/react-query'
+import { ExternalLink } from 'lucide-react'
+import Image from 'next/image'
+import Loading from '~/app/loading'
+import type { Product } from '~/../types'
+import { clean, gql, gqlFetch, relTime, type SortField } from '~/lib'
+import { Badge } from '../ui/badge'
+import { Card, CardContent } from '../ui/card'
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious
+} from '../ui/carousel'
+
+const QUERY = gql`
+  query GetProduct($id: [ID!], $handle: [ID!]!) {
+    products(where: { id_IN: $id, handle_IN: $handle }, options: { limit: 1 }) {
+      price
+      title
+      url
+      images {
+        src
+        width
+        height
+      }
+    }
+  }
+`
+
+const STAMP_LABEL: Record<SortField, string> = {
+  created_at: 'added',
+  published_at: 'published',
+  updated_at: 'updated',
+  price: 'added'
+}
+
+type ItemProps = Partial<Product> & { sortField?: SortField }
+
+export default function Item({
+  handle,
+  vendor,
+  price: listPrice,
+  created_at,
+  published_at,
+  updated_at,
+  sortField = 'created_at'
+}: ItemProps) {
+  const { data, isPending } = useQuery({
     enabled: !!(handle && vendor),
-    queryFn: async ({ queryKey: [, args] }) =>
-      request<Product>(
-        '/api/graphql',
-        gql`
-          query GetProduct($id: [ID!], $handle: [ID!]!) {
-            products(
-              where: { id_IN: $id, handle_IN: $handle }
-              options: { limit: 1 }
-            ) {
-              price
-              title
-              updated_at
-              url
-              images {
-                src
-                width
-                height
-              }
-            }
-          }
-        `,
-        args as Variables
-      ),
-    queryKey: ['product', { handle: [clean(vendor as string)], id: [handle] }],
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-    select: (i: any): Product => i?.products?.[0],
-    suspense: true
+    queryKey: ['product', { handle: [clean(vendor ?? '')], id: [handle] }],
+    queryFn: ({ queryKey: [, args] }) =>
+      gqlFetch<{ products: Product[] }>(
+        QUERY,
+        args as Record<string, unknown>
+      ).then(r => r.products?.[0]),
+    staleTime: Infinity
   })
 
-  const multi = useMemo(() => Number(data?.images?.length) > 1, [data])
+  if (isPending || !data) {
+    return <Loading />
+  }
+
+  const images = data.images ?? []
+  const multi = images.length > 1
+  const price = Number(listPrice ?? data.price)
+
+  const stampField = sortField === 'price' ? 'created_at' : sortField
+  const stamp =
+    { created_at, published_at, updated_at }[stampField] ??
+    published_at ??
+    created_at
 
   return (
-    <Card p="lg" radius="md" shadow="sm">
-      <Group mb="sm" position="apart">
-        <div>
-          <Anchor<'a'>
-            color="primary"
-            href={data?.url}
+    <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
+      <div className="flex w-full items-start justify-between gap-3 px-6 py-4">
+        <div className="min-w-0 flex-1">
+          <a
+            className="flex min-w-0 items-center gap-1 font-medium leading-snug hover:text-primary hover:underline"
+            href={data.url}
             rel="noopener noreferrer"
-            size="xl"
-            sx={{ fontWeight: 500 }}
             target="_blank">
-            {data?.title} <IconExternalLink size={14} />
-          </Anchor>
-
-          <Text color="dimmed" size="xs" transform="uppercase">
-            {vendor} &mdash; {relTime(data?.updated_at)}
-          </Text>
+            <span className="truncate">{data.title}</span>
+            <ExternalLink className="size-3.5 shrink-0 opacity-50" />
+          </a>
+          <p className="mt-0.5 truncate text-xs tracking-wide text-muted-foreground uppercase">
+            {vendor}
+            {stamp && ` · ${STAMP_LABEL[stampField]} ${relTime(stamp)}`}
+          </p>
         </div>
 
-        <Badge color="green" variant="light">
-          {parseFloat(`${data?.price}`).toLocaleString('en-US', {
-            currency: 'USD',
-            style: 'currency'
-          })}
-        </Badge>
-      </Group>
+        {Number.isFinite(price) && (
+          <Badge className="shrink-0" variant="success">
+            {price.toLocaleString('en-US', {
+              currency: 'USD',
+              style: 'currency'
+            })}
+          </Badge>
+        )}
+      </div>
 
-      <Card.Section>
+      <CardContent className="px-0">
         <Carousel
-          align={multi ? 'start' : 'center'}
-          breakpoints={[
-            { minWidth: 'md', slideGap: 'xs', slideSize: '33.33%' },
-            { maxWidth: 'sm', slideGap: 0, slideSize: '100%%' }
-          ]}
-          draggable={multi}
-          height={400}
-          loop
-          withControls={multi}
-          withIndicators={multi}>
-          {data?.images?.map(i => (
-            <Carousel.Slide key={i.src}>
-              <Image
-                alt=""
-                height={Math.min(500, i?.height ?? 500)}
-                loading="lazy"
-                src={i.src}
-                style={{
-                  height: '100%',
-                  objectFit: 'contain',
-                  objectPosition: 'center top',
-                  width: '100%'
-                }}
-                unoptimized
-                width={Math.min(300, i?.width ?? 300)}
-              />
-            </Carousel.Slide>
-          ))}
+          className="bg-muted/40"
+          opts={{ loop: true, watchDrag: multi }}>
+          <CarouselContent className="ml-0">
+            {images.map(img => (
+              <CarouselItem className="pl-0" key={img.src}>
+                <div className="relative aspect-[3/4] w-full">
+                  <Image
+                    alt={data.title ?? ''}
+                    className="object-contain object-center"
+                    fill
+                    loading="lazy"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    src={img.src}
+                    unoptimized
+                  />
+                </div>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+
+          {multi && (
+            <div className="opacity-0 transition-opacity group-hover:opacity-100">
+              <CarouselPrevious />
+              <CarouselNext />
+            </div>
+          )}
         </Carousel>
-      </Card.Section>
+      </CardContent>
     </Card>
   )
 }

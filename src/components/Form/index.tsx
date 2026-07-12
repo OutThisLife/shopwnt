@@ -1,157 +1,53 @@
 'use client'
 
-import {
-  ActionIcon,
-  Drawer,
-  Group,
-  MultiSelect,
-  Select,
-  useMantineColorScheme
-} from '@mantine/core'
-import { showNotification, updateNotification } from '@mantine/notifications'
-import {
-  IconAdjustments,
-  IconArrowsSort,
-  IconCheck,
-  IconGenderFemale,
-  IconMoon,
-  IconSun
-} from '@tabler/icons'
 import { useAtom } from 'jotai'
-import { useState } from 'react'
-import { slugsAtom, sortAtom } from '~/lib'
+import { X } from 'lucide-react'
+import { slugsAtom } from '~/lib'
+import { BrandFilter } from '../brand-filter'
+import { ModeToggle } from '../mode-toggle'
+import { SortSelect } from '../sort-select'
+import { Badge } from '../ui/badge'
 
-export default function Form() {
-  const { colorScheme, toggleColorScheme } = useMantineColorScheme()
+export default function Toolbar() {
+  const [slugs, setSlugs] = useAtom(slugsAtom)
 
-  const [opened, toggle] = useState<boolean>(() => false)
-  const [sortBy, updateSort] = useAtom(sortAtom)
-  const [slugs, updateSlugs] = useAtom(slugsAtom)
+  const active = Object.entries(slugs)
+    .filter(([, v]) => v)
+    .map(([k]) => k)
+
+  const remove = (k: string) => setSlugs(s => ({ ...s, [k]: false }))
 
   return (
-    <>
-      <Group
-        spacing="xs"
-        sx={{
-          inset: '1rem 1rem auto auto',
-          position: 'fixed',
-          zIndex: 1e3 + 1
-        }}>
-        <ActionIcon
-          onClick={() => toggle(s => !s)}
-          radius="lg"
-          size="lg"
-          variant="default">
-          <IconAdjustments />
-        </ActionIcon>
+    <header className="sticky top-0 z-40 border-b bg-background/75 backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-3 sm:px-6">
+        <span className="text-lg font-semibold tracking-tight">
+          shopwnt
+        </span>
 
-        <ActionIcon
-          onClick={() => toggleColorScheme()}
-          radius="lg"
-          size="lg"
-          variant="default">
-          {colorScheme === 'light' ? <IconMoon /> : <IconSun />}
-        </ActionIcon>
-      </Group>
+        <div className="ml-auto flex items-center gap-2">
+          <SortSelect className="hidden sm:flex" />
+          <BrandFilter />
+          <ModeToggle />
+        </div>
+      </div>
 
-      <Drawer
-        lockScroll={false}
-        onClose={() => toggle(false)}
-        padding="xl"
-        position="right"
-        shadow="lg"
-        sx={{ '.mantine-Drawer-header button': { display: 'none' } }}
-        withOverlay={false}
-        {...{ opened }}>
-        <MultiSelect
-          creatable
-          data={Object.keys(slugs)}
-          dropdownPosition="flip"
-          getCreateLabel={k => `+ Create ${k}`}
-          icon={<IconGenderFemale size={16} />}
-          label="Brands"
-          limit={5}
-          mb="md"
-          onChange={e =>
-            updateSlugs(s =>
-              Object.keys(s).reduce(
-                (acc, k) => ({
-                  ...acc,
-                  [k]: e.includes(k)
-                }),
-                {}
-              )
-            )
-          }
-          onCreate={v => {
-            ;(async () => {
-              try {
-                showNotification({
-                  color: 'blue',
-                  id: 'add-brand',
-                  loading: true,
-                  message: 'Verifying shopify domain',
-                  title: 'Adding Brand'
-                })
-
-                const { slug: k } = await (
-                  await fetch(`/api/verify?u=${v}`)
-                ).json()
-
-                updateNotification({
-                  autoClose: 2e3,
-                  color: 'green',
-                  icon: <IconCheck size={16} />,
-                  id: 'add-brand',
-                  message: 'Brand added!',
-                  title: 'Done!'
-                })
-
-                updateSlugs(s => ({ ...s, [k]: true }))
-              } catch (e) {
-                updateNotification({
-                  autoClose: 2e3,
-                  color: 'red',
-                  id: 'add-brand',
-                  message: 'Not a shopify store, sorry!',
-                  title: 'Failed to find store'
-                })
-              }
-            })()
-
-            return v
-          }}
-          placeholder="List of shopify brands"
-          searchable
-          transition="pop-top-left"
-          transitionDuration={150}
-          transitionTimingFunction="ease"
-          value={Object.entries(slugs)
-            .filter(([, v]) => v)
-            .map(([k]) => k)}
-        />
-
-        <Select
-          data={['price', 'updated_at', 'created_at', 'published_at'].map(
-            k => ({
-              label: k
-                .toLocaleLowerCase()
-                .replace(/_|-/g, ' ')
-                .split(' ')
-                .shift(),
-              value: k
-            })
-          )}
-          dropdownPosition="flip"
-          icon={<IconArrowsSort size={16} />}
-          label="Sort By"
-          onChange={e => e && (updateSort(e), toggle(false))}
-          transition="pop-top-left"
-          transitionDuration={150}
-          transitionTimingFunction="ease"
-          value={sortBy}
-        />
-      </Drawer>
-    </>
+      {active.length > 0 && (
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-1.5 px-4 pb-3 sm:px-6">
+          <span className="mr-0.5 text-xs text-muted-foreground">Filtering</span>
+          {active.map(k => (
+            <Badge className="gap-1 pr-1 pl-2" key={k} variant="secondary">
+              {k}
+              <button
+                aria-label={`Remove ${k}`}
+                className="grid size-4 place-items-center rounded-full transition-colors hover:bg-foreground/15"
+                onClick={() => remove(k)}
+                type="button">
+                <X className="size-3" />
+              </button>
+            </Badge>
+          ))}
+        </div>
+      )}
+    </header>
   )
 }

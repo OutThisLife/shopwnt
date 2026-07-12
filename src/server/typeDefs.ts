@@ -1,6 +1,4 @@
-import { gql } from 'apollo-server-micro'
-
-export default gql`
+const typeDefs = /* GraphQL */ `
   type Query {
     products(where: ProductWhere, options: Options): [Product!]!
   }
@@ -98,3 +96,5 @@ export default gql`
     values: [String]
   }
 `
+
+export default typeDefs
