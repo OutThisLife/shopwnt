@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
-import type { ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { Toolbar } from '~/components'
+import { ScrollTop } from '~/components/scroll-top'
+import { UrlSync } from '~/components/url-sync'
 import { cn } from '~/lib/utils'
 import './globals.css'
 import Providers from './providers'
@@ -38,11 +40,17 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           'min-h-dvh bg-background font-sans text-foreground antialiased'
         )}>
         <Providers>
+          <Suspense fallback={null}>
+            <UrlSync />
+          </Suspense>
+
           <Toolbar />
 
           <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
             {children}
           </main>
+
+          <ScrollTop />
         </Providers>
       </body>
     </html>

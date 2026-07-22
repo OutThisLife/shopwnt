@@ -107,6 +107,11 @@
 
   html {
     scroll-behavior: smooth;
+    /* Reserve the scrollbar's space so content doesn't shift when the page
+       grows past the viewport (empty state -> full grid, dialog open, etc.). */
+    scrollbar-gutter: stable;
+    /* Stop the page scroll from chaining into browser pull-to-refresh / bounce. */
+    overscroll-behavior-y: none;
   }
 
   body {
@@ -115,5 +120,6 @@
     font-feature-settings: 'rlig' 1, 'calt' 1;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    overscroll-behavior-y: none;
   }
 }

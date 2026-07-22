@@ -67,7 +67,7 @@ export function BrandFilter() {
       <PopoverTrigger asChild>
         <Button className="gap-2" variant="outline">
           <Store className="size-4 opacity-70" />
-          <span className="hidden sm:inline">Brands</span>
+          <span>Brands</span>
           {activeCount > 0 && (
             <Badge
               className="ml-0.5 h-5 min-w-5 justify-center rounded-full px-1"

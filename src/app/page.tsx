@@ -39,7 +39,13 @@ const QUERY = gql`
       published_at
       title
       updated_at
+      url
       vendor
+      images {
+        src
+        width
+        height
+      }
     }
   }
 `
