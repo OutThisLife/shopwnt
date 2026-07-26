@@ -26,10 +26,16 @@
   --bar-height: calc(2rem + 2px);
 
   /* Liquid glass: a lit top rim and a soft underside read as a thick pane
-     rather than flat blur. */
+     rather than flat blur. The side rims close the bevel around the pill's
+     curve, and the sheen is the diagonal gloss across the face. */
   --glass-rim: oklch(1 0 0 / 0.65);
   --glass-under: oklch(1 0 0 / 0.2);
+  --glass-edge: oklch(1 0 0 / 0.3);
+  --glass-sheen: oklch(1 0 0 / 0.5);
   --glass-shadow: oklch(0.21 0.02 335 / 0.16);
+  /* How much of the pane is its own tint vs. the blurred page behind it.
+     Below ~60% the backdrop actually reads through as glass. */
+  --glass-tint: 58%;
 
   --radius: 0.625rem;
 
@@ -67,7 +73,12 @@
 .dark {
   --glass-rim: oklch(1 0 0 / 0.12);
   --glass-under: oklch(0 0 0 / 0.3);
+  --glass-edge: oklch(1 0 0 / 0.07);
+  --glass-sheen: oklch(1 0 0 / 0.1);
   --glass-shadow: oklch(0 0 0 / 0.45);
+  /* Dark panes need more of their own body — the page behind them is already
+     dark, so a thin tint just reads as a murky hole. */
+  --glass-tint: 66%;
 
   --background: oklch(0.16 0.012 335);
   --foreground: oklch(0.96 0.006 340);
@@ -139,16 +150,46 @@
  * feDisplacementMap fed into backdrop-filter, which is Chromium-only and wants
  * a displacement map sized to the element — a non-starter for a bar that
  * animates its own width. https://webtricks.dev/blog/liquid-glass-css
+ *
+ * The Radix content primitives ship their own `bg-popover` + `shadow-md`, and
+ * tailwind-merge can't dedupe those against a custom utility — it doesn't know
+ * `glass` is a background. Without the overrides here the pane renders fully
+ * opaque and the backdrop-filter blurs behind a solid wall, which is invisible.
  */
 @utility glass {
-  background-color: color-mix(in oklch, var(--popover) 70%, transparent);
+  position: relative;
+  isolation: isolate;
+  background-color: color-mix(
+    in oklch,
+    var(--popover) var(--glass-tint),
+    transparent
+  ) !important;
   -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
   backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
   box-shadow:
     inset 0 1px 0 var(--glass-rim),
     inset 0 -1px 0 var(--glass-under),
+    inset 1px 0 0 var(--glass-edge),
+    inset -1px 0 0 var(--glass-edge),
     0 2px 8px -4px var(--glass-shadow),
-    0 10px 24px -14px var(--glass-shadow);
+    0 10px 24px -14px var(--glass-shadow) !important;
+
+  /* The gloss sits in its own layer so it follows the pane's radius and stays
+     under the content. */
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      var(--glass-sheen),
+      color-mix(in oklch, var(--glass-sheen) 18%, transparent) 28%,
+      transparent 58%
+    );
+  }
 }
 
 @layer base {

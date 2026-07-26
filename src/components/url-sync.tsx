@@ -1,7 +1,7 @@
 'use client'
 
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { atom, useAtom } from 'jotai'
+import { atom, useAtom, useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import {
   SORT_OPTIONS,
@@ -30,7 +30,7 @@ export function UrlSync() {
   const [search, setSearch] = useAtom(searchAtom)
   const [sort, setSort] = useAtom(sortAtom)
   const [slugs, setSlugs] = useAtom(slugsAtom)
-  const [urlReady, setUrlReady] = useAtom(urlSyncReadyAtom)
+  const setUrlReady = useSetAtom(urlSyncReadyAtom)
 
   const [ready, setReady] = useState(false)
 
