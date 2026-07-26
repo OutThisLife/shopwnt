@@ -1,14 +1,18 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useAtomValue } from 'jotai'
+import { useAtomValue, useSetAtom } from 'jotai'
 import { Loader2, PackageOpen, Store, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { Product } from '~/../types'
 import { Item } from '~/components'
+import { Button } from '~/components/ui/button'
 import {
   activeSlugsAtom,
   brandsReadyAtom,
+  facetCountAtom,
+  facetSelectionAtom,
+  facetsAtom,
   getSortOption,
   gql,
   gqlFetch,
@@ -26,12 +30,13 @@ const QUERY = gql`
   query GetProducts(
     $slugs: [ID!]!
     $q: String
+    $facets: [FacetSelection!]
     $sort: [ProductSort!]
     $limit: Int
     $offset: Int
   ) {
     products(
-      where: { handle_IN: $slugs, q: $q }
+      where: { handle_IN: $slugs, q: $q, facets: $facets }
       options: { limit: $limit, offset: $offset, sort: $sort }
     ) {
       id
@@ -55,11 +60,13 @@ const QUERY = gql`
 function EmptyState({
   icon,
   title,
-  description
+  description,
+  action
 }: {
   icon: ReactNode
   title: string
   description: string
+  action?: ReactNode
 }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
@@ -68,6 +75,7 @@ function EmptyState({
       </div>
       <h2 className="text-lg font-semibold">{title}</h2>
       <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+      {action}
     </div>
   )
 }
@@ -78,6 +86,9 @@ export default function Index() {
   const allSlugs = useAtomValue(slugsAtom)
   const slugs = useAtomValue(activeSlugsAtom)
   const q = useAtomValue(searchAtom)
+  const facets = useAtomValue(facetSelectionAtom)
+  const facetCount = useAtomValue(facetCountAtom)
+  const setFacets = useSetAtom(facetsAtom)
   const sort = getSortOption(sortId)
   const sortArg = { [sort.field]: sort.dir }
 
@@ -90,12 +101,13 @@ export default function Index() {
     fetchNextPage
   } = useInfiniteQuery({
     enabled: slugs.length > 0,
-    queryKey: ['products', { slugs, sort: sortArg, q }],
+    queryKey: ['products', { slugs, sort: sortArg, q, facets }],
     initialPageParam: 0,
     queryFn: ({ pageParam }) =>
       gqlFetch<{ products: Product[] }>(QUERY, {
         slugs,
         q,
+        facets,
         sort: sortArg,
         limit: PAGE_SIZE,
         offset: pageParam
@@ -172,13 +184,22 @@ export default function Index() {
   if (!products.length) {
     return (
       <EmptyState
+        action={
+          facetCount > 0 && (
+            <Button onClick={() => setFacets({})} size="sm" variant="outline">
+              Clear filters
+            </Button>
+          )
+        }
         description={
-          q
-            ? `Nothing matched “${q}”. Try a different term.`
-            : 'No products came back for the selected brands.'
+          facetCount > 0
+            ? 'Nothing matches every filter you have on. Loosen one to widen the net.'
+            : q
+              ? `Nothing matched “${q}”. Try a different term.`
+              : 'No products came back for the selected brands.'
         }
         icon={<PackageOpen className="size-6" />}
-        title={q ? 'No matches' : 'Nothing here yet'}
+        title={facetCount > 0 ? 'Filtered to nothing' : q ? 'No matches' : 'Nothing here yet'}
       />
     )
   }

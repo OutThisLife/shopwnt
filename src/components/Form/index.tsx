@@ -5,6 +5,7 @@ import { useLayoutEffect, useRef, useState } from 'react'
 import { paletteAtom } from '~/lib'
 import { cn } from '~/lib/utils'
 import { BrandFilter } from '../brand-filter'
+import { FacetFilter } from '../facet-filter'
 import { SortSelect } from '../sort-select'
 
 // Ghost controls, so the pill reads as one surface instead of nested boxes.
@@ -47,6 +48,7 @@ export default function Toolbar() {
       style={{ width }}>
       <div className="flex w-max items-center gap-1 p-1" ref={content}>
         <SortSelect className={CONTROL} />
+        <FacetFilter className={CONTROL} />
         <BrandFilter className={CONTROL} />
       </div>
     </header>
