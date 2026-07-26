@@ -28,14 +28,26 @@
   /* Liquid glass: a lit top rim and a soft underside read as a thick pane
      rather than flat blur. The side rims close the bevel around the pill's
      curve, and the sheen is the diagonal gloss across the face. */
-  --glass-rim: oklch(1 0 0 / 0.8);
-  --glass-under: oklch(1 0 0 / 0.25);
-  --glass-edge: oklch(1 0 0 / 0.4);
-  --glass-sheen: oklch(1 0 0 / 0.55);
-  --glass-shadow: oklch(0.21 0.02 335 / 0.2);
-  /* How much of the pane is its own tint vs. the blurred page behind it.
-     Below ~45% the page genuinely reads through instead of just looking pale. */
-  --glass-tint: 38%;
+  /* The pen's three glass layers. The tint is a full colour now, not a
+     percentage — it's a wash over the distorted backdrop rather than the
+     surface itself, so it stays near-transparent. */
+  --glass-rim: oklch(1 0 0 / 0.5);
+  /* The core tint sits behind the labels and does the legibility work; it's
+     masked away at the rim so the bend and colour fringe stay visible there.
+     0.68 through the middle measures 6.6:1 against the worst backdrop. */
+  --glass-core: oklch(1 0 0 / 0.68);
+  --glass-tint: oklch(1 0 0 / 0.55);
+  --glass-shadow: oklch(0.21 0.02 335 / 0.16);
+  /* Interaction states on glass. Solid fills read as stickers on a translucent
+     pane, so hover/selection are lit washes of the same white the rim uses —
+     the surface catches more light rather than gaining a chip of colour.
+     Focus is a rim brightening instead of a ring, for the same reason. */
+  --glass-hover: oklch(1 0 0 / 0.28);
+  --glass-active: oklch(1 0 0 / 0.42);
+  --glass-focus-rim: oklch(1 0 0 / 0.85);
+  /* Dark text on a light pane, so the halo is white — it lifts the glyphs off
+     whatever photo is showing through. */
+  --glass-text-halo: oklch(1 0 0 / 0.7);
 
   --radius: 0.625rem;
 
@@ -71,14 +83,15 @@
 }
 
 .dark {
-  --glass-rim: oklch(1 0 0 / 0.18);
-  --glass-under: oklch(0 0 0 / 0.35);
-  --glass-edge: oklch(1 0 0 / 0.1);
-  --glass-sheen: oklch(1 0 0 / 0.14);
-  --glass-shadow: oklch(0 0 0 / 0.55);
-  /* Dark panes need more of their own body — the page behind them is already
-     dark, so a thin tint just reads as a murky hole. */
-  --glass-tint: 52%;
+  --glass-rim: oklch(1 0 0 / 0.14);
+  --glass-core: oklch(0.2 0.014 335 / 0.72);
+  --glass-tint: oklch(0.2 0.014 335 / 0.4);
+  --glass-shadow: oklch(0 0 0 / 0.45);
+  --glass-hover: oklch(1 0 0 / 0.1);
+  --glass-active: oklch(1 0 0 / 0.16);
+  --glass-focus-rim: oklch(1 0 0 / 0.4);
+  /* Light text on a dark pane, so the halo goes the other way. */
+  --glass-text-halo: oklch(0 0 0 / 0.6);
 
   --background: oklch(0.16 0.012 335);
   --foreground: oklch(0.96 0.006 340);
@@ -142,102 +155,218 @@
 }
 
 /*
- * Shared surface for the floating toolbar, palette and their dropdowns, so they
- * all frost the page identically.
+ * Shared surface for the floating toolbar, its dropdowns and the palette.
  *
- * The saturation/brightness lift plus the specular rim is the part of Apple's
- * liquid glass that CSS can do everywhere. True refraction needs an SVG
- * feDisplacementMap fed into backdrop-filter, which is Chromium-only and wants
- * a displacement map sized to the element — a non-starter for a bar that
- * animates its own width. https://webtricks.dev/blog/liquid-glass-css
+ * Tried liquid-glass-react for this and removed it: it paints no background of
+ * its own (only radius/padding/shadow, with a bare backdrop-filter on an inner
+ * span), and it hard-codes glassSize = 270x69 with no ResizeObserver — so a
+ * content-sized pill gets five oversized blend layers stamped over the page and
+ * the grid reads straight through. It also sniffs navigator.userAgent during
+ * render, which is an SSR hazard here.
  *
- * The Radix content primitives ship their own `bg-popover` + `shadow-md`, and
- * tailwind-merge can't dedupe those against a custom utility — it doesn't know
- * `glass` is a background. Without the overrides here the pane renders fully
- * opaque and the backdrop-filter blurs behind a solid wall, which is invisible.
+ * The thing that actually makes glass legible over photography is the tint:
+ * blur alone leaves shapes and contrast behind, so titles still read through.
+ * The tint is the body the content sits on; the blur only softens what's left.
+ */
+/*
+ * Liquid glass, ported from lucasromerodb/liquid-glass-effect-macos (MIT):
+ * https://github.com/lucasromerodb/liquid-glass-effect-macos
+ *
+ * The thing that makes it work is that it's a LAYER STACK, not one element.
+ * The distortion and blur live on their own absolutely-positioned child, so the
+ * SVG filter warps the backdrop without ever touching the content — which is
+ * why the tint can stay near-transparent (the pen uses 25%) and the pane still
+ * reads as glass. Flattening this onto a single element is what forced the tint
+ * up to 80% and made it look like a painted chip.
+ *
+ *   ::before  — backdrop blur + url(#glass-distortion)   z-index 0
+ *   ::after   — flat tint wash                            z-index 1
+ *   box-shadow— inset specular rims (the pen's "shine")   z-index 2
+ *   children  — content, kept sharp                       z-index 3
  */
 @utility glass {
-  position: relative;
-  isolation: isolate;
-  background-color: color-mix(
-    in oklch,
-    var(--popover) var(--glass-tint),
-    transparent
-  );
-  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
-  backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim),
-    inset 0 -1px 0 var(--glass-under),
-    inset 1px 0 0 var(--glass-edge),
-    inset -1px 0 0 var(--glass-edge),
-    0 1px 2px -1px var(--glass-shadow),
-    0 8px 16px -8px var(--glass-shadow),
-    0 20px 40px -20px var(--glass-shadow);
+  &:where([data-slot]) {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    /* The pen's shine layer: a lit top-left edge and a bright bottom-right. */
+    box-shadow:
+      inset 2px 2px 1px 0 var(--glass-rim),
+      inset -1px -1px 1px 1px var(--glass-rim),
+      0 6px 6px var(--glass-shadow),
+      0 0 20px var(--glass-shadow);
+  }
 
-  /* The gloss sits in its own layer so it follows the pane's radius and stays
-     under the content. */
-  &::after {
+  &:where([data-slot])::before {
     content: '';
     position: absolute;
+    z-index: 0;
     inset: 0;
-    z-index: -1;
     pointer-events: none;
-    border-radius: inherit;
-    background: linear-gradient(
-      135deg,
-      var(--glass-sheen),
-      color-mix(in oklch, var(--glass-sheen) 18%, transparent) 28%,
-      transparent 58%
+    -webkit-backdrop-filter: blur(8px) saturate(160%);
+    backdrop-filter: blur(8px) saturate(160%);
+    filter: url(#glass-distortion);
+    isolation: isolate;
+  }
+
+  &:where([data-slot])::after {
+    content: '';
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    pointer-events: none;
+    /* Edge-weighted, not a flat wash. A single opacity can't serve both goals:
+       raise it and the bend disappears, lower it and the text does. So the
+       tint is strong through the middle where the labels sit, and masked away
+       toward the rim so the displacement and its colour fringe stay visible. */
+    background: var(--glass-core);
+    -webkit-mask-image: radial-gradient(
+      115% 130% at 50% 50%,
+      #000 0%,
+      #000 52%,
+      transparent 92%
     );
+    mask-image: radial-gradient(
+      115% 130% at 50% 50%,
+      #000 0%,
+      #000 52%,
+      transparent 92%
+    );
+  }
+
+  /* Content rides above both layers. */
+  & > * {
+    position: relative;
+    z-index: 3;
+  }
+}
+
+/* No backdrop-filter means no glass — fall back to a plain solid pane rather
+   than a distorted one. Same when the user has asked for less transparency. */
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .glass:where([data-slot]) {
+    background-color: var(--popover);
+  }
+
+  .glass:where([data-slot])::before,
+  .glass:where([data-slot])::after {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass:where([data-slot]) {
+    background-color: var(--popover);
+  }
+
+  .glass:where([data-slot])::before,
+  .glass:where([data-slot])::after {
+    display: none;
   }
 }
 
 /*
- * Real refraction, where the browser allows it.
+ * Interaction states inside a glass pane.
  *
- * Chromium is currently the only engine that accepts an SVG filter as a
- * backdrop-filter input, so this is gated on an actual support probe rather
- * than a UA sniff — Safari and Firefox keep the frosted surface above and lose
- * nothing else. The displacement map is generated in `glass-filter.tsx`.
+ * The shadcn defaults fill hover/selection with `bg-accent`, a solid colour.
+ * On a translucent pane that reads as a sticker pasted on top — the fill is
+ * opaque while everything around it isn't. So states are expressed as light
+ * instead: a white wash that makes the surface catch more of it, matching the
+ * rim. Focus brightens the rim rather than drawing a 3px ring outside the
+ * element, which on a pill would sit off the glass entirely.
  *
- * The tint drops here because refraction carries the effect: with the backdrop
- * genuinely bending at the rim, a heavy tint just mutes it.
+ * `:where()` keeps specificity at zero so component-level classes still win.
  */
-@supports (backdrop-filter: url(#glass-refraction)) {
-  .glass {
-    /* Refraction carries the effect, so the pane can give up some tint — but
-       not so much that dark text over a dark product shot stops being legible.
-       Measured against the real foreground token: 0.45 gives 4.85:1 over a
-       near-black backdrop, just clear of the 4.5:1 AA floor. Lower values look
-       better and fail — 0.26 measured 2.49:1. */
-    background-color: color-mix(
-      in oklch,
-      var(--popover) max(45%, calc(var(--glass-tint) - 6%)),
-      transparent
-    );
-    -webkit-backdrop-filter: url(#glass-refraction) blur(6px) saturate(190%)
-      brightness(1.06);
-    backdrop-filter: url(#glass-refraction) blur(6px) saturate(190%)
-      brightness(1.06);
-  }
+.glass:where([data-slot])
+  :is(
+    [data-slot='select-item'],
+    [data-slot='command-item'],
+    [data-slot='select-trigger'],
+    [data-slot='popover-trigger'],
+    [data-slot='button'],
+    button
+  ) {
+  background-color: transparent;
+  transition:
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.glass:where([data-slot])
+  :is([data-slot='select-item'], [data-slot='command-item'], button):hover,
+.glass:where([data-slot])
+  :is([data-slot='select-item'], [data-slot='command-item'])[data-highlighted],
+.glass:where([data-slot]) [data-slot='command-item'][data-selected='true'] {
+  background-color: var(--glass-hover);
+  color: inherit;
+}
+
+/* The committed choice sits brighter than a passing hover. */
+.glass:where([data-slot])
+  :is(
+    [data-slot='select-item'][data-state='checked'],
+    [data-slot='command-item'][aria-selected='true']
+  ) {
+  background-color: var(--glass-active);
+}
+
+.glass:where([data-slot]) :is(button, [data-slot='select-trigger']):active {
+  background-color: var(--glass-active);
+}
+
+/* No ring — light the element's own edge instead. Still keyboard-visible.
+   Tailwind composes rings through --tw-ring-shadow inside box-shadow, so the
+   variables have to be zeroed too or the ring survives the override. */
+.glass:where([data-slot]) :is(button, [data-slot='select-trigger'], input):focus,
+.glass:where([data-slot])
+  :is(button, [data-slot='select-trigger'], input):focus-visible {
+  outline: none;
+  border-color: transparent;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-ring-offset-shadow: 0 0 #0000;
+  --tw-shadow: 0 0 #0000;
+  box-shadow: none;
+}
+
+.glass:where([data-slot])
+  :is(button, [data-slot='select-trigger']):focus-visible {
+  background-color: var(--glass-hover);
+  box-shadow: inset 0 0 0 1px var(--glass-focus-rim);
+}
+
+/* The palette's search field is the pane's own surface — it shouldn't gain a
+   box of its own on focus, the caret is enough. */
+.glass:where([data-slot]) input:focus,
+.glass:where([data-slot]) input:focus-visible {
+  background-color: transparent;
+  box-shadow: none;
 }
 
 /*
- * Text that reacts to whatever it's sitting over.
+ * Legibility on glass.
  *
- * `luminosity` blending takes the lightness of the text and the colour of the
- * backdrop, so labels darken over a pale product shot and lighten over a dark
- * one instead of staying a fixed grey. The pane sets `isolation: isolate`, so
- * the blend resolves against the glass and its backdrop rather than punching
- * through to the whole page.
+ * Tried `mix-blend-mode: difference` here and it fails in the middle of the
+ * range: white minus a mid-grey backdrop is mid-grey, so labels disappear
+ * exactly where product photography spends most of its time. Blend modes only
+ * self-correct at the extremes.
  *
- * Only the plain labels opt in. Anything carrying its own colour — the active
- * check, the count badge, a destructive item — keeps it, since blending those
- * would throw away the meaning the colour is carrying.
+ * A tight contrast shadow works at every backdrop tone instead — it's the same
+ * trick as a text halo, sized small enough to read as weight rather than glow.
  */
-@utility glass-adaptive-text {
-  mix-blend-mode: luminosity;
+.glass:where([data-slot]) {
+  text-shadow: 0 1px 2px var(--glass-text-halo);
+}
+
+/* Displacement reaches a fixed pixel distance, so on a tall panel the same
+   scale that flatters the pill hauls content from outside the pane into the
+   middle of it — a dark photo behind the dropdown gets smeared across the list.
+   The big surfaces opt into the short-reach variant with this class. */
+@utility glass-soft {
+  &::before {
+    filter: url(#glass-distortion-soft);
+  }
 }
 
 @layer base {

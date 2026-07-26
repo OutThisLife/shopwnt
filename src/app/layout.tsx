@@ -4,7 +4,7 @@ import { Suspense, type ReactNode } from 'react'
 import { Toolbar } from '~/components'
 import { BrandHealthcheck } from '~/components/brand-health'
 import { CommandPalette } from '~/components/command-palette'
-import { GlassFilter } from '~/components/glass-filter'
+import { GlassDistortion } from '~/components/glass-distortion'
 import { Inspector } from '~/components/inspector'
 import { ScrollTop } from '~/components/scroll-top'
 import { UrlSync } from '~/components/url-sync'
@@ -44,7 +44,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           'min-h-dvh bg-background font-sans text-foreground antialiased'
         )}>
         <Providers>
-          <GlassFilter />
+          <GlassDistortion />
 
           <Suspense fallback={null}>
             <UrlSync />
