@@ -16,6 +16,11 @@ const badgeVariants = cva(
           'border-transparent bg-destructive text-white [a&]:hover:bg-destructive/90',
         success:
           'border-transparent bg-success/15 text-success dark:bg-success/20',
+        // For badges sitting on a `glass` surface. A solid fill reads as a
+        // sticker on a translucent pane, so this is a lit wash of the same
+        // white the rim uses — the glass catches more light where the badge is.
+        glass:
+          'border-transparent bg-(--glass-active) text-inherit shadow-[inset_0_0_0_1px_var(--glass-rim)]',
         outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground'
       }
     },

@@ -43,18 +43,18 @@ export function BrandFilter({ className }: { className?: string }) {
       <PopoverTrigger asChild>
         <Button className={cn('gap-2', className)} variant="ghost">
           <Store className="size-4 opacity-70" />
-          <span className="glass-adaptive-text">Brands</span>
+          <span>Brands</span>
           {activeCount > 0 && (
             <Badge
-              className="ml-0.5 h-5 min-w-5 justify-center rounded-full px-1"
-              variant="default">
+              className="ml-0.5 h-5 min-w-5 justify-center rounded-full px-1 tabular-nums"
+              variant="glass">
               {activeCount}
             </Badge>
           )}
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="glass w-72 overflow-hidden p-0" sideOffset={6}>
+      <PopoverContent align="end" className="glass glass-soft w-72 overflow-hidden p-0" sideOffset={6}>
         <Command>
           <CommandInput
             onValueChange={setQuery}
