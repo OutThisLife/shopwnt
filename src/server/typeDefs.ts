@@ -1,6 +1,7 @@
 const typeDefs = /* GraphQL */ `
   type Query {
     products(where: ProductWhere, options: Options): [Product!]!
+    facets(where: ProductWhere): [Facet!]!
   }
 
   scalar Date
@@ -16,6 +17,30 @@ const typeDefs = /* GraphQL */ `
     handle_IN: [ID!]!
     id_IN: [ID!]
     q: String
+    facets: [FacetSelection!]
+  }
+
+  "One facet group's selected values. Empty values leave the group unfiltered."
+  input FacetSelection {
+    key: String!
+    values: [String!]!
+  }
+
+  """
+  A filter group derived from whatever the selected brands actually carry —
+  product type, plus every option name they use (Size, Color, Fit, …) and
+  stock status. Nothing here is hardcoded, so the menu changes with the brands.
+  """
+  type Facet {
+    key: String!
+    label: String!
+    values: [FacetValue!]!
+  }
+
+  type FacetValue {
+    value: String!
+    "Matches remaining once every *other* group's selection is applied."
+    count: Int!
   }
 
   input Options {
@@ -24,12 +49,15 @@ const typeDefs = /* GraphQL */ `
     offset: Int
   }
 
+  """
+  Sorting runs on resolved moments rather than raw Shopify stamps: 'arrived' is
+  when a product reached the storefront, 'revised' is when it last genuinely
+  changed. See arrivedAt / revisedAt in lib/util.
+  """
   input ProductSort {
-    id: SortDirection
     price: SortDirection
-    created_at: SortDirection
-    published_at: SortDirection
-    updated_at: SortDirection
+    arrived: SortDirection
+    revised: SortDirection
   }
 
   type Product {

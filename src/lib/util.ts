@@ -107,6 +107,49 @@ export const slugify = (str: string, len = 4): string =>
     .join('-')
     .toLowerCase()
 
+export interface Stamped {
+  created_at?: Date | string | null
+  published_at?: Date | string | null
+  updated_at?: Date | string | null
+}
+
+const ts = (v: Date | string | null | undefined): number => +new Date(v ?? 0) || 0
+
+/**
+ * Shopify writes updated_at as part of publishing, so every freshly dropped
+ * product looks like it was just edited. Anything inside this window of its
+ * arrival is that echo rather than a real change.
+ */
+const PUBLISH_ECHO = 60_000
+
+/**
+ * When a product actually showed up.
+ *
+ * created_at is when the draft was keyed in, which can predate the drop by
+ * weeks; published_at is when it reached the storefront. Stores are
+ * inconsistent about which one moves, so the later of the two is the honest
+ * "this became real" moment.
+ */
+export const arrivedAt = (i: Stamped): number =>
+  Math.max(ts(i?.published_at), ts(i?.created_at))
+
+/**
+ * When a product last genuinely changed.
+ *
+ * Falls back to arrival when the only "update" is the publish echo, so a
+ * brand-new listing still places by its own freshness instead of jumping the
+ * queue ahead of a real restock or price cut.
+ */
+export const revisedAt = (i: Stamped): number => {
+  const arrived = arrivedAt(i)
+  const updated = ts(i?.updated_at)
+
+  return updated - arrived > PUBLISH_ECHO ? updated : arrived
+}
+
+/** True when a product has been touched since it arrived. */
+export const wasRevised = (i: Stamped): boolean => revisedAt(i) > arrivedAt(i)
+
 /** Gets relative time */
 const rtf = new Intl.RelativeTimeFormat('en', {
   numeric: 'auto',

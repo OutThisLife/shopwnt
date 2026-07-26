@@ -3,7 +3,7 @@
 import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import type { Product } from '~/../types'
-import { relTime, type SortField } from '~/lib'
+import { arrivedAt, relTime, revisedAt, wasRevised, type SortField } from '~/lib'
 import { Badge } from '../ui/badge'
 import { Card, CardContent } from '../ui/card'
 import {
@@ -13,13 +13,6 @@ import {
   CarouselNext,
   CarouselPrevious
 } from '../ui/carousel'
-
-const STAMP_LABEL: Record<SortField, string> = {
-  created_at: 'added',
-  published_at: 'published',
-  updated_at: 'updated',
-  price: 'added'
-}
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
 
@@ -32,16 +25,17 @@ export default function Item({
   created_at,
   published_at,
   updated_at,
-  sortField = 'created_at'
+  sortField = 'arrived'
 }: ItemProps) {
   const multi = images.length > 1
   const price = Number(listPrice)
 
-  const stampField = sortField === 'price' ? 'created_at' : sortField
-  const stamp =
-    { created_at, published_at, updated_at }[stampField] ??
-    published_at ??
-    created_at
+  // Show the moment the current sort actually ordered by, so the stamp always
+  // explains the position. Price sorts have no moment of their own, so they
+  // fall back to arrival.
+  const stamps = { created_at, published_at, updated_at }
+  const revised = sortField === 'revised' && wasRevised(stamps)
+  const at = revised ? revisedAt(stamps) : arrivedAt(stamps)
 
   return (
     <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
@@ -57,7 +51,7 @@ export default function Item({
           </a>
           <p className="mt-0.5 truncate text-xs tracking-wide text-muted-foreground uppercase">
             {vendor}
-            {stamp && ` · ${STAMP_LABEL[stampField]} ${relTime(stamp)}`}
+            {at > 0 && ` · ${revised ? 'updated' : 'added'} ${relTime(new Date(at))}`}
           </p>
         </div>
 

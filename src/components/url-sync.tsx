@@ -4,8 +4,8 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { atom, useAtom, useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import {
-  SORT_OPTIONS,
-  type SortId,
+  facetsAtom,
+  resolveSortId,
   searchAtom,
   slugsAtom,
   sortAtom
@@ -14,13 +14,47 @@ import {
 /** True after the one-time URL → atom hydration pass finishes. */
 export const urlSyncReadyAtom = atom(false)
 
-const SORT_IDS = new Set<string>(SORT_OPTIONS.map(o => o.value))
+/**
+ * Facets ride in one param as `key:a|b,key2:c`, so adding a filter group never
+ * needs a new query param. Values are encoded individually — sizes and colors
+ * contain the separators often enough to matter.
+ */
+const encodeFacets = (facets: Record<string, string[]>) =>
+  Object.entries(facets)
+    .filter(([, v]) => v.length)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([k, v]) => `${encodeURIComponent(k)}:${v.map(encodeURIComponent).join('|')}`)
+    .join(',')
+
+const decodeFacets = (raw: string): Record<string, string[]> =>
+  Object.fromEntries(
+    raw
+      .split(',')
+      .map(part => {
+        const at = part.indexOf(':')
+
+        if (at < 1) {
+          return null
+        }
+
+        const values = part
+          .slice(at + 1)
+          .split('|')
+          .map(decodeURIComponent)
+          .filter(Boolean)
+
+        return values.length
+          ? ([decodeURIComponent(part.slice(0, at)), values] as const)
+          : null
+      })
+      .filter(Boolean) as (readonly [string, string[]])[]
+  )
 
 /**
- * Two-way binds search / sort / brand state to the URL query string so a view
- * is shareable, bookmarkable, and survives the back button. On first mount the
- * URL wins over persisted (localStorage) state; afterwards the URL mirrors the
- * live atoms.
+ * Two-way binds search / sort / brand / filter state to the URL query string so
+ * a view is shareable, bookmarkable, and survives the back button. On first
+ * mount the URL wins over persisted (localStorage) state; afterwards the URL
+ * mirrors the live atoms.
  */
 export function UrlSync() {
   const params = useSearchParams()
@@ -30,21 +64,27 @@ export function UrlSync() {
   const [search, setSearch] = useAtom(searchAtom)
   const [sort, setSort] = useAtom(sortAtom)
   const [slugs, setSlugs] = useAtom(slugsAtom)
+  const [facets, setFacets] = useAtom(facetsAtom)
   const setUrlReady = useSetAtom(urlSyncReadyAtom)
 
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
     const q = params?.get('q') ?? null
-    const s = params?.get('sort') ?? null
+    const s = resolveSortId(params?.get('sort'))
     const b = params?.get('brands') ?? null
+    const f = params?.get('filters') ?? null
 
     if (q !== null) {
       setSearch(q)
     }
 
-    if (s && SORT_IDS.has(s)) {
-      setSort(s as SortId)
+    if (s) {
+      setSort(s)
+    }
+
+    if (f) {
+      setFacets(decodeFacets(f))
     }
 
     if (b !== null) {
@@ -74,6 +114,16 @@ export function UrlSync() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // A sort id retired since the link was made still resolves to a live one, so
+  // rewrite the atom to match rather than leaving a dead value in storage.
+  useEffect(() => {
+    const live = resolveSortId(sort)
+
+    if (live && live !== sort) {
+      setSort(live)
+    }
+  }, [sort, setSort])
+
   useEffect(() => {
     if (!ready) {
       return
@@ -97,11 +147,17 @@ export function UrlSync() {
       next.set('brands', active.join(','))
     }
 
+    const filters = encodeFacets(facets)
+
+    if (filters) {
+      next.set('filters', filters)
+    }
+
     const qs = next.toString()
     const path = pathname ?? '/'
 
     router.replace(qs ? `${path}?${qs}` : path, { scroll: false })
-  }, [ready, search, sort, slugs, pathname, router])
+  }, [ready, search, sort, slugs, facets, pathname, router])
 
   return null
 }
