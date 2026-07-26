@@ -3,8 +3,35 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* The whole UI runs at ~80% of the stock Tailwind scale. Overriding the base
+   tokens keeps every utility (p-4, size-4, text-sm, …) in proportion instead of
+   hand-tuning class names per component. Line heights are unitless ratios, so
+   they follow the font sizes automatically. */
+@theme {
+  --spacing: 0.2rem;
+
+  --text-xs: 0.625rem;
+  --text-sm: 0.75rem;
+  --text-base: 0.8125rem;
+  --text-lg: 0.9375rem;
+  --text-xl: 1rem;
+  --text-2xl: 1.25rem;
+}
+
 :root {
-  --radius: 0.75rem;
+  /* Floating toolbar geometry. The page derives its top padding from these, so
+     the bar always sits with equal air above and below it. */
+  --bar-inset: 0.8rem;
+  /* h-8 control + p-1 either side + the 1px border either side. */
+  --bar-height: calc(2rem + 2px);
+
+  /* Liquid glass: a lit top rim and a soft underside read as a thick pane
+     rather than flat blur. */
+  --glass-rim: oklch(1 0 0 / 0.65);
+  --glass-under: oklch(1 0 0 / 0.2);
+  --glass-shadow: oklch(0.21 0.02 335 / 0.16);
+
+  --radius: 0.625rem;
 
   --background: oklch(0.995 0.004 340);
   --foreground: oklch(0.21 0.02 335);
@@ -38,6 +65,10 @@
 }
 
 .dark {
+  --glass-rim: oklch(1 0 0 / 0.12);
+  --glass-under: oklch(0 0 0 / 0.3);
+  --glass-shadow: oklch(0 0 0 / 0.45);
+
   --background: oklch(0.16 0.012 335);
   --foreground: oklch(0.96 0.006 340);
 
@@ -97,6 +128,27 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-app-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/*
+ * Shared surface for the floating toolbar, palette and their dropdowns, so they
+ * all frost the page identically.
+ *
+ * The saturation/brightness lift plus the specular rim is the part of Apple's
+ * liquid glass that CSS can do everywhere. True refraction needs an SVG
+ * feDisplacementMap fed into backdrop-filter, which is Chromium-only and wants
+ * a displacement map sized to the element — a non-starter for a bar that
+ * animates its own width. https://webtricks.dev/blog/liquid-glass-css
+ */
+@utility glass {
+  background-color: color-mix(in oklch, var(--popover) 70%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
+  backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
+  box-shadow:
+    inset 0 1px 0 var(--glass-rim),
+    inset 0 -1px 0 var(--glass-under),
+    0 2px 8px -4px var(--glass-shadow),
+    0 10px 24px -14px var(--glass-shadow);
 }
 
 @layer base {

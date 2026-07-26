@@ -1,7 +1,7 @@
 'use client'
 
-import { useAtom } from 'jotai'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { atom, useAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import {
   SORT_OPTIONS,
@@ -10,6 +10,9 @@ import {
   slugsAtom,
   sortAtom
 } from '~/lib'
+
+/** True after the one-time URL → atom hydration pass finishes. */
+export const urlSyncReadyAtom = atom(false)
 
 const SORT_IDS = new Set<string>(SORT_OPTIONS.map(o => o.value))
 
@@ -27,6 +30,7 @@ export function UrlSync() {
   const [search, setSearch] = useAtom(searchAtom)
   const [sort, setSort] = useAtom(sortAtom)
   const [slugs, setSlugs] = useAtom(slugsAtom)
+  const [urlReady, setUrlReady] = useAtom(urlSyncReadyAtom)
 
   const [ready, setReady] = useState(false)
 
@@ -65,6 +69,7 @@ export function UrlSync() {
     }
 
     setReady(true)
+    setUrlReady(true)
     // Hydrate from the URL exactly once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

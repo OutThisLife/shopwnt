@@ -8,10 +8,12 @@ import type { Product } from '~/../types'
 import { Item } from '~/components'
 import {
   activeSlugsAtom,
+  brandsReadyAtom,
   getSortOption,
   gql,
   gqlFetch,
   searchAtom,
+  slugsAtom,
   sortAtom
 } from '~/lib'
 import Loading from './loading'
@@ -72,6 +74,8 @@ function EmptyState({
 
 export default function Index() {
   const sortId = useAtomValue(sortAtom)
+  const brandsReady = useAtomValue(brandsReadyAtom)
+  const allSlugs = useAtomValue(slugsAtom)
   const slugs = useAtomValue(activeSlugsAtom)
   const q = useAtomValue(searchAtom)
   const sort = getSortOption(sortId)
@@ -125,6 +129,16 @@ export default function Index() {
     return () => io.disconnect()
   }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
+  if (!brandsReady && Object.keys(allSlugs).length > 0) {
+    return (
+      <div className={`${GRID} pt-8`}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Loading key={i} />
+        ))}
+      </div>
+    )
+  }
+
   if (!slugs.length) {
     return (
       <EmptyState
@@ -147,7 +161,7 @@ export default function Index() {
 
   if (isPending) {
     return (
-      <div className={`${GRID} pt-8`}>
+      <div className={GRID}>
         {Array.from({ length: 6 }).map((_, i) => (
           <Loading key={i} />
         ))}
@@ -170,7 +184,7 @@ export default function Index() {
   }
 
   return (
-    <div className="pt-8">
+    <div>
       <div className={GRID}>
         {products.map(p => (
           <Item key={`${p.vendor}-${p.id}`} {...p} sortField={sort.field} />

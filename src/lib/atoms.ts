@@ -58,12 +58,22 @@ export const slugsAtom = atom(
   }
 )
 
-export const activeSlugsAtom = atom(get =>
-  Object.entries(get(slugsAtom))
+/** False until persisted brands have been probed on load. */
+export const brandsReadyAtom = atom(false)
+
+export const activeSlugsAtom = atom(get => {
+  if (!get(brandsReadyAtom)) {
+    return []
+  }
+
+  return Object.entries(get(slugsAtom))
     .filter(([, v]) => v)
     .map(([k]) => clean(k))
-)
+})
 
 export const sortAtom = atomWithStorage<SortId>('shopwnt:sort', 'newest')
 
 export const searchAtom = atom('')
+
+/** Palette visibility, shared so the toolbar can get out of its way. */
+export const paletteAtom = atom(false)

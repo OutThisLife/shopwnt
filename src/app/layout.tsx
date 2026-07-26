@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import { Inter } from 'next/font/google'
 import { Suspense, type ReactNode } from 'react'
 import { Toolbar } from '~/components'
+import { BrandHealthcheck } from '~/components/brand-health'
+import { CommandPalette } from '~/components/command-palette'
+import { Inspector } from '~/components/inspector'
 import { ScrollTop } from '~/components/scroll-top'
 import { UrlSync } from '~/components/url-sync'
 import { cn } from '~/lib/utils'
@@ -42,15 +45,20 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
         <Providers>
           <Suspense fallback={null}>
             <UrlSync />
+            <BrandHealthcheck />
           </Suspense>
 
           <Toolbar />
 
-          <main className="mx-auto w-full max-w-6xl px-4 pb-24 sm:px-6">
+          {/* The toolbar floats out of flow, so clear it by its own height plus
+              the inset twice over — equal air above the bar and below it. */}
+          <main className="mx-auto w-full max-w-5xl px-4 pt-[calc(var(--bar-inset)*2+var(--bar-height))] pb-24 sm:px-6">
             {children}
           </main>
 
+          <CommandPalette />
           <ScrollTop />
+          <Inspector />
         </Providers>
       </body>
     </html>

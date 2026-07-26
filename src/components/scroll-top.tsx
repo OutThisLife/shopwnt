@@ -22,7 +22,7 @@ export function ScrollTop() {
       aria-hidden={!show}
       aria-label="Back to top"
       className={cn(
-        'fixed right-4 bottom-4 z-50 size-10 rounded-full shadow-lg transition-all sm:right-6 sm:bottom-6',
+        'fixed bottom-4 left-4 z-50 size-10 rounded-full shadow-lg transition-all sm:bottom-6 sm:left-6',
         show
           ? 'translate-y-0 opacity-100'
           : 'pointer-events-none translate-y-2 opacity-0'

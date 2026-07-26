@@ -32,6 +32,19 @@ export const gqlFetch = async <T>(
 
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
 
+/**
+ * Reduce anything paste-shaped — a bare domain, or a full product URL with
+ * query and hash — down to just the hostname.
+ */
+export const storeHost = (raw: string): string =>
+  raw
+    .trim()
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    .replace(/^\/\//, '')
+    .split(/[/?#]/)[0]
+    .replace(/\.+$/, '')
+    .toLowerCase()
+
 export const filterObj = <T = Record<string, unknown> | undefined>(
   obj: T,
   fn: (v: [string, unknown]) => boolean

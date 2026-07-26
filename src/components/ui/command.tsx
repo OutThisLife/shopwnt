@@ -23,11 +23,17 @@ function Command({
 
 function CommandInput({
   className,
+  wrapperClassName,
   ...props
-}: React.ComponentProps<typeof CommandPrimitive.Input>) {
+}: React.ComponentProps<typeof CommandPrimitive.Input> & {
+  wrapperClassName?: string
+}) {
   return (
     <div
-      className="flex h-9 items-center gap-2 border-b px-3"
+      className={cn(
+        'flex h-9 items-center gap-2 border-b px-3',
+        wrapperClassName
+      )}
       data-slot="command-input-wrapper">
       <SearchIcon className="size-4 shrink-0 opacity-50" />
       <CommandPrimitive.Input

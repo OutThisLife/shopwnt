@@ -19,11 +19,12 @@ export function SortSelect({ className }: { className?: string }) {
     <Select onValueChange={v => setSort(v as SortId)} value={sort}>
       <SelectTrigger
         aria-label="Sort products"
-        className={className as ComponentProps<typeof SelectTrigger>['className']}>
+        className={className as ComponentProps<typeof SelectTrigger>['className']}
+        size="sm">
         <ArrowUpDown className="opacity-60" />
         <SelectValue />
       </SelectTrigger>
-      <SelectContent align="end">
+      <SelectContent align="end" className="glass">
         {SORT_OPTIONS.map(o => (
           <SelectItem key={o.value} value={o.value}>
             {o.label}

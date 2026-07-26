@@ -1,69 +1,52 @@
 'use client'
 
-import { useAtom } from 'jotai'
-import { X } from 'lucide-react'
-import { slugsAtom } from '~/lib'
+import { useAtomValue } from 'jotai'
+import { useLayoutEffect, useRef, useState } from 'react'
+import { paletteAtom } from '~/lib'
+import { cn } from '~/lib/utils'
 import { BrandFilter } from '../brand-filter'
-import { SearchBox } from '../search-box'
 import { SortSelect } from '../sort-select'
 
+// Ghost controls, so the pill reads as one surface instead of nested boxes.
+const CONTROL =
+  'h-8 rounded-full border-0 bg-transparent shadow-none hover:bg-accent hover:text-accent-foreground dark:bg-transparent dark:hover:bg-accent/50'
+
 export default function Toolbar() {
-  const [slugs, setSlugs] = useAtom(slugsAtom)
+  const palette = useAtomValue(paletteAtom)
+  const content = useRef<HTMLDivElement>(null)
+  const [width, setWidth] = useState<number>()
 
-  const active = Object.entries(slugs)
-    .filter(([, v]) => v)
-    .map(([k]) => k)
+  // The pill resizes whenever the sort label or the brand count changes. CSS
+  // can't tween that on its own — `width: auto` computes to `auto` either side
+  // of the change, so there's nothing to interpolate. Measuring the content and
+  // pinning the pill to it gives the transition a real number to work with.
+  useLayoutEffect(() => {
+    const el = content.current
 
-  const remove = (k: string) => setSlugs(s => ({ ...s, [k]: false }))
+    if (!el) {
+      return
+    }
+
+    const observer = new ResizeObserver(() => setWidth(el.offsetWidth))
+
+    observer.observe(el)
+
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/70 backdrop-blur-xl">
-      <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <div className="flex h-16 items-center gap-3">
-          <span className="shrink-0 text-lg font-semibold tracking-tight">
-            sho
-            <span className="bg-gradient-to-r from-foreground from-50% to-primary to-50% bg-clip-text text-transparent">
-              p
-            </span>
-            <span className="text-primary">wnt</span>
-          </span>
-
-          {/* Desktop: centered search inline in the top row */}
-          <div className="hidden min-w-0 flex-1 justify-center px-1 sm:px-3 md:flex">
-            <SearchBox className="w-full max-w-md" />
-          </div>
-
-          <div className="ml-auto flex shrink-0 items-center gap-2">
-            <SortSelect className="hidden md:flex" />
-            <BrandFilter />
-          </div>
-        </div>
-
-        {/* Mobile: search + sort get a dedicated row so both stay visible */}
-        <div className="flex items-center gap-2 pb-3 md:hidden">
-          <SearchBox className="min-w-0 flex-1" />
-          <SortSelect className="shrink-0" />
-        </div>
-      </div>
-
-      {active.length > 0 && (
-        <div className="mx-auto -mt-1 flex max-w-6xl flex-wrap items-center gap-1.5 px-4 pb-3 sm:px-6">
-          <span className="mr-1 text-xs font-medium text-muted-foreground">
-            Filtering
-          </span>
-
-          {active.map(k => (
-            <button
-              className="group inline-flex items-center gap-1 rounded-full border bg-secondary/60 py-0.5 pr-1.5 pl-2.5 text-xs font-medium transition-colors hover:bg-secondary"
-              key={k}
-              onClick={() => remove(k)}
-              type="button">
-              {k}
-              <X className="size-3 text-muted-foreground transition-colors group-hover:text-foreground" />
-            </button>
-          ))}
-        </div>
+    <header
+      className={cn(
+        // content-box so the measured content width maps straight onto the pill.
+        'glass fixed top-(--bar-inset) left-1/2 z-40 box-content -translate-x-1/2 overflow-hidden rounded-full border transition-all duration-200',
+        // The palette lands in this exact spot, so hand the space over to it.
+        palette && 'pointer-events-none scale-95 opacity-0'
       )}
+      style={{ width }}>
+      <div className="flex w-max items-center gap-1 p-1" ref={content}>
+        <SortSelect className={CONTROL} />
+        <BrandFilter className={CONTROL} />
+      </div>
     </header>
   )
 }
