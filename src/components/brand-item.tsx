@@ -17,7 +17,7 @@ export function BrandItem({
 }) {
   return (
     <CommandItem onSelect={onToggle} value={slug}>
-      <span className="flex-1 truncate">{slug}</span>
+      <span className="glass-adaptive-text flex-1 truncate">{slug}</span>
 
       {pending && <Loader2 className="size-3.5 animate-spin opacity-13" />}
 

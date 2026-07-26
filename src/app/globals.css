@@ -193,6 +193,53 @@
   }
 }
 
+/*
+ * Real refraction, where the browser allows it.
+ *
+ * Chromium is currently the only engine that accepts an SVG filter as a
+ * backdrop-filter input, so this is gated on an actual support probe rather
+ * than a UA sniff — Safari and Firefox keep the frosted surface above and lose
+ * nothing else. The displacement map is generated in `glass-filter.tsx`.
+ *
+ * The tint drops here because refraction carries the effect: with the backdrop
+ * genuinely bending at the rim, a heavy tint just mutes it.
+ */
+@supports (backdrop-filter: url(#glass-refraction)) {
+  .glass {
+    /* Refraction carries the effect, so the pane can give up some tint — but
+       not so much that dark text over a dark product shot stops being legible.
+       Measured against the real foreground token: 0.45 gives 4.85:1 over a
+       near-black backdrop, just clear of the 4.5:1 AA floor. Lower values look
+       better and fail — 0.26 measured 2.49:1. */
+    background-color: color-mix(
+      in oklch,
+      var(--popover) max(45%, calc(var(--glass-tint) - 6%)),
+      transparent
+    );
+    -webkit-backdrop-filter: url(#glass-refraction) blur(6px) saturate(190%)
+      brightness(1.06);
+    backdrop-filter: url(#glass-refraction) blur(6px) saturate(190%)
+      brightness(1.06);
+  }
+}
+
+/*
+ * Text that reacts to whatever it's sitting over.
+ *
+ * `luminosity` blending takes the lightness of the text and the colour of the
+ * backdrop, so labels darken over a pale product shot and lighten over a dark
+ * one instead of staying a fixed grey. The pane sets `isolation: isolate`, so
+ * the blend resolves against the glass and its backdrop rather than punching
+ * through to the whole page.
+ *
+ * Only the plain labels opt in. Anything carrying its own colour — the active
+ * check, the count badge, a destructive item — keeps it, since blending those
+ * would throw away the meaning the colour is carrying.
+ */
+@utility glass-adaptive-text {
+  mix-blend-mode: luminosity;
+}
+
 @layer base {
   * {
     border-color: var(--border);
