@@ -71,7 +71,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     // you can watch it filter as you type.
     <div className="pointer-events-none fixed inset-x-0 top-(--bar-inset) z-50 flex justify-center px-4">
       <Command
-        className="glass pointer-events-auto w-full max-w-lg rounded-xl border animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+        className="glass glass-soft pointer-events-auto w-full max-w-lg rounded-xl border animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
         onKeyDown={e => {
           if (e.key === 'Escape' || (e.key === 'Enter' && !hasList)) {
             onClose()

@@ -8,8 +8,9 @@ import { BrandFilter } from '../brand-filter'
 import { SortSelect } from '../sort-select'
 
 // Ghost controls, so the pill reads as one surface instead of nested boxes.
-const CONTROL =
-  'h-8 rounded-full border-0 bg-transparent shadow-none hover:bg-accent hover:text-accent-foreground dark:bg-transparent dark:hover:bg-accent/50'
+// Hover, active and focus come from the `glass` interaction rules in
+// globals.css — solid accent fills would read as stickers on the pane.
+const CONTROL = 'h-8 rounded-full border-0 bg-transparent shadow-none'
 
 export default function Toolbar() {
   const palette = useAtomValue(paletteAtom)
@@ -38,10 +39,11 @@ export default function Toolbar() {
     <header
       className={cn(
         // content-box so the measured content width maps straight onto the pill.
-        'glass fixed top-(--bar-inset) left-1/2 z-40 box-content -translate-x-1/2 overflow-hidden rounded-full border transition-all duration-200',
+        'glass fixed top-(--bar-inset) left-1/2 z-40 box-content -translate-x-1/2 rounded-full transition-all duration-200',
         // The palette lands in this exact spot, so hand the space over to it.
         palette && 'pointer-events-none scale-95 opacity-0'
       )}
+      data-slot="toolbar"
       style={{ width }}>
       <div className="flex w-max items-center gap-1 p-1" ref={content}>
         <SortSelect className={CONTROL} />
