@@ -48,6 +48,13 @@
   /* Dark text on a light pane, so the halo is white — it lifts the glyphs off
      whatever photo is showing through. */
   --glass-text-halo: oklch(1 0 0 / 0.7);
+  /* Springy easing for the pill's own geometry. The final control point sits
+     above 1, so width and scale overshoot the target and settle back — that
+     slight rebound is what reads as liquid rather than a mechanical tween.
+     Only safe on properties where overshoot is meaningful; opacity would
+     clip past 1 and flatten, so that gets the gentle curve instead. */
+  --ease-liquid: cubic-bezier(0.175, 0.885, 0.32, 1.475);
+  --ease-liquid-soft: cubic-bezier(0.32, 0.72, 0.29, 1);
 
   --radius: 0.625rem;
 
@@ -366,6 +373,29 @@
 @utility glass-soft {
   &::before {
     filter: url(#glass-distortion-soft);
+  }
+}
+
+/*
+ * Liquid motion for the pill's own geometry.
+ *
+ * The bar remeasures whenever the sort label or brand count changes, and a
+ * linear tween on that reads mechanical. Width springs slightly past its target
+ * and settles, which is what makes it feel like it's flowing to the new size.
+ *
+ * Opacity is deliberately excluded from the springy curve — overshoot past 1
+ * clips, so it just flickers. It gets a plain ease instead.
+ */
+@utility glass-springy {
+  transition-property: width, scale, opacity;
+  transition-duration: 520ms, 340ms, 200ms;
+  transition-timing-function: var(--ease-liquid), var(--ease-liquid),
+    var(--ease-liquid-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glass-springy {
+    transition-duration: 0.01ms;
   }
 }
 

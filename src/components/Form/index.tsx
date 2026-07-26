@@ -39,7 +39,7 @@ export default function Toolbar() {
     <header
       className={cn(
         // content-box so the measured content width maps straight onto the pill.
-        'glass fixed top-(--bar-inset) left-1/2 z-40 box-content -translate-x-1/2 rounded-full transition-all duration-200',
+        'glass glass-springy fixed top-(--bar-inset) left-1/2 z-40 box-content -translate-x-1/2 rounded-full',
         // The palette lands in this exact spot, so hand the space over to it.
         palette && 'pointer-events-none scale-95 opacity-0'
       )}
