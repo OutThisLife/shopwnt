@@ -12,7 +12,11 @@ function Command({
   return (
     <CommandPrimitive
       className={cn(
-        'flex h-full w-full flex-col overflow-hidden rounded-md bg-popover text-popover-foreground',
+        // Transparent by default: when this sits inside a `glass` surface the
+        // pane behind it is the background, and a second opaque layer here
+        // would blank out the frost. Radius is inherited so the corners always
+        // follow whatever wraps it instead of guessing at rounded-md.
+        'flex h-full w-full flex-col overflow-hidden rounded-[inherit] bg-transparent text-popover-foreground',
         className
       )}
       data-slot="command"
@@ -31,7 +35,11 @@ function CommandInput({
   return (
     <div
       className={cn(
-        'flex h-9 items-center gap-2 border-b px-3',
+        // The rule is drawn as a ::after inset from the edges rather than a
+        // full-bleed border-b, which otherwise runs straight into the pane's
+        // rounded corners and reads as a mistake.
+        'relative flex h-9 items-center gap-2 px-3',
+        'after:pointer-events-none after:absolute after:inset-x-2 after:bottom-0 after:h-px after:bg-border',
         wrapperClassName
       )}
       data-slot="command-input-wrapper">

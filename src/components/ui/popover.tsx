@@ -27,7 +27,10 @@ function PopoverContent({
       <PopoverPrimitive.Content
         align={align}
         className={cn(
-          'z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          'z-50 w-72 origin-(--radix-popover-content-transform-origin) rounded-md border p-4 text-popover-foreground outline-hidden data-[state=closed]:animate-out data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+          // A `glass` caller brings its own translucent background and rim, so
+          // only fall back to the solid popover chrome when it doesn't.
+          !className?.includes('glass') && 'bg-popover shadow-md',
           className
         )}
         data-slot="popover-content"

@@ -54,7 +54,7 @@ export function BrandFilter({ className }: { className?: string }) {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="end" className="glass w-72 p-0">
+      <PopoverContent align="end" className="glass w-72 overflow-hidden p-0" sideOffset={6}>
         <Command>
           <CommandInput
             onValueChange={setQuery}

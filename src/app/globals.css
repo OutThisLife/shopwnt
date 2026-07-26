@@ -28,14 +28,14 @@
   /* Liquid glass: a lit top rim and a soft underside read as a thick pane
      rather than flat blur. The side rims close the bevel around the pill's
      curve, and the sheen is the diagonal gloss across the face. */
-  --glass-rim: oklch(1 0 0 / 0.65);
-  --glass-under: oklch(1 0 0 / 0.2);
-  --glass-edge: oklch(1 0 0 / 0.3);
-  --glass-sheen: oklch(1 0 0 / 0.5);
-  --glass-shadow: oklch(0.21 0.02 335 / 0.16);
+  --glass-rim: oklch(1 0 0 / 0.8);
+  --glass-under: oklch(1 0 0 / 0.25);
+  --glass-edge: oklch(1 0 0 / 0.4);
+  --glass-sheen: oklch(1 0 0 / 0.55);
+  --glass-shadow: oklch(0.21 0.02 335 / 0.2);
   /* How much of the pane is its own tint vs. the blurred page behind it.
-     Below ~60% the backdrop actually reads through as glass. */
-  --glass-tint: 58%;
+     Below ~45% the page genuinely reads through instead of just looking pale. */
+  --glass-tint: 38%;
 
   --radius: 0.625rem;
 
@@ -71,14 +71,14 @@
 }
 
 .dark {
-  --glass-rim: oklch(1 0 0 / 0.12);
-  --glass-under: oklch(0 0 0 / 0.3);
-  --glass-edge: oklch(1 0 0 / 0.07);
-  --glass-sheen: oklch(1 0 0 / 0.1);
-  --glass-shadow: oklch(0 0 0 / 0.45);
+  --glass-rim: oklch(1 0 0 / 0.18);
+  --glass-under: oklch(0 0 0 / 0.35);
+  --glass-edge: oklch(1 0 0 / 0.1);
+  --glass-sheen: oklch(1 0 0 / 0.14);
+  --glass-shadow: oklch(0 0 0 / 0.55);
   /* Dark panes need more of their own body — the page behind them is already
      dark, so a thin tint just reads as a murky hole. */
-  --glass-tint: 66%;
+  --glass-tint: 52%;
 
   --background: oklch(0.16 0.012 335);
   --foreground: oklch(0.96 0.006 340);
@@ -163,16 +163,17 @@
     in oklch,
     var(--popover) var(--glass-tint),
     transparent
-  ) !important;
-  -webkit-backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
-  backdrop-filter: blur(16px) saturate(180%) brightness(1.04);
+  );
+  -webkit-backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
+  backdrop-filter: blur(20px) saturate(200%) brightness(1.08);
   box-shadow:
     inset 0 1px 0 var(--glass-rim),
     inset 0 -1px 0 var(--glass-under),
     inset 1px 0 0 var(--glass-edge),
     inset -1px 0 0 var(--glass-edge),
-    0 2px 8px -4px var(--glass-shadow),
-    0 10px 24px -14px var(--glass-shadow) !important;
+    0 1px 2px -1px var(--glass-shadow),
+    0 8px 16px -8px var(--glass-shadow),
+    0 20px 40px -20px var(--glass-shadow);
 
   /* The gloss sits in its own layer so it follows the pane's radius and stays
      under the content. */
