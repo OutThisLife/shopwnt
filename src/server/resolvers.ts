@@ -335,5 +335,15 @@ export const Query = {
 export const Product = {
   price: (i: IProduct) => i?.variants?.[0]?.price ?? i?.price,
   url: (i: IProduct) =>
-    `https://${clean(i?.vendor)}.myshopify.com/products/${i?.handle}`
+    `https://${clean(i?.vendor)}.myshopify.com/products/${i?.handle}`,
+  variants: (i: IProduct) =>
+    (i?.variants ?? []).map(v => ({ ...v, product: i }))
+}
+
+export const Variant = {
+  cartUrl: (v: any) => {
+    const host = v?.product ? clean(v.product.vendor) : v?.product_id
+
+    return host && v?.id ? `https://${host}.myshopify.com/cart/${v.id}:1` : null
+  }
 }

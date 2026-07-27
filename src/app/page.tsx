@@ -53,6 +53,19 @@ const QUERY = gql`
         width
         height
       }
+      variants {
+        id
+        available
+        title
+        option1
+        option2
+        option3
+        cartUrl
+      }
+      options {
+        name
+        values
+      }
     }
   }
 `

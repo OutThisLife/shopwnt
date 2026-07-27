@@ -4,6 +4,7 @@ import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import type { Product } from '~/../types'
 import { arrivedAt, relTime, revisedAt, wasRevised, type SortField } from '~/lib'
+import { cn } from '~/lib/utils'
 import { Badge } from '../ui/badge'
 import { Card, CardContent } from '../ui/card'
 import {
@@ -16,12 +17,59 @@ import {
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
 
+/** Shared chrome for a size pill; state classes are layered per pill. */
+const PILL =
+  'inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-2 text-xs font-medium transition-colors'
+
+interface SizePill {
+  label: string
+  href?: string
+  available: boolean
+}
+
+/**
+ * One pill per size, in catalog order.
+ *
+ * Shopify carries option values on variant option1/2/3, positionally matching
+ * the product's `options`, so the size lives in whichever slot the size option
+ * occupies. Where two variants share a label the available one wins the pill,
+ * but the first cart URL is kept so a sold-out size still links somewhere.
+ */
+const sizesOf = (options: Product['options'], variants: Product['variants']) => {
+  const idx = (options ?? []).findIndex(
+    o => `${o?.name ?? ''}`.toLowerCase() === 'size'
+  )
+
+  if (idx < 0) {
+    return []
+  }
+
+  const byLabel = new Map<string, SizePill>()
+
+  for (const v of variants ?? []) {
+    const label = [v.option1, v.option2, v.option3][idx]?.trim()
+    const hit = label && byLabel.get(label)
+
+    if (label && (!hit || (v.available && !hit.available))) {
+      byLabel.set(label, {
+        label,
+        href: v.cartUrl ?? undefined,
+        available: !!v.available
+      })
+    }
+  }
+
+  return [...byLabel.values()]
+}
+
 export default function Item({
   title,
   url,
   vendor,
   price: listPrice,
   images = [],
+  options = [],
+  variants = [],
   created_at,
   published_at,
   updated_at,
@@ -36,6 +84,8 @@ export default function Item({
   const stamps = { created_at, published_at, updated_at }
   const revised = sortField === 'revised' && wasRevised(stamps)
   const at = revised ? revisedAt(stamps) : arrivedAt(stamps)
+
+  const sizes = sizesOf(options, variants)
 
   return (
     <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
@@ -94,6 +144,35 @@ export default function Item({
             </div>
           )}
         </Carousel>
+
+        {sizes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 px-6 pt-3 pb-4">
+            {sizes.map(({ label, href, available }) => {
+              const buyable = available && href
+
+              return (
+                <a
+                  aria-disabled={!buyable}
+                  className={cn(
+                    PILL,
+                    buyable
+                      ? 'hover:border-primary hover:text-primary'
+                      : 'pointer-events-none text-muted-foreground line-through opacity-60'
+                  )}
+                  href={buyable ? href : undefined}
+                  key={label}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  // A cart permalink lands the browser on that store's cart with
+                  // the variant already in it — cross-origin AJAX to a dozen
+                  // different Shopify stores isn't possible from here.
+                  title={buyable ? `Add ${label} to cart` : `${label} — sold out`}>
+                  {label}
+                </a>
+              )
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

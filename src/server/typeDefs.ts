@@ -84,6 +84,7 @@ const typeDefs = /* GraphQL */ `
     id: ID!
     available: Boolean
     barcode: String
+    cartUrl: String
     compare_at_price: String
     created_at: Date
     featured_image: String

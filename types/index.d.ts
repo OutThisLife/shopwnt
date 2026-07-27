@@ -1,6 +1,7 @@
 export interface Variant {
   available: boolean
   barcode?: any
+  cartUrl?: string
   compare_at_price: string
   created_at: Date
   featured_image?: any
