@@ -1,6 +1,6 @@
 'use client'
 
-import { useSetAtom } from 'jotai'
+import { useAtom } from 'jotai'
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { slugsAtom } from './atoms'
@@ -8,7 +8,7 @@ import { storeHost } from './util'
 
 /** Verifies a pasted domain or URL is a Shopify store, then adds it as a brand. */
 export function useAddBrand() {
-  const setSlugs = useSetAtom(slugsAtom)
+  const [slugs, setSlugs] = useAtom(slugsAtom)
   const [adding, setAdding] = useState(false)
 
   const addBrand = async (raw: string) => {
@@ -16,6 +16,28 @@ export function useAddBrand() {
 
     if (!v || adding) {
       return null
+    }
+
+    // A host already in the list is already a brand — skip the verify round-trip
+    // and just make sure it's switched on. storeHost folds any URL shape down
+    // to the hostname, so a full product URL matches the bare domain entry.
+    const host = storeHost(v)
+    const existing = Object.keys(slugs).find(
+      s => storeHost(s) === host || s === host
+    )
+
+    if (existing) {
+      if (slugs[existing]) {
+        toast.info('Already added', { description: existing })
+
+        return existing
+      }
+
+      // Exists but switched off — flip it back on instead of re-verifying.
+      setSlugs(s => ({ ...s, [existing]: true }))
+      toast.success('Brand added', { description: existing })
+
+      return existing
     }
 
     setAdding(true)
