@@ -6,6 +6,8 @@ import { paletteAtom } from '~/lib'
 import { cn } from '~/lib/utils'
 import { BrandFilter } from '../brand-filter'
 import { FacetFilter } from '../facet-filter'
+import { LoadStatus } from '../load-status'
+import { SearchTag } from '../search-tag'
 import { SortSelect } from '../sort-select'
 
 // Ghost controls, so the pill reads as one surface instead of nested boxes.
@@ -47,9 +49,11 @@ export default function Toolbar() {
       data-slot="toolbar"
       style={{ width }}>
       <div className="flex w-max items-center gap-1 p-1" ref={content}>
+        <SearchTag className={CONTROL} />
         <SortSelect className={CONTROL} />
         <FacetFilter className={CONTROL} />
         <BrandFilter className={CONTROL} />
+        <LoadStatus className="mr-1.5 ml-0.5" />
       </div>
     </header>
   )
