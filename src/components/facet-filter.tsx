@@ -57,7 +57,7 @@ export function FacetFilter({ className }: { className?: string }) {
       </PopoverTrigger>
 
       <PopoverContent
-        align="end"
+        align="center"
         className="glass glass-soft w-72 overflow-hidden p-0"
         sideOffset={6}>
         <Command>
