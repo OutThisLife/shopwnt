@@ -86,6 +86,28 @@ interface FacetSelection {
   values: string[]
 }
 
+/**
+ * The filter groups worth offering grid-wide.
+ *
+ * Deriving groups from whatever option names the catalogs happened to use
+ * surfaced junk: a store selling gift cards contributed "Denominations", one
+ * with a single candle line contributed "Scent", and the menu became a column
+ * per vendor quirk. These are the axes a person actually shops a mixed grid on,
+ * and anything else a catalog carries is per-product detail — it belongs on the
+ * card, not in a grid-wide filter.
+ *
+ * Option names are matched case-folded, with the aliases stores use for the
+ * same axis folded onto one group.
+ */
+const OPTION_GROUPS: { name: string; label: string; aliases: string[] }[] = [
+  { name: 'size', label: 'Size', aliases: ['size', 'sizes', 'us size', 'shoe size'] },
+  { name: 'color', label: 'Color', aliases: ['color', 'colour', 'shade'] }
+]
+
+/** The option group a catalog's option name belongs to, if any. */
+const groupFor = (name: string) =>
+  OPTION_GROUPS.find(g => g.aliases.includes(name))
+
 const OPTION_PREFIX = 'option:'
 
 /** Per-group ceiling on offered values. Past this a menu stops being scannable. */
@@ -97,13 +119,24 @@ const IN_STOCK = 'In stock'
 const SOLD_OUT = 'Sold out'
 
 /**
- * "Title" is what Shopify calls the option on a product that has no real
- * options, so its values are placeholders rather than anything you'd filter by.
+ * Price is a derived axis, not a catalog option. Raw prices are useless as a
+ * facet — every product is its own value — so they're bucketed into bands.
  */
-const PLACEHOLDER_OPTION = 'title'
+const PRICE = { key: 'price_band', label: 'Price' }
 
-const titleCase = (s: string) =>
-  s.replace(/\w\S*/g, w => w[0].toUpperCase() + w.slice(1).toLowerCase())
+const PRICE_BANDS: { label: string; max: number }[] = [
+  { label: 'Under $50', max: 50 },
+  { label: '$50 – $100', max: 100 },
+  { label: '$100 – $250', max: 250 },
+  { label: '$250 – $500', max: 500 },
+  { label: '$500+', max: Infinity }
+]
+
+const priceBand = (i: IProduct): string | null => {
+  const p = priceOf(i)
+
+  return p > 0 ? (PRICE_BANDS.find(b => p < b.max)?.label ?? null) : null
+}
 
 /**
  * Stores are inconsistent about casing — "Black" and "BLACK" are one color
@@ -111,18 +144,33 @@ const titleCase = (s: string) =>
  */
 const foldKey = (s: string) => s.trim().toLowerCase()
 
-/** Option values a product contributes, minus Shopify's placeholder group. */
-const optionValues = (i: IProduct, name: string): string[] =>
-  (i?.options ?? [])
-    .filter(o => foldKey(`${o?.name ?? ''}`) === name)
+/**
+ * Option values a product contributes to a canonical group, matched across
+ * every alias so a store calling it "Colour" lands in the same Color column,
+ * and bucketed where the group has a canonical form (sizes).
+ */
+const optionValues = (i: IProduct, name: string): string[] => {
+  const aliases = groupFor(name)?.aliases ?? [name]
+
+  const vals = (i?.options ?? [])
+    .filter(o => aliases.includes(foldKey(`${o?.name ?? ''}`)))
     .flatMap(o => o?.values ?? [])
     .map(v => `${v ?? ''}`.trim())
     .filter(Boolean)
+
+  return name === 'size' ? vals.map(sizeBucket) : vals
+}
 
 /** Every value a product contributes to one facet group. */
 const valuesOf = (i: IProduct, key: string): string[] => {
   if (key === STOCK.key) {
     return [i?.variants?.some(v => v.available) ? IN_STOCK : SOLD_OUT]
+  }
+
+  if (key === PRICE.key) {
+    const band = priceBand(i)
+
+    return band ? [band] : []
   }
 
   if (key === 'product_type') {
@@ -139,12 +187,12 @@ const valuesOf = (i: IProduct, key: string): string[] => {
 }
 
 /**
- * Derive the filter groups from what the selected brands actually carry. A
- * store that only sells candles never surfaces a Size filter, and one that
- * calls it "Inseam" gets an Inseam filter — nothing here is a fixed list.
+ * Build the grid-wide filter groups from a fixed set of axes: what it is,
+ * what size, what color, whether you can buy it. Values still come from the
+ * live catalogs — a brand set with no shoes offers no shoe sizes — but the
+ * *groups* no longer follow whatever a vendor named its options.
  *
- * Groups too sparse to be useful are dropped: a single value filters nothing,
- * and a value-per-product is a serial number, not a facet.
+ * Groups too sparse to be useful are dropped: a single value filters nothing.
  */
 const groupsOf = (pool: IProduct[]) => {
   // Values are tallied under a case-folded key so "Black" and "BLACK" are one
@@ -174,19 +222,19 @@ const groupsOf = (pool: IProduct[]) => {
       note('product_type', 'Category', type)
     }
 
-    note(STOCK.key, STOCK.label, i?.variants?.some(v => v.available) ? IN_STOCK : SOLD_OUT)
-
-    for (const o of i?.options ?? []) {
-      const name = foldKey(`${o?.name ?? ''}`)
-
-      if (!name || name === PLACEHOLDER_OPTION) {
-        continue
-      }
-
-      for (const v of optionValues(i, name)) {
-        note(`${OPTION_PREFIX}${name}`, titleCase(name), v)
+    for (const g of OPTION_GROUPS) {
+      for (const v of optionValues(i, g.name)) {
+        note(`${OPTION_PREFIX}${g.name}`, g.label, v)
       }
     }
+
+    const band = priceBand(i)
+
+    if (band) {
+      note(PRICE.key, PRICE.label, band)
+    }
+
+    note(STOCK.key, STOCK.label, i?.variants?.some(v => v.available) ? IN_STOCK : SOLD_OUT)
   }
 
   const groups = [...seen]
@@ -203,25 +251,58 @@ const groupsOf = (pool: IProduct[]) => {
         .sort(byValue(key))
     }))
     .filter(g => g.values.length > 1)
-    .filter(g => !g.key.startsWith(OPTION_PREFIX) || g.values.length < pool.length)
 
-  // Category leads, stock trails, option groups keep catalog order between.
-  const rank = (k: string) => (k === 'product_type' ? 0 : k === STOCK.key ? 2 : 1)
+  const order = [
+    'product_type',
+    `${OPTION_PREFIX}size`,
+    `${OPTION_PREFIX}color`,
+    PRICE.key,
+    STOCK.key
+  ]
 
-  return groups.sort((a, b) => rank(a.key) - rank(b.key))
+  return groups.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
 }
 
-const SIZE_ORDER = ['xxs', 'xs', 's', 'm', 'l', 'xl', 'xxl', 'xxxl', '2xl', '3xl', '4xl']
+/**
+ * Letter sizes collapse into three buckets so the Size filter reads as a
+ * choice (Small / Medium / Large) rather than a roll-call of every letter a
+ * catalog happens to use. Numeric sizes and "One Size" belong to no bucket,
+ * so they pass through as their own entries alongside the three.
+ */
+const SIZE_BUCKET: Record<string, string> = {
+  xxs: 'Small',
+  xs: 'Small',
+  s: 'Small',
+  m: 'Medium',
+  l: 'Large',
+  xl: 'Large',
+  xxl: 'Large',
+  xxxl: 'Large',
+  '2xl': 'Large',
+  '3xl': 'Large',
+  '4xl': 'Large'
+}
+
+const sizeBucket = (v: string): string =>
+  SIZE_BUCKET[v.trim().toLowerCase()] ?? v
 
 /**
  * Sizes are the one group where alphabetical is actively wrong — L before M
- * before S reads as noise. Sort the standard run by the run, numeric sizes
- * numerically, and fall back to alphabetical for everything else.
+ * before S reads as noise. Now that letter sizes collapse into Small/Medium/
+ * Large buckets, sort the buckets in size order; numeric sizes and "One Size"
+ * still pass through, numerically then alphabetically.
  */
+const BUCKET_ORDER = ['Small', 'Medium', 'Large']
+
 const byValue = (key: string) => (a: string, b: string) => {
+  if (key === PRICE.key) {
+    const idx = (v: string) => PRICE_BANDS.findIndex(band => band.label === v)
+
+    return idx(a) - idx(b)
+  }
+
   if (key === `${OPTION_PREFIX}size`) {
-    const idx = (v: string) => SIZE_ORDER.indexOf(v.trim().toLowerCase())
-    const [ia, ib] = [idx(a), idx(b)]
+    const [ia, ib] = [BUCKET_ORDER.indexOf(a), BUCKET_ORDER.indexOf(b)]
 
     if (ia >= 0 && ib >= 0) {
       return ia - ib
