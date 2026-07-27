@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <title>shopwnt</title>
+  <!-- Brand chip. #ea3460 is the primary token oklch(0.62 0.216 13) resolved to
+       sRGB, so the mark reads identically in a tab strip on either theme. -->
+  <rect width="32" height="32" rx="7.5" fill="#ea3460"/>
+  <!-- Bag drawn as a solid body plus a stroked handle rather than one cut-out
+       path: at 16px the cut-out collapsed to a single pixel row and the handle
+       merged into the body. A stroke keeps a real gap at every size.
+       Body sits low and wide so the silhouette reads as a bag, not a box. -->
+  <path
+    fill="none"
+    stroke="#fff"
+    stroke-width="2.6"
+    d="M11.6 13.4v-2.9a4.4 4.4 0 0 1 8.8 0v2.9"/>
+  <path
+    fill="#fff"
+    d="M7.9 13.9h16.2a1.6 1.6 0 0 1 1.6 1.45l.92 9.2a1.6 1.6 0 0 1-1.6 1.76H6.98a1.6 1.6 0 0 1-1.6-1.76l.92-9.2A1.6 1.6 0 0 1 7.9 13.9Z"/>
+</svg>
