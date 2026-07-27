@@ -4,6 +4,7 @@ import { useAtom } from 'jotai'
 import { ArrowUpDown } from 'lucide-react'
 import type { ComponentProps } from 'react'
 import { SORT_OPTIONS, type SortId, sortAtom } from '~/lib'
+import { DROPDOWN_PANEL } from './ui/dropdown'
 import {
   Select,
   SelectContent,
@@ -24,7 +25,7 @@ export function SortSelect({ className }: { className?: string }) {
         <ArrowUpDown className="opacity-60" />
         <SelectValue />
       </SelectTrigger>
-      <SelectContent align="center" className="glass glass-soft overflow-hidden" sideOffset={6}>
+      <SelectContent align="center" className={DROPDOWN_PANEL} sideOffset={6}>
         {SORT_OPTIONS.map(o => (
           <SelectItem key={o.value} value={o.value}>
             {o.label}

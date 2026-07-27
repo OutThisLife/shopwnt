@@ -1,7 +1,7 @@
 'use client'
 
 import * as SelectPrimitive from '@radix-ui/react-select'
-import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
+import { ChevronDownIcon, ChevronUpIcon } from 'lucide-react'
 import type * as React from 'react'
 import { cn } from '~/lib/utils'
 
@@ -64,7 +64,9 @@ function SelectContent({
         {...props}>
         <SelectPrimitive.Viewport
           className={cn(
-            'p-1',
+            // Matches the px-1 pb-1 gutter the Brands/Filters columns use, so
+            // the row fill insets from the panel edge identically.
+            'px-1 py-1',
             position === 'popper' &&
               'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1'
           )}>
@@ -83,16 +85,18 @@ function SelectItem({
   return (
     <SelectPrimitive.Item
       className={cn(
-        "relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        // Same metrics as DropdownRow so Sort, Brands and Filters read as one
+        // control family. Selection is the row's own fill rather than a tick,
+        // so there's no indicator gutter to reserve.
+        'flex cursor-pointer items-center gap-2 rounded-sm px-1.5 py-1 text-left text-sm outline-hidden transition-colors select-none',
+        'data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground',
+        'focus:bg-accent/60 data-[highlighted]:bg-accent/60',
+        'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
+        "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       data-slot="select-item"
       {...props}>
-      <span className="absolute right-2 flex size-3.5 items-center justify-center">
-        <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4" />
-        </SelectPrimitive.ItemIndicator>
-      </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
     </SelectPrimitive.Item>
   )
