@@ -1,6 +1,7 @@
 export const fetcher = async <T extends Record<string, any>>(
-  k: string
-): Promise<T> => (await fetch(k)).json() as Promise<T>
+  k: string,
+  init?: RequestInit
+): Promise<T> => (await fetch(k, init)).json() as Promise<T>
 
 /** Passthrough tag for editor highlighting / prettier formatting. */
 export const gql = (strings: TemplateStringsArray, ...values: unknown[]): string =>

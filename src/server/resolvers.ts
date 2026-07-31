@@ -3,10 +3,19 @@ import { arrivedAt, clean, fetcher, revisedAt } from '~/lib'
 
 const PER_PAGE = 250
 const MAX_PAGES = 20
+/** Pages fetched concurrently once page 1 proves there's more. */
+const BATCH = 5
 const TTL = 5 * 60_000
 
 const shopify = (slug: string, path: string) =>
   new URL(path, `https://${slug}.myshopify.com`).toString()
+
+/** Same browser-shaped headers the health probe uses; Shopify 430s bare bots. */
+const HEADERS = {
+  'User-Agent':
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36',
+  Accept: 'application/json'
+}
 
 const priceOf = (i: IProduct) => parseFloat(i?.variants?.[0]?.price) || 0
 
@@ -28,57 +37,108 @@ const matches = (q: string) => {
   const tokens = norm(q).split(/\s+/).filter(Boolean)
 
   return (i: IProduct) => {
-    const hay = haystack(i)
+    const hay = metaOf(i).hay
 
     return tokens.every(t => hay.includes(t))
   }
 }
 
 const cmp: Record<string, (a: any, b: any) => number> = {
-  price: (a, b) => priceOf(a) - priceOf(b),
-  arrived: (a, b) => arrivedAt(a) - arrivedAt(b),
-  revised: (a, b) => revisedAt(a) - revisedAt(b)
+  price: (a, b) => metaOf(a).price - metaOf(b).price,
+  arrived: (a, b) => metaOf(a).arrived - metaOf(b).arrived,
+  revised: (a, b) => metaOf(a).revised - metaOf(b).revised
 }
 
-// products.json only supports limit/page — sorting must be done here, over the
-// full catalog. Cache the walk so infinite-scroll pages don't re-fetch it all.
-const cache = new Map<string, { at: number; items: IProduct[] }>()
+const page = async (slug: string, n: number): Promise<IProduct[]> => {
+  const u = new URL(shopify(slug, 'products.json'))
 
+  u.searchParams.set('limit', `${PER_PAGE}`)
+  u.searchParams.set('page', `${n}`)
+
+  try {
+    const { products } = await fetcher<{ products?: IProduct[] }>(u.toString(), {
+      headers: HEADERS
+    })
+
+    return products ?? []
+  } catch {
+    return []
+  }
+}
+
+/**
+ * products.json only supports limit/page, so the whole catalog has to be
+ * walked. Page 1 goes alone — most stores fit in it, and one request is the
+ * floor — then the rest go in concurrent batches instead of single file, so a
+ * 20-page catalog costs ~5 round-trips rather than 20.
+ */
+const walk = async (slug: string): Promise<IProduct[]> => {
+  const items: IProduct[] = []
+
+  for (let at = 1; at <= MAX_PAGES; ) {
+    const size = at === 1 ? 1 : Math.min(BATCH, MAX_PAGES - at + 1)
+    const pages = await Promise.all(
+      Array.from({ length: size }, (_, n) => page(slug, at + n))
+    )
+    const short = pages.findIndex(p => p.length < PER_PAGE)
+
+    items.push(...pages.slice(0, short < 0 ? size : short + 1).flat())
+
+    if (short >= 0) {
+      break
+    }
+
+    at += size
+  }
+
+  // Vendor doubles as the store slug downstream (urls, cart links), and only
+  // sellable products are worth carrying. Settled here once per walk so every
+  // request shares the same object references — which is what lets metaOf
+  // memoize against them.
+  return items.filter(i => i?.variants?.length).map(i => ({ ...i, vendor: slug }))
+}
+
+const cache = new Map<string, { at: number; items: IProduct[] }>()
+const inflight = new Map<string, Promise<IProduct[]>>()
+
+/** One walk per store at a time — concurrent misses join it, never repeat it. */
+const refresh = (slug: string): Promise<IProduct[]> => {
+  const going = inflight.get(slug)
+
+  if (going) {
+    return going
+  }
+
+  const next = walk(slug)
+    .then(items => {
+      cache.set(slug, { at: Date.now(), items })
+
+      return items
+    })
+    .finally(() => inflight.delete(slug))
+
+  inflight.set(slug, next)
+
+  return next
+}
+
+/**
+ * Stale-while-revalidate: an expired entry still answers instantly and the
+ * re-walk happens behind it, so nobody's request ever blocks on Shopify twice.
+ * Only a store never seen before waits on the network.
+ */
 const catalog = async (slug: string): Promise<IProduct[]> => {
   const hit = cache.get(slug)
 
-  if (hit && Date.now() - hit.at < TTL) {
-    return hit.items
+  if (!hit) {
+    return refresh(slug)
   }
 
-  const items: IProduct[] = []
-
-  for (let page = 1; page <= MAX_PAGES; page++) {
-    const u = new URL(shopify(slug, 'products.json'))
-
-    u.searchParams.set('limit', `${PER_PAGE}`)
-    u.searchParams.set('page', `${page}`)
-
-    try {
-      const { products } = await fetcher<{ products?: IProduct[] }>(u.toString())
-
-      if (!products?.length) {
-        break
-      }
-
-      items.push(...products)
-
-      if (products.length < PER_PAGE) {
-        break
-      }
-    } catch {
-      break
-    }
+  if (Date.now() - hit.at >= TTL) {
+    void refresh(slug)
   }
 
-  cache.set(slug, { at: Date.now(), items })
-
-  return items
+  return hit.items
 }
 
 interface FacetSelection {
@@ -144,6 +204,14 @@ const priceBand = (i: IProduct): string | null => {
  */
 const foldKey = (s: string) => s.trim().toLowerCase()
 
+/** Every group the menu can offer, in display order. */
+const FACETS: { key: string; label: string }[] = [
+  { key: 'product_type', label: 'Category' },
+  ...OPTION_GROUPS.map(g => ({ key: `${OPTION_PREFIX}${g.name}`, label: g.label })),
+  { key: PRICE.key, label: PRICE.label },
+  { key: STOCK.key, label: STOCK.label }
+]
+
 /**
  * Option values a product contributes to a canonical group, matched across
  * every alias so a store calling it "Colour" lands in the same Color column,
@@ -187,6 +255,49 @@ const valuesOf = (i: IProduct, key: string): string[] => {
 }
 
 /**
+ * Everything derived per product — the search haystack, the resolved sort
+ * stamps, every facet group's values raw and folded — memoized against the
+ * product object itself. The catalog cache hands back the same references
+ * request after request, so this work happens once per walk; the facets
+ * resolver alone used to redo it groups × selections times over the pool.
+ */
+interface Meta {
+  hay: string
+  price: number
+  arrived: number
+  revised: number
+  values: Record<string, string[]>
+  folded: Record<string, Set<string>>
+}
+
+const metas = new WeakMap<IProduct, Meta>()
+
+const metaOf = (i: IProduct): Meta => {
+  const hit = metas.get(i)
+
+  if (hit) {
+    return hit
+  }
+
+  const values = Object.fromEntries(FACETS.map(f => [f.key, valuesOf(i, f.key)]))
+
+  const meta: Meta = {
+    hay: haystack(i),
+    price: priceOf(i),
+    arrived: arrivedAt(i),
+    revised: revisedAt(i),
+    values,
+    folded: Object.fromEntries(
+      FACETS.map(f => [f.key, new Set(values[f.key].map(foldKey))])
+    )
+  }
+
+  metas.set(i, meta)
+
+  return meta
+}
+
+/**
  * Build the grid-wide filter groups from a fixed set of axes: what it is,
  * what size, what color, whether you can buy it. Values still come from the
  * live catalogs — a brand set with no shoes offers no shoe sizes — but the
@@ -216,28 +327,18 @@ const groupsOf = (pool: IProduct[]) => {
   }
 
   for (const i of pool) {
-    const type = `${i?.product_type ?? ''}`.trim()
+    const meta = metaOf(i)
 
-    if (type) {
-      note('product_type', 'Category', type)
-    }
-
-    for (const g of OPTION_GROUPS) {
-      for (const v of optionValues(i, g.name)) {
-        note(`${OPTION_PREFIX}${g.name}`, g.label, v)
+    for (const { key, label } of FACETS) {
+      for (const v of meta.values[key] ?? []) {
+        note(key, label, v)
       }
     }
-
-    const band = priceBand(i)
-
-    if (band) {
-      note(PRICE.key, PRICE.label, band)
-    }
-
-    note(STOCK.key, STOCK.label, i?.variants?.some(v => v.available) ? IN_STOCK : SOLD_OUT)
   }
 
-  const groups = [...seen]
+  const order = FACETS.map(f => f.key)
+
+  return [...seen]
     .map(([key, g]) => ({
       key,
       label: g.label,
@@ -251,16 +352,7 @@ const groupsOf = (pool: IProduct[]) => {
         .sort(byValue(key))
     }))
     .filter(g => g.values.length > 1)
-
-  const order = [
-    'product_type',
-    `${OPTION_PREFIX}size`,
-    `${OPTION_PREFIX}color`,
-    PRICE.key,
-    STOCK.key
-  ]
-
-  return groups.sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
+    .sort((a, b) => order.indexOf(a.key) - order.indexOf(b.key))
 }
 
 /**
@@ -327,22 +419,15 @@ const facetsMatch = (selections: FacetSelection[]) => (i: IProduct) =>
 
     // Folded on both sides so picking "Black" also catches the "BLACK" listings
     // it was merged with when the group was built.
-    const mine = new Set(valuesOf(i, key).map(foldKey))
+    const mine =
+      metaOf(i).folded[key] ?? new Set(valuesOf(i, key).map(foldKey))
 
     return values.some(v => mine.has(foldKey(v)))
   })
 
 /** Every sellable product across the selected brands, narrowed by the search. */
 const merge = async (handles: string[], q: string): Promise<IProduct[]> => {
-  const all = (
-    await Promise.all(
-      handles.map(async k =>
-        (await catalog(k))
-          .filter(i => i?.variants?.length)
-          .map(i => ({ ...i, vendor: k }))
-      )
-    )
-  ).flat()
+  const all = (await Promise.all(handles.map(catalog))).flat()
 
   return q.trim() ? all.filter(matches(q)) : all
 }
@@ -363,7 +448,10 @@ export const Query = {
     if (ids.length && handles.length) {
       const res = await Promise.all(
         ids.map(id =>
-          fetcher<{ product?: IProduct }>(shopify(handles[0], `products/${id}.json`))
+          fetcher<{ product?: IProduct }>(
+            shopify(handles[0], `products/${id}.json`),
+            { headers: HEADERS }
+          )
         )
       )
 
@@ -396,17 +484,22 @@ export const Query = {
       label,
       values: (() => {
         const others = selections.filter(s => s.key !== key)
-        const scoped = pool.filter(i => facetsMatch(others)(i))
+        const scoped = pool.filter(facetsMatch(others))
         const counts = new Map<string, number>()
 
+        // Tallied folded, and looked up folded: the offered label is whichever
+        // spelling the catalog used first, which isn't necessarily the one any
+        // given product carries.
         for (const i of scoped) {
-          for (const v of valuesOf(i, key)) {
-            counts.set(v, (counts.get(v) ?? 0) + 1)
+          for (const v of metaOf(i).values[key] ?? valuesOf(i, key)) {
+            const fold = foldKey(v)
+
+            counts.set(fold, (counts.get(fold) ?? 0) + 1)
           }
         }
 
         return values
-          .map(value => ({ value, count: counts.get(value) ?? 0 }))
+          .map(value => ({ value, count: counts.get(foldKey(value)) ?? 0 }))
           .filter(v => v.count > 0)
       })()
     }))
