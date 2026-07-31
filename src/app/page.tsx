@@ -1,6 +1,6 @@
 'use client'
 
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { Loader2, PackageOpen, Store, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
@@ -109,6 +109,7 @@ export default function Index() {
     data,
     isPending,
     isError,
+    isPlaceholderData,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage
@@ -116,6 +117,10 @@ export default function Index() {
     enabled: slugs.length > 0,
     queryKey: ['products', { slugs, sort: sortArg, q, facets }],
     initialPageParam: 0,
+    // Changing sort, search, or a filter keys a fresh query. Holding the last
+    // grid while it loads keeps the page interactive instead of tearing down
+    // to skeletons on every toolbar touch.
+    placeholderData: keepPreviousData,
     queryFn: ({ pageParam }) =>
       gqlFetch<{ products: Product[] }>(QUERY, {
         slugs,
@@ -142,7 +147,7 @@ export default function Index() {
 
     const io = new IntersectionObserver(
       entries => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage) {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage && !isPlaceholderData) {
           fetchNextPage()
         }
       },
@@ -152,7 +157,7 @@ export default function Index() {
     io.observe(el)
 
     return () => io.disconnect()
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage])
+  }, [hasNextPage, isFetchingNextPage, isPlaceholderData, fetchNextPage])
 
   if (!brandsReady && Object.keys(allSlugs).length > 0) {
     return (

@@ -5,7 +5,12 @@ import { useEffect, useRef } from 'react'
 import { brandsReadyAtom, slugsAtom } from '~/lib'
 import { urlSyncReadyAtom } from './url-sync'
 
-/** On load, probe every persisted brand; drop any store that no longer responds. */
+/**
+ * On load, probe every persisted brand; drop any store that no longer
+ * responds. The probe doesn't gate the grid: brands are marked ready
+ * immediately so products and facets start fetching on the first paint, and a
+ * dead store just contributes an empty catalog until the prune removes it.
+ */
 export function BrandHealthcheck() {
   const urlReady = useAtomValue(urlSyncReadyAtom)
   const [slugs, setSlugs] = useAtom(slugsAtom)
@@ -18,12 +23,11 @@ export function BrandHealthcheck() {
     }
 
     ran.current = true
+    setReady(true)
 
     const keys = Object.keys(slugs)
 
     if (!keys.length) {
-      setReady(true)
-
       return
     }
 
@@ -56,10 +60,8 @@ export function BrandHealthcheck() {
             return next
           })
         }
-      } finally {
-        if (!cancelled) {
-          setReady(true)
-        }
+      } catch {
+        // The probe is advisory; a network blip shouldn't touch the brand list.
       }
     })()
 

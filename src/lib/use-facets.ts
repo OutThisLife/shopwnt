@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { useEffect } from 'react'
 import {
@@ -49,6 +49,10 @@ export function useFacets() {
   const { data, isPending } = useQuery({
     enabled: slugs.length > 0,
     queryKey: ['facets', { slugs, q, selection }],
+    // Every selection re-keys this query. Holding the previous response keeps
+    // the pinned menu's counts up instead of flashing every value to zero
+    // while the recount is in flight.
+    placeholderData: keepPreviousData,
     queryFn: () =>
       gqlFetch<{ facets: Facet[] }>(QUERY, {
         slugs,
