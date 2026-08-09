@@ -2,11 +2,12 @@
 
 import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
 import { useAtomValue, useSetAtom } from 'jotai'
-import { Loader2, PackageOpen, Store, TriangleAlert } from 'lucide-react'
+import { PackageOpen, Store, TriangleAlert } from 'lucide-react'
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { Product } from '~/../types'
 import { Item } from '~/components'
 import { Button } from '~/components/ui/button'
+import { Loader } from '~/components/ui/loader'
 import {
   activeSlugsAtom,
   brandsReadyAtom,
@@ -163,7 +164,7 @@ export default function Index() {
     return (
       <div className={`${GRID} pt-8`}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <Loading key={i} />
+          <Loading index={i} key={i} />
         ))}
       </div>
     )
@@ -193,7 +194,7 @@ export default function Index() {
     return (
       <div className={GRID}>
         {Array.from({ length: 6 }).map((_, i) => (
-          <Loading key={i} />
+          <Loading index={i} key={i} />
         ))}
       </div>
     )
@@ -234,7 +235,7 @@ export default function Index() {
 
       {isFetchingNextPage && (
         <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" />
+          <Loader />
           Loading more…
         </div>
       )}

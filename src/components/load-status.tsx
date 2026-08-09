@@ -2,10 +2,10 @@
 
 import { useIsFetching } from '@tanstack/react-query'
 import { useAtomValue } from 'jotai'
-import { Loader2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { brandsReadyAtom, slugsAtom } from '~/lib'
 import { cn } from '~/lib/utils'
+import { Loader } from './ui/loader'
 
 /** Below this a spinner is a flicker, not information. */
 const MIN_VISIBLE = 400
@@ -53,7 +53,7 @@ export function LoadStatus({ className }: { className?: string }) {
         className
       )}
       role="status">
-      <Loader2 className="size-3.5 animate-spin text-muted-foreground" />
+      <Loader className="text-muted-foreground" />
       <span className="sr-only">{shown ? 'Loading' : 'Idle'}</span>
     </span>
   )

@@ -1,11 +1,12 @@
 'use client'
 
-import { Check, Copy, ExternalLink, Loader2, ScanSearch, X } from 'lucide-react'
+import { Check, Copy, ExternalLink, ScanSearch, X } from 'lucide-react'
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import type { InspectResult, InspectVariant } from '~/pages/api/inspect'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
+import { Loader } from './ui/loader'
 
 const money = (cents: number) =>
   (cents / 100).toLocaleString('en-US', { currency: 'USD', style: 'currency' })
@@ -148,7 +149,7 @@ export function Inspector() {
               value={url}
             />
             <Button className="h-8" disabled={loading} size="sm" type="submit">
-              {loading ? <Loader2 className="size-3.5 animate-spin" /> : 'Check'}
+              {loading ? <Loader /> : 'Check'}
             </Button>
           </form>
 

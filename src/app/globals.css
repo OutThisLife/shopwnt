@@ -392,9 +392,125 @@
     var(--ease-liquid-soft);
 }
 
+/*
+ * Loading states, ported from Generative Loaders (MIT):
+ * https://github.com/kasturikhanke/generative-loaders
+ *
+ * Taken as CSS rather than as the package: its text loaders are built on
+ * framer-motion, which nothing here needs, and these two variants are plain
+ * keyframes upstream. Both animate only opacity and transform, so they stay on
+ * the compositor next to a grid of product photography.
+ */
+
+/* `signal` — the inline activity bars. */
+@keyframes loader-signal {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleY(0.25);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+.loader-signal > i {
+  animation: loader-signal 900ms ease-in-out infinite;
+  animation-delay: calc(var(--cell) * -90ms);
+}
+
+/*
+ * `coalesce` — particles drawing in to a forming core.
+ *
+ * Upstream animates left/top; here each particle sits at the centre and is
+ * moved by a transform in container units, so a screenful of these stays off
+ * the main thread. --phase offsets a whole frame so a grid of them isn't one
+ * synchronised strobe.
+ */
+.loader-coalesce {
+  container-type: size;
+}
+
+@keyframes loader-coalesce {
+  0% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--x0) * 1cqw), calc(-50% + var(--y0) * 1cqh))
+      scale(0.35);
+  }
+
+  14% {
+    opacity: 0.26;
+    transform: translate(calc(-50% + var(--x1) * 1cqw), calc(-50% + var(--y1) * 1cqh))
+      scale(0.62);
+  }
+
+  56% {
+    opacity: var(--dot-opacity);
+    transform: translate(calc(-50% + var(--x2) * 1cqw), calc(-50% + var(--y2) * 1cqh))
+      scale(0.86);
+  }
+
+  86% {
+    opacity: var(--dot-opacity);
+    transform: translate(calc(-50% + var(--x3) * 1cqw), calc(-50% + var(--y3) * 1cqh))
+      scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.12);
+  }
+}
+
+@keyframes loader-coalesce-core {
+  0%,
+  100% {
+    opacity: 0.46;
+    transform: scale(0.76);
+  }
+
+  82% {
+    opacity: 0.9;
+    transform: scale(1.08);
+  }
+}
+
+.loader-coalesce > i,
+.loader-coalesce > b {
+  position: absolute;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.loader-coalesce > i {
+  top: 50%;
+  left: 50%;
+  width: calc(var(--size) * 1%);
+  animation: loader-coalesce 2.07s linear infinite;
+  animation-delay: calc(var(--delay) * 1ms - var(--phase, 0ms));
+}
+
+.loader-coalesce > b {
+  top: 48.4%;
+  left: 48.4%;
+  width: 3.2%;
+  box-shadow: 0 0 6px color-mix(in srgb, currentColor 22%, transparent);
+  animation: loader-coalesce-core 2.07s ease-in-out infinite;
+  animation-delay: calc(0ms - var(--phase, 0ms));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .glass-springy {
     transition-duration: 0.01ms;
+  }
+
+  .loader-signal > i,
+  .loader-coalesce > i,
+  .loader-coalesce > b {
+    animation: none;
   }
 }
 
