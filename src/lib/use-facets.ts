@@ -67,7 +67,9 @@ export function useFacets() {
   // grid to nothing with no visible cause.
   useEffect(() => {
     if (data) {
-      prune(Object.fromEntries(data.map(f => [f.key, f.values.map(v => v.value)])))
+      prune(
+        Object.fromEntries(data.map(f => [f.key, f.values.map(v => v.value)]))
+      )
     }
   }, [data, prune])
 

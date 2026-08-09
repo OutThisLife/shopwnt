@@ -3,7 +3,12 @@
 import { useAtomValue } from 'jotai'
 import { Plus, Store } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { activeSlugsAtom, brandSlugsAtom, brandsReadyAtom, storeHost } from '~/lib'
+import {
+  activeSlugsAtom,
+  brandSlugsAtom,
+  brandsReadyAtom,
+  storeHost
+} from '~/lib'
 import { useAddBrand } from '~/lib/use-add-brand'
 import { useBrand } from '~/lib/use-brand'
 import { useHoverOpen } from '~/lib/use-hover-open'
@@ -32,7 +37,11 @@ function BrandOption({ slug }: { slug: string }) {
   return (
     <DropdownRow active={active} onClick={toggle}>
       <span className={cn('flex-1', resolving && 'opacity-60')}>{name}</span>
-      {pending ? <Loader className="opacity-60" /> : <DropdownCheck active={active} />}
+      {pending ? (
+        <Loader className="opacity-60" />
+      ) : (
+        <DropdownCheck active={active} />
+      )}
     </DropdownRow>
   )
 }
@@ -47,7 +56,9 @@ export function BrandFilter({ className }: { className?: string }) {
   const hover = useHoverOpen(open, setOpen)
 
   const term = query.trim().toLowerCase()
-  const shown = term ? brands.filter(b => b.toLowerCase().includes(term)) : brands
+  const shown = term
+    ? brands.filter(b => b.toLowerCase().includes(term))
+    : brands
 
   // Balanced columns rather than filling one before starting the next, so the
   // panel stays a tidy block instead of an L.
@@ -55,7 +66,9 @@ export function BrandFilter({ className }: { className?: string }) {
     const n = Math.min(Math.ceil(shown.length / PER_COLUMN) || 1, MAX_COLUMNS)
     const per = Math.ceil(shown.length / n)
 
-    return Array.from({ length: n }, (_, i) => shown.slice(i * per, (i + 1) * per))
+    return Array.from({ length: n }, (_, i) =>
+      shown.slice(i * per, (i + 1) * per)
+    )
   }, [shown])
 
   const add = async () => {
@@ -64,7 +77,8 @@ export function BrandFilter({ className }: { className?: string }) {
     }
   }
 
-  const canAdd = brandsReady && term && !brands.some(b => b.toLowerCase() === term)
+  const canAdd =
+    brandsReady && term && !brands.some(b => b.toLowerCase() === term)
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
@@ -120,7 +134,7 @@ export function BrandFilter({ className }: { className?: string }) {
                 {adding ? (
                   <Loader className="opacity-60" />
                 ) : (
-                  <Plus className="size-3.5 shrink-0 text-muted-foreground" />
+                  <Plus className="text-muted-foreground size-3.5 shrink-0" />
                 )}
                 <span>Add “{storeHost(query) || query.trim()}”</span>
               </DropdownRow>

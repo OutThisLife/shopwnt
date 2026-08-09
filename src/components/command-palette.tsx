@@ -3,7 +3,14 @@
 import { useAtom, useAtomValue } from 'jotai'
 import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { brandSlugsAtom, brandsReadyAtom, paletteAtom, searchAtom, storeHost } from '~/lib'
+import {
+  brandSlugsAtom,
+  brandsReadyAtom,
+  isTyping,
+  paletteAtom,
+  searchAtom,
+  storeHost
+} from '~/lib'
 import { useAddBrand } from '~/lib/use-add-brand'
 import { cn } from '~/lib/utils'
 import { BrandItem } from './brand-item'
@@ -67,7 +74,7 @@ function Palette({ onClose }: { onClose: () => void }) {
     // you can watch it filter as you type.
     <div className="pointer-events-none fixed inset-x-0 top-(--bar-inset) z-50 flex justify-center px-4">
       <Command
-        className="glass glass-soft pointer-events-auto w-full max-w-lg rounded-xl border animate-in fade-in-0 zoom-in-95 slide-in-from-top-2"
+        className="glass glass-soft animate-in fade-in-0 zoom-in-95 slide-in-from-top-2 pointer-events-auto w-full max-w-lg rounded-xl border"
         onKeyDown={e => {
           if (e.key === 'Escape' || (e.key === 'Enter' && !hasList)) {
             onClose()
@@ -81,7 +88,10 @@ function Palette({ onClose }: { onClose: () => void }) {
           onValueChange={setValue}
           placeholder="Search products, or add a store…"
           value={value}
-          wrapperClassName={cn('h-14 gap-3 px-4 [&>svg]:size-5', !hasList && 'border-b-0')}
+          wrapperClassName={cn(
+            'h-14 gap-3 px-4 [&>svg]:size-5',
+            !hasList && 'border-b-0'
+          )}
         />
 
         {hasList && (
@@ -92,7 +102,10 @@ function Palette({ onClose }: { onClose: () => void }) {
               ))}
 
               {canAdd && (
-                <CommandItem disabled={adding} onSelect={add} value={`add ${host}`}>
+                <CommandItem
+                  disabled={adding}
+                  onSelect={add}
+                  value={`add ${host}`}>
                   <Plus className="text-muted-foreground" />
                   <span className="truncate">Add “{host}”</span>
                 </CommandItem>
@@ -117,13 +130,13 @@ export function CommandPalette() {
         return
       }
 
-      const el = document.activeElement as HTMLElement | null
-      const typing =
-        el?.tagName === 'INPUT' ||
-        el?.tagName === 'TEXTAREA' ||
-        el?.isContentEditable
-
-      if (e.key === '/' && !typing && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (
+        e.key === '/' &&
+        !isTyping() &&
+        !e.metaKey &&
+        !e.ctrlKey &&
+        !e.altKey
+      ) {
         e.preventDefault()
         setOpen(true)
       }

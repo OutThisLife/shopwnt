@@ -4,8 +4,14 @@ export const fetcher = async <T extends Record<string, any>>(
 ): Promise<T> => (await fetch(k, init)).json() as Promise<T>
 
 /** Passthrough tag for editor highlighting / prettier formatting. */
-export const gql = (strings: TemplateStringsArray, ...values: unknown[]): string =>
-  strings.reduce((acc, s, i) => acc + s + (i < values.length ? `${values[i]}` : ''), '')
+export const gql = (
+  strings: TemplateStringsArray,
+  ...values: unknown[]
+): string =>
+  strings.reduce(
+    (acc, s, i) => acc + s + (i < values.length ? `${values[i]}` : ''),
+    ''
+  )
 
 /** Minimal GraphQL over fetch against the local API route. */
 export const gqlFetch = async <T>(
@@ -18,7 +24,10 @@ export const gqlFetch = async <T>(
     body: JSON.stringify({ query, variables })
   })
 
-  const json = (await res.json()) as { data?: T; errors?: { message: string }[] }
+  const json = (await res.json()) as {
+    data?: T
+    errors?: { message: string }[]
+  }
 
   if (json.errors?.length) {
     throw new Error(json.errors.map(e => e.message).join('; '))
@@ -32,6 +41,17 @@ export const gqlFetch = async <T>(
 }
 
 export const clean = (s: string) => s.replace(/(\s)/g, '').toLocaleLowerCase()
+
+/** Focus is in a field, so a bare-letter shortcut is just a character. */
+export const isTyping = (): boolean => {
+  const el = document.activeElement as HTMLElement | null
+
+  return (
+    el?.tagName === 'INPUT' ||
+    el?.tagName === 'TEXTAREA' ||
+    !!el?.isContentEditable
+  )
+}
 
 /**
  * Reduce anything paste-shaped — a bare domain, or a full product URL with
@@ -114,7 +134,8 @@ export interface Stamped {
   updated_at?: Date | string | null
 }
 
-const ts = (v: Date | string | null | undefined): number => +new Date(v ?? 0) || 0
+const ts = (v: Date | string | null | undefined): number =>
+  +new Date(v ?? 0) || 0
 
 /**
  * Shopify writes updated_at as part of publishing, so every freshly dropped

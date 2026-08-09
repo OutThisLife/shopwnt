@@ -56,9 +56,12 @@ const page = async (slug: string, n: number): Promise<IProduct[]> => {
   u.searchParams.set('page', `${n}`)
 
   try {
-    const { products } = await fetcher<{ products?: IProduct[] }>(u.toString(), {
-      headers: HEADERS
-    })
+    const { products } = await fetcher<{ products?: IProduct[] }>(
+      u.toString(),
+      {
+        headers: HEADERS
+      }
+    )
 
     return products ?? []
   } catch {
@@ -75,7 +78,7 @@ const page = async (slug: string, n: number): Promise<IProduct[]> => {
 const walk = async (slug: string): Promise<IProduct[]> => {
   const items: IProduct[] = []
 
-  for (let at = 1; at <= MAX_PAGES; ) {
+  for (let at = 1; at <= MAX_PAGES;) {
     const size = at === 1 ? 1 : Math.min(BATCH, MAX_PAGES - at + 1)
     const pages = await Promise.all(
       Array.from({ length: size }, (_, n) => page(slug, at + n))
@@ -95,7 +98,9 @@ const walk = async (slug: string): Promise<IProduct[]> => {
   // sellable products are worth carrying. Settled here once per walk so every
   // request shares the same object references — which is what lets metaOf
   // memoize against them.
-  return items.filter(i => i?.variants?.length).map(i => ({ ...i, vendor: slug }))
+  return items
+    .filter(i => i?.variants?.length)
+    .map(i => ({ ...i, vendor: slug }))
 }
 
 const cache = new Map<string, { at: number; items: IProduct[] }>()
@@ -160,7 +165,11 @@ interface FacetSelection {
  * same axis folded onto one group.
  */
 const OPTION_GROUPS: { name: string; label: string; aliases: string[] }[] = [
-  { name: 'size', label: 'Size', aliases: ['size', 'sizes', 'us size', 'shoe size'] },
+  {
+    name: 'size',
+    label: 'Size',
+    aliases: ['size', 'sizes', 'us size', 'shoe size']
+  },
   { name: 'color', label: 'Color', aliases: ['color', 'colour', 'shade'] }
 ]
 
@@ -207,7 +216,10 @@ const foldKey = (s: string) => s.trim().toLowerCase()
 /** Every group the menu can offer, in display order. */
 const FACETS: { key: string; label: string }[] = [
   { key: 'product_type', label: 'Category' },
-  ...OPTION_GROUPS.map(g => ({ key: `${OPTION_PREFIX}${g.name}`, label: g.label })),
+  ...OPTION_GROUPS.map(g => ({
+    key: `${OPTION_PREFIX}${g.name}`,
+    label: g.label
+  })),
   { key: PRICE.key, label: PRICE.label },
   { key: STOCK.key, label: STOCK.label }
 ]
@@ -279,7 +291,9 @@ const metaOf = (i: IProduct): Meta => {
     return hit
   }
 
-  const values = Object.fromEntries(FACETS.map(f => [f.key, valuesOf(i, f.key)]))
+  const values = Object.fromEntries(
+    FACETS.map(f => [f.key, valuesOf(i, f.key)])
+  )
 
   const meta: Meta = {
     hay: haystack(i),
@@ -419,8 +433,7 @@ const facetsMatch = (selections: FacetSelection[]) => (i: IProduct) =>
 
     // Folded on both sides so picking "Black" also catches the "BLACK" listings
     // it was merged with when the group was built.
-    const mine =
-      metaOf(i).folded[key] ?? new Set(valuesOf(i, key).map(foldKey))
+    const mine = metaOf(i).folded[key] ?? new Set(valuesOf(i, key).map(foldKey))
 
     return values.some(v => mine.has(foldKey(v)))
   })

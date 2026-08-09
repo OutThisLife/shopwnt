@@ -136,7 +136,11 @@ function Distortion({
 export function GlassDistortion() {
   return (
     <svg aria-hidden className="hidden">
-      <Distortion baseFrequency="0.008 0.008" id="glass-distortion" scale={70} />
+      <Distortion
+        baseFrequency="0.008 0.008"
+        id="glass-distortion"
+        scale={70}
+      />
       <Distortion
         baseFrequency="0.012 0.012"
         id="glass-distortion-soft"

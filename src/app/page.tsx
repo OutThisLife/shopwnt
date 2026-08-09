@@ -84,11 +84,11 @@ function EmptyState({
 }) {
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 text-center">
-      <div className="grid size-12 place-items-center rounded-full bg-muted text-muted-foreground">
+      <div className="bg-muted text-muted-foreground grid size-12 place-items-center rounded-full">
         {icon}
       </div>
       <h2 className="text-lg font-semibold">{title}</h2>
-      <p className="max-w-sm text-sm text-muted-foreground">{description}</p>
+      <p className="text-muted-foreground max-w-sm text-sm">{description}</p>
       {action}
     </div>
   )
@@ -148,7 +148,11 @@ export default function Index() {
 
     const io = new IntersectionObserver(
       entries => {
-        if (entries[0]?.isIntersecting && !isFetchingNextPage && !isPlaceholderData) {
+        if (
+          entries[0]?.isIntersecting &&
+          !isFetchingNextPage &&
+          !isPlaceholderData
+        ) {
           fetchNextPage()
         }
       },
@@ -218,7 +222,13 @@ export default function Index() {
               : 'No products came back for the selected brands.'
         }
         icon={<PackageOpen className="size-6" />}
-        title={facetCount > 0 ? 'Filtered to nothing' : q ? 'No matches' : 'Nothing here yet'}
+        title={
+          facetCount > 0
+            ? 'Filtered to nothing'
+            : q
+              ? 'No matches'
+              : 'Nothing here yet'
+        }
       />
     )
   }
@@ -234,14 +244,14 @@ export default function Index() {
       <div aria-hidden className="h-px w-full" ref={sentinelRef} />
 
       {isFetchingNextPage && (
-        <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+        <div className="text-muted-foreground flex items-center justify-center gap-2 py-10 text-sm">
           <Loader />
           Loading more…
         </div>
       )}
 
       {!hasNextPage && (
-        <p className="py-10 text-center text-sm text-muted-foreground">
+        <p className="text-muted-foreground py-10 text-center text-sm">
           You've reached the end.
         </p>
       )}

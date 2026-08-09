@@ -36,7 +36,7 @@ export function SearchTag({ className }: { className?: string }) {
       {query ? (
         <span className="max-w-32 truncate">{query}</span>
       ) : (
-        <kbd className="pointer-events-none font-sans text-xs tracking-wide text-muted-foreground">
+        <kbd className="text-muted-foreground pointer-events-none font-sans text-xs tracking-wide">
           {mac ? '⌘K' : 'Ctrl K'}
         </kbd>
       )}

@@ -84,7 +84,9 @@ export function FacetFilter({ className }: { className?: string }) {
   const counts = useMemo(
     () =>
       new Map(
-        facets.flatMap(f => f.values.map(v => [`${f.key}\u0000${v.value}`, v.count]))
+        facets.flatMap(f =>
+          f.values.map(v => [`${f.key}\u0000${v.value}`, v.count])
+        )
       ),
     [facets]
   )
@@ -176,7 +178,9 @@ export function FacetFilter({ className }: { className?: string }) {
           {/* Always rendered so committing a filter doesn't grow the panel. */}
           <div className="flex h-8 items-center justify-between gap-4 px-2.5">
             <DropdownMeta>
-              {count ? `${count} ${count === 1 ? 'filter' : 'filters'} on` : 'No filters'}
+              {count
+                ? `${count} ${count === 1 ? 'filter' : 'filters'} on`
+                : 'No filters'}
             </DropdownMeta>
             <Button
               className="h-6 cursor-pointer px-2"

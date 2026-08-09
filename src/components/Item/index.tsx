@@ -4,7 +4,13 @@ import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
 import { memo } from 'react'
 import type { Product } from '~/../types'
-import { arrivedAt, relTime, revisedAt, wasRevised, type SortField } from '~/lib'
+import {
+  arrivedAt,
+  relTime,
+  revisedAt,
+  wasRevised,
+  type SortField
+} from '~/lib'
 import { useBrandName } from '~/lib/use-brand'
 import { cn } from '~/lib/utils'
 import { Badge } from '../ui/badge'
@@ -42,7 +48,10 @@ interface SizePill {
  * occupies. Where two variants share a label the available one wins the pill,
  * but the first cart URL is kept so a sold-out size still links somewhere.
  */
-const sizesOf = (options: Product['options'], variants: Product['variants']) => {
+const sizesOf = (
+  options: Product['options'],
+  variants: Product['variants']
+) => {
   const idx = (options ?? []).findIndex(
     o => `${o?.name ?? ''}`.toLowerCase() === 'size'
   )
@@ -84,7 +93,9 @@ function Item({
 }: ItemProps) {
   const multi = images.length > 1
   const price = Number(listPrice)
-  const { name: vendorName, resolving: resolvingVendor } = useBrandName(vendor ?? '')
+  const { name: vendorName, resolving: resolvingVendor } = useBrandName(
+    vendor ?? ''
+  )
 
   // Show the moment the current sort actually ordered by, so the stamp always
   // explains the position. Price sorts have no moment of their own, so they
@@ -99,8 +110,10 @@ function Item({
     <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
       <CardContent className="px-0">
         {/* Card is the photo — meta floats on it, no footer band. */}
-        <div className="relative aspect-3/4 w-full bg-muted/40">
-          <Carousel className="size-full" opts={{ loop: true, watchDrag: multi }}>
+        <div className="bg-muted/40 relative aspect-3/4 w-full">
+          <Carousel
+            className="size-full"
+            opts={{ loop: true, watchDrag: multi }}>
             <CarouselContent className="ml-0 h-full">
               {images.map(img => (
                 <CarouselItem className="pl-0" key={img.src}>
@@ -144,7 +157,7 @@ function Item({
             {vendor && (
               <p
                 className={cn(
-                  'absolute top-3 left-3 max-w-[calc(100%-5.5rem)] rounded-full px-2.5 py-1 text-xs tracking-wide text-foreground',
+                  'text-foreground absolute top-3 left-3 max-w-[calc(100%-5.5rem)] rounded-full px-2.5 py-1 text-xs tracking-wide',
                   resolvingVendor && 'opacity-60',
                   CHIP
                 )}>
@@ -164,7 +177,7 @@ function Item({
             <div className="absolute inset-x-3 bottom-3 flex flex-col gap-2">
               <div className={cn('rounded-lg px-2.5 py-2', CHIP)}>
                 <a
-                  className="pointer-events-auto inline text-sm font-medium leading-snug hover:text-primary hover:underline"
+                  className="hover:text-primary pointer-events-auto inline text-sm leading-snug font-medium hover:underline"
                   href={url}
                   rel="noopener noreferrer"
                   target="_blank">
@@ -172,7 +185,7 @@ function Item({
                   <ExternalLink className="ml-1 inline size-3.5 -translate-y-px opacity-50" />
                 </a>
                 {at > 0 && (
-                  <p className="mt-0.5 text-xs text-muted-foreground">
+                  <p className="text-muted-foreground mt-0.5 text-xs">
                     {revised ? 'updated' : 'added'} {relTime(new Date(at))}
                   </p>
                 )}
@@ -190,7 +203,7 @@ function Item({
                       className={cn(
                         PILL,
                         buyable
-                          ? 'pointer-events-auto hover:border-primary hover:text-primary'
+                          ? 'hover:border-primary hover:text-primary pointer-events-auto'
                           : 'text-muted-foreground line-through opacity-60'
                       )}
                       href={buyable ? href : undefined}
@@ -199,7 +212,9 @@ function Item({
                       target="_blank"
                       // Cart permalink — cross-origin AJAX to a dozen Shopify
                       // stores isn't possible from here.
-                      title={buyable ? `Add ${label} to cart` : `${label} — sold out`}>
+                      title={
+                        buyable ? `Add ${label} to cart` : `${label} — sold out`
+                      }>
                       {label}
                     </a>
                   )

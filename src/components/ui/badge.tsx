@@ -21,7 +21,8 @@ const badgeVariants = cva(
         // white the rim uses — the glass catches more light where the badge is.
         glass:
           'border-transparent bg-(--glass-active) text-inherit shadow-[inset_0_0_0_1px_var(--glass-rim)]',
-        outline: 'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground'
+        outline:
+          'text-foreground [a&]:hover:bg-accent [a&]:hover:text-accent-foreground'
       }
     },
     defaultVariants: {

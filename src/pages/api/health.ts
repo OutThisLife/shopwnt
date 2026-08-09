@@ -9,7 +9,10 @@ const check = async (slug: string): Promise<boolean> => {
   try {
     const res = await fetch(
       `https://${slug}.myshopify.com/products.json?limit=1`,
-      { cache: 'no-store', headers: { 'User-Agent': UA, Accept: 'application/json' } }
+      {
+        cache: 'no-store',
+        headers: { 'User-Agent': UA, Accept: 'application/json' }
+      }
     )
 
     return res.ok
@@ -28,13 +31,22 @@ const handler = async (
     return res.status(400).json({ error: 'Missing slug(s).' })
   }
 
-  const slugs = [...new Set(raw.split(',').map(s => s.trim().toLowerCase()).filter(Boolean))]
+  const slugs = [
+    ...new Set(
+      raw
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  ]
 
   if (!slugs.length || slugs.some(s => !SLUG.test(s))) {
     return res.status(400).json({ error: 'Invalid slug(s).' })
   }
 
-  const pairs = await Promise.all(slugs.map(async slug => [slug, await check(slug)] as const))
+  const pairs = await Promise.all(
+    slugs.map(async slug => [slug, await check(slug)] as const)
+  )
 
   res.status(200).json({ results: Object.fromEntries(pairs) })
 }

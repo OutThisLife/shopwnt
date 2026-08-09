@@ -7,6 +7,7 @@ import { CommandPalette } from '~/components/command-palette'
 import { GlassDistortion } from '~/components/glass-distortion'
 import { Inspector } from '~/components/inspector'
 import { ScrollTop } from '~/components/scroll-top'
+import { ThemeHotkey } from '~/components/theme-hotkey'
 import { UrlSync } from '~/components/url-sync'
 import { cn } from '~/lib/utils'
 import './globals.css'
@@ -41,7 +42,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
     <html className={sans.variable} lang="en" suppressHydrationWarning>
       <body
         className={cn(
-          'min-h-dvh bg-background font-sans text-foreground antialiased'
+          'bg-background text-foreground min-h-dvh font-sans antialiased'
         )}>
         <Providers>
           <GlassDistortion />
@@ -60,6 +61,7 @@ export default function RootLayout({ children }: { children?: ReactNode }) {
           </main>
 
           <CommandPalette />
+          <ThemeHotkey />
           <ScrollTop />
           <Inspector />
         </Providers>

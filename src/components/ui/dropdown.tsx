@@ -54,7 +54,7 @@ export function DropdownCheck({ active }: { active?: boolean }) {
   return (
     <Check
       className={cn(
-        'size-3.5 shrink-0 text-primary transition-opacity',
+        'text-primary size-3.5 shrink-0 transition-opacity',
         active ? 'opacity-100' : 'opacity-0'
       )}
     />
@@ -68,7 +68,10 @@ export function DropdownHeading({
 }: React.ComponentProps<'div'>) {
   return (
     <div
-      className={cn('px-2.5 py-1 text-xs font-medium text-muted-foreground', className)}
+      className={cn(
+        'text-muted-foreground px-2.5 py-1 text-xs font-medium',
+        className
+      )}
       {...props}
     />
   )
@@ -101,7 +104,7 @@ export function DropdownSearch({
     <div className="flex h-8 items-center gap-2 px-2.5">
       <Icon className="size-4 shrink-0 opacity-50" />
       <input
-        className="h-8 w-full bg-transparent text-sm outline-hidden placeholder:text-muted-foreground"
+        className="placeholder:text-muted-foreground h-8 w-full bg-transparent text-sm outline-hidden"
         {...props}
       />
     </div>
@@ -138,7 +141,7 @@ export function DropdownNotice({
   return (
     <div
       className={cn(
-        'px-2.5 py-6 text-sm text-muted-foreground',
+        'text-muted-foreground px-2.5 py-6 text-sm',
         busy ? 'flex items-center gap-2' : 'text-center'
       )}>
       {busy && <Loader className="opacity-60" />}

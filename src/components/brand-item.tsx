@@ -11,7 +11,8 @@ export function BrandItem({ slug }: { slug: string }) {
 
   return (
     <CommandItem onSelect={toggle} value={`${name} ${slug}`}>
-      <span className={cn('flex-1 transition-opacity', resolving && 'opacity-60')}>
+      <span
+        className={cn('flex-1 transition-opacity', resolving && 'opacity-60')}>
         {name}
       </span>
 

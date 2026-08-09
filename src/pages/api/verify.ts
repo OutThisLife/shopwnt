@@ -43,7 +43,9 @@ const handler = async (
     return res.status(200).json({ slug: hit.slug })
   }
 
-  const cleaned = raw.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/\//, '')
+  const cleaned = raw
+    .replace(/^[a-z][a-z0-9+.-]*:\/\//i, '')
+    .replace(/^\/\//, '')
   const slash = cleaned.indexOf('/')
   const path = slash === -1 ? '' : cleaned.slice(slash)
 

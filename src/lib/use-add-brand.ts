@@ -60,7 +60,8 @@ export function useAddBrand() {
     } catch (err) {
       toast.error('Not a Shopify store', {
         id,
-        description: err instanceof Error ? err.message : `Couldn't verify “${v}”`
+        description:
+          err instanceof Error ? err.message : `Couldn't verify “${v}”`
       })
 
       return null

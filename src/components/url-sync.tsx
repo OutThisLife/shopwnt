@@ -23,7 +23,10 @@ const encodeFacets = (facets: Record<string, string[]>) =>
   Object.entries(facets)
     .filter(([, v]) => v.length)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([k, v]) => `${encodeURIComponent(k)}:${v.map(encodeURIComponent).join('|')}`)
+    .map(
+      ([k, v]) =>
+        `${encodeURIComponent(k)}:${v.map(encodeURIComponent).join('|')}`
+    )
     .join(',')
 
 const decodeFacets = (raw: string): Record<string, string[]> =>

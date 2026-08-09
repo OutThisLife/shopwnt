@@ -31,7 +31,7 @@ function VariantRow({ variant }: { variant: InspectVariant }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-medium">{variant.title}</p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
+          <p className="text-muted-foreground mt-0.5 text-xs">
             {money(variant.price)}
             {variant.availableCount !== null &&
               ` · ${variant.availableCount} in store's warehouse`}
@@ -60,7 +60,7 @@ function VariantRow({ variant }: { variant: InspectVariant }) {
             type="button"
             variant="outline">
             {copied ? (
-              <Check className="size-3 text-success" />
+              <Check className="text-success size-3" />
             ) : (
               <Copy className="size-3" />
             )}
@@ -105,7 +105,9 @@ export function Inspector() {
     setResult(null)
 
     try {
-      const res = await fetch(`/api/inspect?u=${encodeURIComponent(url.trim())}`)
+      const res = await fetch(
+        `/api/inspect?u=${encodeURIComponent(url.trim())}`
+      )
       const json = await res.json()
 
       if (!res.ok) {
@@ -126,20 +128,22 @@ export function Inspector() {
     <>
       {open && (
         <div
-          className="fixed right-4 bottom-20 z-50 flex max-h-[min(30rem,calc(100dvh-8rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border bg-popover text-popover-foreground shadow-xl sm:right-6 sm:bottom-24"
+          className="bg-popover text-popover-foreground fixed right-4 bottom-20 z-50 flex max-h-[min(30rem,calc(100dvh-8rem))] w-[min(23rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border shadow-xl sm:right-6 sm:bottom-24"
           role="dialog">
           <div className="flex items-center justify-between border-b px-3 py-2">
             <p className="text-sm font-semibold">Variant inspector</p>
             <button
               aria-label="Close"
-              className="grid size-6 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground"
+              className="text-muted-foreground hover:bg-foreground/10 hover:text-foreground grid size-6 place-items-center rounded-md transition-colors"
               onClick={() => setOpen(false)}
               type="button">
               <X className="size-3.5" />
             </button>
           </div>
 
-          <form className="flex items-center gap-2 border-b p-3" onSubmit={submit}>
+          <form
+            className="flex items-center gap-2 border-b p-3"
+            onSubmit={submit}>
             <Input
               aria-label="Product URL"
               className="h-8 text-sm"
@@ -154,13 +158,13 @@ export function Inspector() {
           </form>
 
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3">
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && <p className="text-destructive text-sm">{error}</p>}
 
             {!error && !result && !loading && (
-              <p className="text-xs leading-relaxed text-muted-foreground">
-                Paste any Shopify product URL to see every variant, what the store
-                is really holding, and a direct add-to-cart link — including sizes
-                the storefront hides.
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Paste any Shopify product URL to see every variant, what the
+                store is really holding, and a direct add-to-cart link —
+                including sizes the storefront hides.
               </p>
             )}
 
@@ -168,7 +172,7 @@ export function Inspector() {
               <>
                 <div className="mb-2">
                   <p className="truncate text-sm font-medium">{result.title}</p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-muted-foreground text-xs">
                     {result.variants.length} variant
                     {result.variants.length === 1 ? '' : 's'}
                     {hidden > 0 && ` · ${hidden} hidden but buyable`}

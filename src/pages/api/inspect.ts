@@ -85,9 +85,9 @@ const handler = async (
   const target = parseTarget(String(req.query?.u ?? ''))
 
   if (!target) {
-    return res
-      .status(400)
-      .json({ error: 'Paste a full product URL, e.g. store.com/products/handle' })
+    return res.status(400).json({
+      error: 'Paste a full product URL, e.g. store.com/products/handle'
+    })
   }
 
   const { origin, handle } = target

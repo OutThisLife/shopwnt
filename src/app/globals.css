@@ -325,7 +325,8 @@
 /* No ring — light the element's own edge instead. Still keyboard-visible.
    Tailwind composes rings through --tw-ring-shadow inside box-shadow, so the
    variables have to be zeroed too or the ring survives the override. */
-.glass:where([data-slot]) :is(button, [data-slot='select-trigger'], input):focus,
+.glass:where([data-slot])
+  :is(button, [data-slot='select-trigger'], input):focus,
 .glass:where([data-slot])
   :is(button, [data-slot='select-trigger'], input):focus-visible {
   outline: none;
@@ -388,8 +389,8 @@
 @utility glass-springy {
   transition-property: width, scale, opacity;
   transition-duration: 520ms, 340ms, 200ms;
-  transition-timing-function: var(--ease-liquid), var(--ease-liquid),
-    var(--ease-liquid-soft);
+  transition-timing-function:
+    var(--ease-liquid), var(--ease-liquid), var(--ease-liquid-soft);
 }
 
 /*
@@ -436,25 +437,37 @@
 @keyframes loader-coalesce {
   0% {
     opacity: 0;
-    transform: translate(calc(-50% + var(--x0) * 1cqw), calc(-50% + var(--y0) * 1cqh))
+    transform: translate(
+        calc(-50% + var(--x0) * 1cqw),
+        calc(-50% + var(--y0) * 1cqh)
+      )
       scale(0.35);
   }
 
   14% {
     opacity: 0.26;
-    transform: translate(calc(-50% + var(--x1) * 1cqw), calc(-50% + var(--y1) * 1cqh))
+    transform: translate(
+        calc(-50% + var(--x1) * 1cqw),
+        calc(-50% + var(--y1) * 1cqh)
+      )
       scale(0.62);
   }
 
   56% {
     opacity: var(--dot-opacity);
-    transform: translate(calc(-50% + var(--x2) * 1cqw), calc(-50% + var(--y2) * 1cqh))
+    transform: translate(
+        calc(-50% + var(--x2) * 1cqw),
+        calc(-50% + var(--y2) * 1cqh)
+      )
       scale(0.86);
   }
 
   86% {
     opacity: var(--dot-opacity);
-    transform: translate(calc(-50% + var(--x3) * 1cqw), calc(-50% + var(--y3) * 1cqh))
+    transform: translate(
+        calc(-50% + var(--x3) * 1cqw),
+        calc(-50% + var(--y3) * 1cqh)
+      )
       scale(1);
   }
 
@@ -532,7 +545,9 @@
   body {
     background-color: var(--background);
     color: var(--foreground);
-    font-feature-settings: 'rlig' 1, 'calt' 1;
+    font-feature-settings:
+      'rlig' 1,
+      'calt' 1;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
     overscroll-behavior-y: none;

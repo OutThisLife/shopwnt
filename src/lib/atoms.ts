@@ -5,7 +5,8 @@ import { clean, client } from '.'
 
 export type SortField = 'price' | 'arrived' | 'revised'
 export type SortDir = 'ASC' | 'DESC'
-export type SortId = 'newest' | 'oldest' | 'updated' | 'price_asc' | 'price_desc'
+export type SortId =
+  'newest' | 'oldest' | 'updated' | 'price_asc' | 'price_desc'
 
 export interface SortOption {
   value: SortId
@@ -23,10 +24,25 @@ export interface SortOption {
  */
 export const SORT_OPTIONS: SortOption[] = [
   { value: 'newest', label: 'Newest', field: 'arrived', dir: 'DESC' },
-  { value: 'updated', label: 'Recently updated', field: 'revised', dir: 'DESC' },
+  {
+    value: 'updated',
+    label: 'Recently updated',
+    field: 'revised',
+    dir: 'DESC'
+  },
   { value: 'oldest', label: 'Oldest', field: 'arrived', dir: 'ASC' },
-  { value: 'price_asc', label: 'Price: Low to High', field: 'price', dir: 'ASC' },
-  { value: 'price_desc', label: 'Price: High to Low', field: 'price', dir: 'DESC' }
+  {
+    value: 'price_asc',
+    label: 'Price: Low to High',
+    field: 'price',
+    dir: 'ASC'
+  },
+  {
+    value: 'price_desc',
+    label: 'Price: High to Low',
+    field: 'price',
+    dir: 'DESC'
+  }
 ]
 
 /** Retired sort ids, kept resolvable so old links and saved state still land. */
