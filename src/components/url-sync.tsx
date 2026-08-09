@@ -1,6 +1,6 @@
 'use client'
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { atom, useAtom, useSetAtom } from 'jotai'
 import { useEffect, useState } from 'react'
 import {
@@ -58,7 +58,6 @@ const decodeFacets = (raw: string): Record<string, string[]> =>
  */
 export function UrlSync() {
   const params = useSearchParams()
-  const router = useRouter()
   const pathname = usePathname()
 
   const [search, setSearch] = useAtom(searchAtom)
@@ -156,8 +155,16 @@ export function UrlSync() {
     const qs = next.toString()
     const path = pathname ?? '/'
 
-    router.replace(qs ? `${path}?${qs}` : path, { scroll: false })
-  }, [ready, search, sort, slugs, facets, pathname, router])
+    // This only mirrors client state for sharing/bookmarking. A Next router
+    // navigation would ask the server to rebuild the page after every click,
+    // blocking the main thread while the already-live client query does the
+    // same work.
+    window.history.replaceState(
+      window.history.state,
+      '',
+      qs ? `${path}?${qs}` : path
+    )
+  }, [ready, search, sort, slugs, facets, pathname])
 
   return null
 }

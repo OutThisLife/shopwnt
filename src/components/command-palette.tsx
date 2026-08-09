@@ -3,9 +3,8 @@
 import { useAtom, useAtomValue } from 'jotai'
 import { Plus } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { paletteAtom, searchAtom, slugsAtom, brandsReadyAtom, storeHost } from '~/lib'
+import { brandSlugsAtom, brandsReadyAtom, paletteAtom, searchAtom, storeHost } from '~/lib'
 import { useAddBrand } from '~/lib/use-add-brand'
-import { useBrandToggle } from '~/lib/use-brand-toggle'
 import { cn } from '~/lib/utils'
 import { BrandItem } from './brand-item'
 import {
@@ -18,17 +17,14 @@ import {
 
 function Palette({ onClose }: { onClose: () => void }) {
   const [query, setQuery] = useAtom(searchAtom)
-  const slugs = useAtomValue(slugsAtom)
+  const slugs = useAtomValue(brandSlugsAtom)
   const brandsReady = useAtomValue(brandsReadyAtom)
   const [value, setValue] = useState(query)
   const { addBrand, adding } = useAddBrand()
-  const { toggle, pending } = useBrandToggle()
   const ref = useRef<HTMLDivElement>(null)
 
   const term = value.trim().toLowerCase()
-  const brands = brandsReady
-    ? Object.keys(slugs).filter(b => b.includes(term))
-    : []
+  const brands = brandsReady ? slugs.filter(b => b.includes(term)) : []
   // The input doubles as the product search, so only offer to add a store when
   // what's typed is domain-shaped — the same thing /api/verify insists on.
   const host = storeHost(value)
@@ -92,13 +88,7 @@ function Palette({ onClose }: { onClose: () => void }) {
           <CommandList>
             <CommandGroup heading="Brands">
               {brands.map(b => (
-                <BrandItem
-                  active={slugs[b]}
-                  key={b}
-                  onToggle={() => toggle(b)}
-                  pending={pending.includes(b)}
-                  slug={b}
-                />
+                <BrandItem key={b} slug={b} />
               ))}
 
               {canAdd && (

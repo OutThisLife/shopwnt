@@ -2,8 +2,10 @@
 
 import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
+import { memo } from 'react'
 import type { Product } from '~/../types'
 import { arrivedAt, relTime, revisedAt, wasRevised, type SortField } from '~/lib'
+import { useBrandName } from '~/lib/use-brand'
 import { cn } from '~/lib/utils'
 import { Badge } from '../ui/badge'
 import { Card, CardContent } from '../ui/card'
@@ -17,8 +19,8 @@ import {
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
 
-/** Frosted chip shared by store, title, and size pills on the photo. */
-const CHIP = 'bg-background/80 backdrop-blur-sm'
+/** Translucent chip shared by store, title, and size pills on the photo. */
+const CHIP = 'bg-background/90'
 
 /** Shared chrome for a size pill; state classes are layered per pill. */
 const PILL = cn(
@@ -67,7 +69,7 @@ const sizesOf = (options: Product['options'], variants: Product['variants']) => 
   return [...byLabel.values()]
 }
 
-export default function Item({
+function Item({
   title,
   url,
   vendor,
@@ -82,6 +84,7 @@ export default function Item({
 }: ItemProps) {
   const multi = images.length > 1
   const price = Number(listPrice)
+  const { name: vendorName, resolving: resolvingVendor } = useBrandName(vendor ?? '')
 
   // Show the moment the current sort actually ordered by, so the stamp always
   // explains the position. Price sorts have no moment of their own, so they
@@ -101,7 +104,19 @@ export default function Item({
             <CarouselContent className="ml-0 h-full">
               {images.map(img => (
                 <CarouselItem className="pl-0" key={img.src}>
-                  <div className="relative aspect-3/4 w-full">
+                  <div className="relative aspect-3/4 w-full overflow-hidden">
+                    {/* A 64px rendition scales into a soft color field without
+                        making every card carry a live GPU blur filter. */}
+                    <Image
+                      aria-hidden
+                      alt=""
+                      className="scale-110 object-cover opacity-60 saturate-75"
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=64`}
+                      unoptimized
+                    />
                     <Image
                       alt={title ?? ''}
                       className="object-contain object-center"
@@ -129,10 +144,11 @@ export default function Item({
             {vendor && (
               <p
                 className={cn(
-                  'absolute top-3 left-3 max-w-[calc(100%-5.5rem)] rounded-full px-2.5 py-1 text-xs tracking-wide text-foreground uppercase',
+                  'absolute top-3 left-3 max-w-[calc(100%-5.5rem)] rounded-full px-2.5 py-1 text-xs tracking-wide text-foreground',
+                  resolvingVendor && 'opacity-60',
                   CHIP
                 )}>
-                {vendor}
+                {vendorName}
               </p>
             )}
 
@@ -162,35 +178,33 @@ export default function Item({
                 )}
               </div>
 
-              {sizes.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {sizes.map(({ label, href, available }) => {
-                    const buyable = available && href
+              {/* Row keeps its height with no sizes so every card gets the
+                  same breathing room under the title. */}
+              <div className="flex min-h-6 flex-wrap gap-1.5">
+                {sizes.map(({ label, href, available }) => {
+                  const buyable = available && href
 
-                    return (
-                      <a
-                        aria-disabled={!buyable}
-                        className={cn(
-                          PILL,
-                          buyable
-                            ? 'pointer-events-auto hover:border-primary hover:text-primary'
-                            : 'text-muted-foreground line-through opacity-60'
-                        )}
-                        href={buyable ? href : undefined}
-                        key={label}
-                        rel="noopener noreferrer"
-                        target="_blank"
-                        // Cart permalink — cross-origin AJAX to a dozen Shopify
-                        // stores isn't possible from here.
-                        title={
-                          buyable ? `Add ${label} to cart` : `${label} — sold out`
-                        }>
-                        {label}
-                      </a>
-                    )
-                  })}
-                </div>
-              )}
+                  return (
+                    <a
+                      aria-disabled={!buyable}
+                      className={cn(
+                        PILL,
+                        buyable
+                          ? 'pointer-events-auto hover:border-primary hover:text-primary'
+                          : 'text-muted-foreground line-through opacity-60'
+                      )}
+                      href={buyable ? href : undefined}
+                      key={label}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                      // Cart permalink — cross-origin AJAX to a dozen Shopify
+                      // stores isn't possible from here.
+                      title={buyable ? `Add ${label} to cart` : `${label} — sold out`}>
+                      {label}
+                    </a>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
@@ -198,3 +212,5 @@ export default function Item({
     </Card>
   )
 }
+
+export default memo(Item)

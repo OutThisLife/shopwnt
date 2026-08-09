@@ -1,5 +1,5 @@
 import { atom } from 'jotai'
-import { atomWithStorage } from 'jotai/utils'
+import { atomWithStorage, selectAtom } from 'jotai/utils'
 import type { SetStateAction } from 'react'
 import { clean, client } from '.'
 
@@ -67,6 +67,50 @@ export const slugsAtom = atom(
   }
 )
 
+/** Stable catalog membership; toggling one brand must not redraw every row. */
+export const brandSlugsAtom = selectAtom(
+  slugsAtom,
+  value => Object.keys(value),
+  (a, b) => a.length === b.length && a.every((slug, i) => slug === b[i])
+)
+
+/**
+ * One atom per key, kept for the life of the page — jotai's own atomFamily is
+ * deprecated. Rows read their own selection through these, so toggling one
+ * doesn't rerender the whole menu.
+ */
+const perKey = <A, T>(id: (arg: A) => string, create: (arg: A) => T) => {
+  const made = new Map<string, T>()
+
+  return (arg: A) => {
+    const key = id(arg)
+    const hit = made.get(key)
+
+    if (hit) {
+      return hit
+    }
+
+    const next = create(arg)
+
+    made.set(key, next)
+
+    return next
+  }
+}
+
+export const brandActiveAtom = perKey(
+  (slug: string) => slug,
+  (slug: string) =>
+    atom(
+      get => !!get(slugsAtom)[slug],
+      (get, set) =>
+        set(slugsAtom, current => ({
+          ...current,
+          [slug]: !get(slugsAtom)[slug]
+        }))
+    )
+)
+
 /** False until persisted brands have been probed on load. */
 export const brandsReadyAtom = atom(false)
 
@@ -99,6 +143,30 @@ export const facetsAtom = atom(
       Object.fromEntries(Object.entries(next).filter(([, v]) => v.length > 0))
     )
   }
+)
+
+interface FacetValueKey {
+  key: string
+  value: string
+}
+
+export const facetValueAtom = perKey(
+  ({ key, value }: FacetValueKey) => `${key}\u0000${value}`,
+  ({ key, value }: FacetValueKey) =>
+    atom(
+      get => get(facetsAtom)[key]?.includes(value) ?? false,
+      (_get, set) =>
+        set(facetsAtom, current => {
+          const values = current[key] ?? []
+
+          return {
+            ...current,
+            [key]: values.includes(value)
+              ? values.filter(item => item !== value)
+              : [...values, value]
+          }
+        })
+    )
 )
 
 /** The shape the GraphQL layer wants, stable-ordered so it keys queries cleanly. */

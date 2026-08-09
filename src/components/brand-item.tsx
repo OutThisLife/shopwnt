@@ -1,27 +1,30 @@
 'use client'
 
-import { Check, Loader2 } from 'lucide-react'
+import { Check } from 'lucide-react'
+import { useBrand } from '~/lib/use-brand'
 import { cn } from '~/lib/utils'
 import { CommandItem } from './ui/command'
+import { Loader } from './ui/loader'
 
-export function BrandItem({
-  slug,
-  active,
-  pending,
-  onToggle
-}: {
-  slug: string
-  active: boolean
-  pending: boolean
-  onToggle: () => void
-}) {
+export function BrandItem({ slug }: { slug: string }) {
+  const { active, name, pending, resolving, toggle } = useBrand(slug)
+
   return (
-    <CommandItem onSelect={onToggle} value={slug}>
-      <span className="flex-1 truncate">{slug}</span>
+    <CommandItem onSelect={toggle} value={`${name} ${slug}`}>
+      <span className={cn('flex-1 transition-opacity', resolving && 'opacity-60')}>
+        {name}
+      </span>
 
-      {pending && <Loader2 className="size-3.5 animate-spin opacity-13" />}
-
-      <Check className={cn('text-primary', active ? 'opacity-100' : 'opacity-0')} />
+      {pending ? (
+        <Loader className="opacity-60" />
+      ) : (
+        <Check
+          className={cn(
+            'text-primary transition-opacity',
+            active ? 'opacity-100' : 'opacity-0'
+          )}
+        />
+      )}
     </CommandItem>
   )
 }
