@@ -37,7 +37,7 @@
      0.68 through the middle measures 6.6:1 against the worst backdrop. */
   --glass-core: oklch(1 0 0 / 0.68);
   --glass-tint: oklch(1 0 0 / 0.55);
-  --glass-shadow: oklch(0.21 0.02 335 / 0.16);
+  --glass-shadow: oklch(0 0 0 / 0.12);
   /* Interaction states on glass. Solid fills read as stickers on a translucent
      pane, so hover/selection are lit washes of the same white the rim uses —
      the surface catches more light rather than gaining a chip of colour.
@@ -93,7 +93,7 @@
   --glass-rim: oklch(1 0 0 / 0.14);
   --glass-core: oklch(0.2 0.014 335 / 0.72);
   --glass-tint: oklch(0.2 0.014 335 / 0.4);
-  --glass-shadow: oklch(0 0 0 / 0.45);
+  --glass-shadow: oklch(0 0 0 / 0.2);
   --glass-hover: oklch(1 0 0 / 0.1);
   --glass-active: oklch(1 0 0 / 0.16);
   --glass-focus-rim: oklch(1 0 0 / 0.4);
@@ -196,12 +196,11 @@
     position: relative;
     isolation: isolate;
     overflow: hidden;
-    /* The pen's shine layer: a lit top-left edge and a bright bottom-right. */
+    /* Specular rims + a tight bottom-edge lift — no ambient glow. */
     box-shadow:
       inset 2px 2px 1px 0 var(--glass-rim),
       inset -1px -1px 1px 1px var(--glass-rim),
-      0 6px 6px var(--glass-shadow),
-      0 0 20px var(--glass-shadow);
+      0 2px 2px -1px var(--glass-shadow);
   }
 
   &:where([data-slot])::before {

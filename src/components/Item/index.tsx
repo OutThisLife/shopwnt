@@ -17,9 +17,14 @@ import {
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
 
+/** Frosted chip shared by store, title, and size pills on the photo. */
+const CHIP = 'bg-background/80 backdrop-blur-sm'
+
 /** Shared chrome for a size pill; state classes are layered per pill. */
-const PILL =
-  'inline-flex h-6 min-w-6 items-center justify-center rounded-full border px-2 text-xs font-medium transition-colors'
+const PILL = cn(
+  'inline-flex h-6 min-w-6 items-center justify-center rounded-full border border-border/60 px-2 text-xs font-medium transition-colors',
+  CHIP
+)
 
 interface SizePill {
   label: string
@@ -89,90 +94,106 @@ export default function Item({
 
   return (
     <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
-      <div className="flex w-full items-start justify-between gap-3 px-6 py-4">
-        <div className="min-w-0 flex-1">
-          <a
-            className="flex min-w-0 items-center gap-1 font-medium leading-snug hover:text-primary hover:underline"
-            href={url}
-            rel="noopener noreferrer"
-            target="_blank">
-            <span className="truncate">{title}</span>
-            <ExternalLink className="size-3.5 shrink-0 opacity-50" />
-          </a>
-          <p className="mt-0.5 truncate text-xs tracking-wide text-muted-foreground uppercase">
-            {vendor}
-            {at > 0 && ` · ${revised ? 'updated' : 'added'} ${relTime(new Date(at))}`}
-          </p>
-        </div>
-
-        {Number.isFinite(price) && (
-          <Badge className="shrink-0" variant="success">
-            {price.toLocaleString('en-US', {
-              currency: 'USD',
-              style: 'currency'
-            })}
-          </Badge>
-        )}
-      </div>
-
       <CardContent className="px-0">
-        <Carousel
-          className="bg-muted/40"
-          opts={{ loop: true, watchDrag: multi }}>
-          <CarouselContent className="ml-0">
-            {images.map(img => (
-              <CarouselItem className="pl-0" key={img.src}>
-                <div className="relative aspect-3/4 w-full">
-                  <Image
-                    alt={title ?? ''}
-                    className="object-contain object-center"
-                    fill
-                    loading="lazy"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    src={img.src}
-                    unoptimized
-                  />
-                </div>
-              </CarouselItem>
-            ))}
-          </CarouselContent>
+        {/* Card is the photo — meta floats on it, no footer band. */}
+        <div className="relative aspect-3/4 w-full bg-muted/40">
+          <Carousel className="size-full" opts={{ loop: true, watchDrag: multi }}>
+            <CarouselContent className="ml-0 h-full">
+              {images.map(img => (
+                <CarouselItem className="pl-0" key={img.src}>
+                  <div className="relative aspect-3/4 w-full">
+                    <Image
+                      alt={title ?? ''}
+                      className="object-contain object-center"
+                      fill
+                      loading="lazy"
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      src={img.src}
+                      unoptimized
+                    />
+                  </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
 
-          {multi && (
-            <div className="opacity-0 transition-opacity group-hover:opacity-100">
-              <CarouselPrevious />
-              <CarouselNext />
-            </div>
-          )}
-        </Carousel>
+            {multi && (
+              <div className="opacity-0 transition-opacity group-hover:opacity-100">
+                <CarouselPrevious />
+                <CarouselNext />
+              </div>
+            )}
+          </Carousel>
 
-        {sizes.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 px-6 pt-3 pb-4">
-            {sizes.map(({ label, href, available }) => {
-              const buyable = available && href
+          {/* pointer-events-none so carousel arrows still work; links opt back in. */}
+          <div className="pointer-events-none absolute inset-0 z-10">
+            {vendor && (
+              <p
+                className={cn(
+                  'absolute top-3 left-3 max-w-[calc(100%-5.5rem)] rounded-full px-2.5 py-1 text-xs tracking-wide text-foreground uppercase',
+                  CHIP
+                )}>
+                {vendor}
+              </p>
+            )}
 
-              return (
+            {Number.isFinite(price) && (
+              <Badge className="absolute top-3 right-3" variant="success">
+                {price.toLocaleString('en-US', {
+                  currency: 'USD',
+                  style: 'currency'
+                })}
+              </Badge>
+            )}
+
+            <div className="absolute inset-x-3 bottom-3 flex flex-col gap-2">
+              <div className={cn('rounded-lg px-2.5 py-2', CHIP)}>
                 <a
-                  aria-disabled={!buyable}
-                  className={cn(
-                    PILL,
-                    buyable
-                      ? 'hover:border-primary hover:text-primary'
-                      : 'pointer-events-none text-muted-foreground line-through opacity-60'
-                  )}
-                  href={buyable ? href : undefined}
-                  key={label}
+                  className="pointer-events-auto inline text-sm font-medium leading-snug hover:text-primary hover:underline"
+                  href={url}
                   rel="noopener noreferrer"
-                  target="_blank"
-                  // A cart permalink lands the browser on that store's cart with
-                  // the variant already in it — cross-origin AJAX to a dozen
-                  // different Shopify stores isn't possible from here.
-                  title={buyable ? `Add ${label} to cart` : `${label} — sold out`}>
-                  {label}
+                  target="_blank">
+                  {title}
+                  <ExternalLink className="ml-1 inline size-3.5 -translate-y-px opacity-50" />
                 </a>
-              )
-            })}
+                {at > 0 && (
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {revised ? 'updated' : 'added'} {relTime(new Date(at))}
+                  </p>
+                )}
+              </div>
+
+              {sizes.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {sizes.map(({ label, href, available }) => {
+                    const buyable = available && href
+
+                    return (
+                      <a
+                        aria-disabled={!buyable}
+                        className={cn(
+                          PILL,
+                          buyable
+                            ? 'pointer-events-auto hover:border-primary hover:text-primary'
+                            : 'text-muted-foreground line-through opacity-60'
+                        )}
+                        href={buyable ? href : undefined}
+                        key={label}
+                        rel="noopener noreferrer"
+                        target="_blank"
+                        // Cart permalink — cross-origin AJAX to a dozen Shopify
+                        // stores isn't possible from here.
+                        title={
+                          buyable ? `Add ${label} to cart` : `${label} — sold out`
+                        }>
+                        {label}
+                      </a>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   )

@@ -24,7 +24,7 @@ import Loading from './loading'
 
 const PAGE_SIZE = 24
 
-const GRID = 'grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3'
+const GRID = 'grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3'
 
 const QUERY = gql`
   query GetProducts(
