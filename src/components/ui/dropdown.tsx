@@ -1,8 +1,9 @@
 'use client'
 
-import { Loader2 } from 'lucide-react'
+import { Check } from 'lucide-react'
 import type * as React from 'react'
 import { cn } from '~/lib/utils'
+import { Loader } from './loader'
 
 /**
  * The shared parts of a toolbar dropdown.
@@ -15,29 +16,47 @@ import { cn } from '~/lib/utils'
 
 /** Panel surface. Callers add their own max-width. */
 export const DROPDOWN_PANEL =
-  'w-auto overflow-hidden border-0 bg-white p-0 dark:bg-popover'
+  'w-auto overflow-hidden border-0 bg-white p-0 [contain:paint] dark:bg-popover'
 
-/** One column of rows, fixed so the panel only resizes when columns do. */
-export const DROPDOWN_COLUMN = 'w-40 shrink-0'
+/**
+ * One column of rows. Store names run from "FRAME" to "NAKEDCASHMERE", and
+ * breaking one across two lines to hold a fixed width costs more than letting
+ * the column be as wide as its longest row — the panel scrolls sideways past
+ * its max-width.
+ */
+export const DROPDOWN_COLUMN = 'w-max min-w-36 shrink-0'
 
 export function DropdownRow({
-  active = false,
+  active,
   className,
   dim = false,
   ...props
 }: React.ComponentProps<'button'> & { active?: boolean; dim?: boolean }) {
   return (
     <button
+      aria-pressed={active}
       className={cn(
-        'flex cursor-pointer items-center gap-2 rounded-sm px-1.5 py-1 text-left text-sm outline-hidden transition-colors',
+        'flex min-h-7 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-left text-sm whitespace-nowrap outline-hidden transition-colors',
         active
-          ? 'bg-accent text-accent-foreground'
+          ? 'bg-primary/10 text-primary'
           : 'hover:bg-accent/60 focus-visible:bg-accent/60',
         dim && !active && 'text-muted-foreground/60',
         className
       )}
       type="button"
       {...props}
+    />
+  )
+}
+
+/** A row's tick, holding its column whether or not the row is on. */
+export function DropdownCheck({ active }: { active?: boolean }) {
+  return (
+    <Check
+      className={cn(
+        'size-3.5 shrink-0 text-primary transition-opacity',
+        active ? 'opacity-100' : 'opacity-0'
+      )}
     />
   )
 }
@@ -65,7 +84,7 @@ export function DropdownMeta({
     <span
       className={cn(
         'text-xs tabular-nums',
-        active ? 'text-accent-foreground/70' : 'text-muted-foreground',
+        active ? 'text-primary/70' : 'text-muted-foreground',
         className
       )}
       {...props}
@@ -122,7 +141,7 @@ export function DropdownNotice({
         'px-2.5 py-6 text-sm text-muted-foreground',
         busy ? 'flex items-center gap-2' : 'text-center'
       )}>
-      {busy && <Loader2 className="size-3.5 animate-spin opacity-60" />}
+      {busy && <Loader className="opacity-60" />}
       {children}
     </div>
   )

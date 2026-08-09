@@ -1,36 +1,51 @@
 'use client'
 
 import { useAtomValue } from 'jotai'
-import { Loader2, Plus, Store } from 'lucide-react'
+import { Plus, Store } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { brandsReadyAtom, slugsAtom, storeHost } from '~/lib'
+import { activeSlugsAtom, brandSlugsAtom, brandsReadyAtom, storeHost } from '~/lib'
 import { useAddBrand } from '~/lib/use-add-brand'
-import { useBrandToggle } from '~/lib/use-brand-toggle'
+import { useBrand } from '~/lib/use-brand'
+import { useHoverOpen } from '~/lib/use-hover-open'
 import { cn } from '~/lib/utils'
+import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import {
   DROPDOWN_COLUMN,
   DROPDOWN_PANEL,
+  DropdownCheck,
   DropdownColumn,
   DropdownNotice,
   DropdownRow,
   DropdownSearch
 } from './ui/dropdown'
+import { Loader } from './ui/loader'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
 /** Past this many brands one column becomes a scroll chore, so it splits. */
 const PER_COLUMN = 4
 const MAX_COLUMNS = 3
 
+function BrandOption({ slug }: { slug: string }) {
+  const { active, name, pending, resolving, toggle } = useBrand(slug)
+
+  return (
+    <DropdownRow active={active} onClick={toggle}>
+      <span className={cn('flex-1', resolving && 'opacity-60')}>{name}</span>
+      {pending ? <Loader className="opacity-60" /> : <DropdownCheck active={active} />}
+    </DropdownRow>
+  )
+}
+
 export function BrandFilter({ className }: { className?: string }) {
-  const slugs = useAtomValue(slugsAtom)
+  const brands = useAtomValue(brandSlugsAtom)
+  const activeCount = useAtomValue(activeSlugsAtom).length
   const brandsReady = useAtomValue(brandsReadyAtom)
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
   const { addBrand, adding } = useAddBrand()
-  const { toggle, pending } = useBrandToggle()
+  const hover = useHoverOpen(open, setOpen)
 
-  const brands = Object.keys(slugs)
   const term = query.trim().toLowerCase()
   const shown = term ? brands.filter(b => b.toLowerCase().includes(term)) : brands
 
@@ -53,17 +68,23 @@ export function BrandFilter({ className }: { className?: string }) {
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild {...hover.trigger}>
         <Button className={cn('gap-2', className)} variant="ghost">
           <Store className="size-4 opacity-70" />
           <span>Brands</span>
+          {activeCount > 0 && (
+            <Badge className="h-5 min-w-5 rounded-full px-1.5" variant="glass">
+              {activeCount}
+            </Badge>
+          )}
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
         align="center"
         className={cn(DROPDOWN_PANEL, 'max-w-[min(92vw,34rem)]')}
-        sideOffset={6}>
+        sideOffset={6}
+        {...hover.content}>
         <div className="flex flex-col">
           <DropdownSearch
             icon={Store}
@@ -85,13 +106,8 @@ export function BrandFilter({ className }: { className?: string }) {
             <div className="flex overflow-x-auto">
               {columns.map((col, i) => (
                 <DropdownColumn className={DROPDOWN_COLUMN} key={i}>
-                  {col.map(k => (
-                    <DropdownRow active={slugs[k]} key={k} onClick={() => toggle(k)}>
-                      <span className="flex-1 truncate">{k}</span>
-                      {pending.includes(k) && (
-                        <Loader2 className="size-3.5 shrink-0 animate-spin opacity-60" />
-                      )}
-                    </DropdownRow>
+                  {col.map(slug => (
+                    <BrandOption key={slug} slug={slug} />
                   ))}
                 </DropdownColumn>
               ))}
@@ -102,13 +118,11 @@ export function BrandFilter({ className }: { className?: string }) {
             <div className="px-1 pb-1">
               <DropdownRow className="w-full" disabled={adding} onClick={add}>
                 {adding ? (
-                  <Loader2 className="size-3.5 shrink-0 animate-spin opacity-60" />
+                  <Loader className="opacity-60" />
                 ) : (
                   <Plus className="size-3.5 shrink-0 text-muted-foreground" />
                 )}
-                <span className="truncate">
-                  Add “{storeHost(query) || query.trim()}”
-                </span>
+                <span>Add “{storeHost(query) || query.trim()}”</span>
               </DropdownRow>
             </div>
           )}

@@ -1,15 +1,24 @@
 'use client'
 
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
-import { activeSlugsAtom, facetCountAtom, facetsAtom, searchAtom } from '~/lib'
+import { memo, useMemo, useState } from 'react'
+import {
+  activeSlugsAtom,
+  facetCountAtom,
+  facetsAtom,
+  facetValueAtom,
+  searchAtom
+} from '~/lib'
 import { useFacets, type Facet } from '~/lib/use-facets'
+import { useHoverOpen } from '~/lib/use-hover-open'
 import { cn } from '~/lib/utils'
+import { Badge } from './ui/badge'
 import { Button } from './ui/button'
 import {
   DROPDOWN_COLUMN,
   DROPDOWN_PANEL,
+  DropdownCheck,
   DropdownColumn,
   DropdownHeading,
   DropdownMeta,
@@ -19,14 +28,35 @@ import {
 } from './ui/dropdown'
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
 
+const FacetOption = memo(function FacetOption({
+  facetKey,
+  value,
+  count
+}: {
+  facetKey: string
+  value: string
+  count: number
+}) {
+  const [active, toggle] = useAtom(facetValueAtom({ key: facetKey, value }))
+
+  return (
+    <DropdownRow active={active} dim={!count} onClick={toggle}>
+      <DropdownCheck active={active} />
+      <span className="flex-1">{value}</span>
+      <DropdownMeta active={active}>{count}</DropdownMeta>
+    </DropdownRow>
+  )
+})
+
 export function FacetFilter({ className }: { className?: string }) {
   const brands = useAtomValue(activeSlugsAtom)
   const search = useAtomValue(searchAtom)
-  const [selected, setSelected] = useAtom(facetsAtom)
   const count = useAtomValue(facetCountAtom)
+  const clear = useSetAtom(facetsAtom)
   const { facets, loading } = useFacets()
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const hover = useHoverOpen(open, setOpen)
 
   // The server recomputes counts on every selection and drops values that fall
   // to zero, so reading the menu straight off the response makes columns grow,
@@ -59,16 +89,6 @@ export function FacetFilter({ className }: { className?: string }) {
     [facets]
   )
 
-  const toggle = (key: string, value: string) =>
-    setSelected(s => {
-      const on = s[key] ?? []
-
-      return {
-        ...s,
-        [key]: on.includes(value) ? on.filter(v => v !== value) : [...on, value]
-      }
-    })
-
   const term = query.trim().toLowerCase()
 
   // Typing is an explicit narrowing, so it may reshape the columns — clicking
@@ -93,17 +113,23 @@ export function FacetFilter({ className }: { className?: string }) {
 
   return (
     <Popover onOpenChange={setOpen} open={open}>
-      <PopoverTrigger asChild>
+      <PopoverTrigger asChild {...hover.trigger}>
         <Button className={cn('gap-2', className)} variant="ghost">
           <SlidersHorizontal className="size-4 opacity-70" />
           <span>Filter</span>
+          {count > 0 && (
+            <Badge className="h-5 min-w-5 rounded-full px-1.5" variant="glass">
+              {count}
+            </Badge>
+          )}
         </Button>
       </PopoverTrigger>
 
       <PopoverContent
         align="center"
         className={cn(DROPDOWN_PANEL, 'max-w-[min(92vw,56rem)]')}
-        sideOffset={6}>
+        sideOffset={6}
+        {...hover.content}>
         <div className="flex flex-col">
           <DropdownSearch
             icon={Search}
@@ -127,21 +153,18 @@ export function FacetFilter({ className }: { className?: string }) {
                   <DropdownHeading>{f.label}</DropdownHeading>
                   <DropdownColumn>
                     {f.values.map(v => {
-                      const on = selected[f.key]?.includes(v.value) ?? false
                       const n = counts.get(`${f.key}\u0000${v.value}`) ?? 0
 
                       return (
-                        <DropdownRow
-                          active={on}
+                        <FacetOption
                           // A value the selection has emptied stays put rather
                           // than vanishing — dimmed but still clickable, so the
                           // column never jumps under the cursor.
-                          dim={!n}
+                          count={n}
+                          facetKey={f.key}
                           key={v.value}
-                          onClick={() => toggle(f.key, v.value)}>
-                          <span className="flex-1 truncate">{v.value}</span>
-                          <DropdownMeta active={on}>{n}</DropdownMeta>
-                        </DropdownRow>
+                          value={v.value}
+                        />
                       )
                     })}
                   </DropdownColumn>
@@ -158,7 +181,7 @@ export function FacetFilter({ className }: { className?: string }) {
             <Button
               className="h-6 cursor-pointer px-2"
               disabled={!count}
-              onClick={() => setSelected({})}
+              onClick={() => clear({})}
               size="sm"
               variant="ghost">
               <X className="size-3.5" />
