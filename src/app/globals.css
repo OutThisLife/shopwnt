@@ -432,13 +432,13 @@
  */
 .loader-coalesce {
   container-type: size;
-  /* Skeleton chips use --accent; the coalesce particles sit a touch darker
-     in light mode and a touch lighter in dark so they read on the photo well. */
-  color: color-mix(in oklch, var(--accent) 86%, var(--foreground) 14%);
+  /* Skeleton chips use --accent; nudge the particles just enough to read on
+     the photo without leaving the same pink family. */
+  color: color-mix(in oklch, var(--accent) 94%, var(--accent-foreground) 6%);
 }
 
 .dark .loader-coalesce {
-  color: color-mix(in oklch, var(--accent) 72%, var(--foreground) 28%);
+  color: color-mix(in oklch, var(--accent) 93%, var(--foreground) 7%);
 }
 
 @keyframes loader-coalesce {

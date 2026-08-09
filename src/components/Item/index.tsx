@@ -125,7 +125,7 @@ function Item({
                       <Image
                         aria-hidden
                         alt=""
-                        className="scale-110 object-cover opacity-60 saturate-75"
+                        className="scale-110 object-cover opacity-[0.07] saturate-75"
                         fill
                         loading="lazy"
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
