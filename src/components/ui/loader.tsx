@@ -81,7 +81,7 @@ export function ImageLoader({
     <div
       aria-hidden
       className={cn(
-        'text-muted-foreground absolute inset-[7%]',
+        'absolute inset-[7%]',
         'loader-coalesce',
         className
       )}

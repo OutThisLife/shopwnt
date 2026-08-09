@@ -432,6 +432,13 @@
  */
 .loader-coalesce {
   container-type: size;
+  /* Skeleton chips use --accent; the coalesce particles sit a touch darker
+     in light mode and a touch lighter in dark so they read on the photo well. */
+  color: color-mix(in oklch, var(--accent) 86%, var(--foreground) 14%);
+}
+
+.dark .loader-coalesce {
+  color: color-mix(in oklch, var(--accent) 72%, var(--foreground) 28%);
 }
 
 @keyframes loader-coalesce {
@@ -513,6 +520,46 @@
   box-shadow: 0 0 6px color-mix(in srgb, currentColor 22%, transparent);
   animation: loader-coalesce-core 2.07s ease-in-out infinite;
   animation-delay: calc(0ms - var(--phase, 0ms));
+}
+
+/*
+ * The card as a window.
+ *
+ * The photo is bigger than its frame and drifts against the page as the card
+ * crosses the viewport, so scrolling reveals a different slice of it instead
+ * of sliding a flat picture around. Same drift as the Hermes landing page,
+ * which writes --py-img per frame from a Lenis scroll callback; a grid that
+ * keeps growing can't afford per-card JS, so this rides a view() timeline and
+ * stays on the compositor.
+ *
+ * The scale has to outrun the travel or the frame shows through at the ends:
+ * 1.14 leaves 7% of slack on each edge for a ±6% drift. The landing page runs
+ * ±10% at 1.22, which crops too much off a product shot.
+ */
+@keyframes card-window {
+  from {
+    transform: translate3d(0, 6%, 0) scale(1.14);
+  }
+
+  to {
+    transform: translate3d(0, -6%, 0) scale(1.14);
+  }
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* An anonymous view() would resolve against the photo's nearest scroll
+       container, and the carousel clips — so every card would sit frozen at
+       half progress. The card names a timeline off its own box instead. */
+    .card-window-scope {
+      view-timeline-name: --card-window;
+    }
+
+    .card-window {
+      animation: card-window linear both;
+      animation-timeline: --card-window;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

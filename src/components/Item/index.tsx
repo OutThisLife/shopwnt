@@ -25,8 +25,8 @@ import {
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
 
-/** Translucent chip shared by store, title, and size pills on the photo. */
-const CHIP = 'bg-background/90'
+/** Frosted chip shared by everything that floats on the photo. */
+const CHIP = 'bg-background/70 backdrop-blur-md'
 
 /** Shared chrome for a size pill; state classes are layered per pill. */
 const PILL = cn(
@@ -107,7 +107,7 @@ function Item({
   const sizes = sizesOf(options, variants)
 
   return (
-    <Card className="group gap-0 overflow-hidden py-0 transition-shadow hover:shadow-md">
+    <Card className="card-window-scope group gap-0 overflow-hidden py-0 shadow-none">
       <CardContent className="px-0">
         {/* Card is the photo — meta floats on it, no footer band. */}
         <div className="bg-muted/40 relative aspect-3/4 w-full">
@@ -118,27 +118,33 @@ function Item({
               {images.map(img => (
                 <CarouselItem className="pl-0" key={img.src}>
                   <div className="relative aspect-3/4 w-full overflow-hidden">
-                    {/* A 64px rendition scales into a soft color field without
-                        making every card carry a live GPU blur filter. */}
-                    <Image
-                      aria-hidden
-                      alt=""
-                      className="scale-110 object-cover opacity-60 saturate-75"
-                      fill
-                      loading="lazy"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=64`}
-                      unoptimized
-                    />
-                    <Image
-                      alt={title ?? ''}
-                      className="object-contain object-center"
-                      fill
-                      loading="lazy"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      src={img.src}
-                      unoptimized
-                    />
+                    {/* Both layers drift together inside the fixed frame. */}
+                    <div className="card-window absolute inset-0">
+                      {/* A 64px rendition scales into a soft color field
+                          without making every card carry a live GPU blur. */}
+                      <Image
+                        aria-hidden
+                        alt=""
+                        className="scale-110 object-cover opacity-60 saturate-75"
+                        fill
+                        loading="lazy"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=64`}
+                        unoptimized
+                      />
+                      {/* Cards render ~450px wide; a 1200px rendition covers
+                          2x displays while costing a fraction of the original
+                          multi-megapixel file to fetch and decode. */}
+                      <Image
+                        alt={title ?? ''}
+                        className="object-contain object-center"
+                        fill
+                        loading="lazy"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=1200`}
+                        unoptimized
+                      />
+                    </div>
                   </div>
                 </CarouselItem>
               ))}
@@ -146,8 +152,8 @@ function Item({
 
             {multi && (
               <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                <CarouselPrevious />
-                <CarouselNext />
+                <CarouselPrevious className={CHIP} />
+                <CarouselNext className={CHIP} />
               </div>
             )}
           </Carousel>
@@ -166,7 +172,9 @@ function Item({
             )}
 
             {Number.isFinite(price) && (
-              <Badge className="absolute top-3 right-3" variant="success">
+              <Badge
+                className="absolute top-3 right-3 backdrop-blur-md"
+                variant="success">
                 {price.toLocaleString('en-US', {
                   currency: 'USD',
                   style: 'currency'

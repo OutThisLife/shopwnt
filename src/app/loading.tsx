@@ -5,7 +5,7 @@ import { Skeleton } from '~/components/ui/skeleton'
 /** `index` is only passed when a whole grid of these is on screen at once. */
 export default function Loading({ index = 0 }: { index?: number }) {
   return (
-    <Card className="gap-0 overflow-hidden py-0">
+    <Card className="gap-0 overflow-hidden py-0 shadow-none">
       <CardContent className="px-0">
         <div className="bg-muted/40 relative aspect-3/4 w-full">
           <ImageLoader phase={index * 260} />
