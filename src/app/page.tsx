@@ -191,8 +191,10 @@ export default function Index() {
 
     const io = new IntersectionObserver(
       entries => {
+        // Fast scrolling can queue a leave and re-entry together. The latest
+        // entry owns the current position; the first can leave the grid stuck.
         if (
-          entries[0]?.isIntersecting &&
+          entries.at(-1)?.isIntersecting &&
           !isFetchingNextPage &&
           !isPlaceholderData
         ) {
