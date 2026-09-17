@@ -1,3 +1,7 @@
+import { promisify } from 'node:util'
+import { gzip, gunzip } from 'node:zlib'
+import { unstable_cache } from 'next/cache'
+import { after } from 'next/server'
 import type { Product as IProduct } from '~/../types'
 import { arrivedAt, clean, fetcher, revisedAt } from '~/lib'
 
@@ -5,7 +9,8 @@ const PER_PAGE = 250
 const MAX_PAGES = 20
 /** Pages fetched concurrently once page 1 proves there's more. */
 const BATCH = 5
-const TTL = 5 * 60_000
+const compress = promisify(gzip)
+const decompress = promisify(gunzip)
 
 const shopify = (slug: string, path: string) =>
   new URL(path, `https://${slug}.myshopify.com`).toString()
@@ -49,25 +54,49 @@ const cmp: Record<string, (a: any, b: any) => number> = {
   revised: (a, b) => metaOf(a).revised - metaOf(b).revised
 }
 
-const page = async (slug: string, n: number): Promise<IProduct[]> => {
-  const u = new URL(shopify(slug, 'products.json'))
+// Process-local Maps disappear on serverless cold starts. Cache validated pages
+// in Next's persistent Data Cache instead. A raw Shopify page can exceed its
+// 2 MB entry limit; compression retains every field without caching a partial catalog.
+const cachedPage = unstable_cache(
+  async (slug: string, n: number) => {
+    const u = new URL(shopify(slug, 'products.json'))
 
-  u.searchParams.set('limit', `${PER_PAGE}`)
-  u.searchParams.set('page', `${n}`)
+    u.searchParams.set('limit', `${PER_PAGE}`)
+    u.searchParams.set('page', `${n}`)
 
-  try {
-    const { products } = await fetcher<{ products?: IProduct[] }>(
-      u.toString(),
-      {
-        headers: HEADERS
-      }
-    )
+    const res = await fetch(u, {
+      headers: HEADERS,
+      cache: 'no-store',
+      signal: AbortSignal.timeout(10_000)
+    })
 
-    return products ?? []
-  } catch {
-    return []
-  }
-}
+    // A removed store is empty; throttling and failed later pages aren't.
+    if (n === 1 && (res.status === 404 || res.status === 410)) {
+      return (await compress('[]')).toString('base64')
+    }
+
+    if (!res.ok) {
+      throw new Error(`Could not read catalog ${slug} (HTTP ${res.status})`)
+    }
+
+    const { products } = await res.json()
+
+    if (!Array.isArray(products)) {
+      throw new Error(`Invalid catalog response from ${slug}`)
+    }
+
+    return (await compress(JSON.stringify(products))).toString('base64')
+  },
+  ['shopify-catalog-page-v1'],
+  { revalidate: 300 }
+)
+
+const page = async (slug: string, n: number): Promise<IProduct[]> =>
+  JSON.parse(
+    (
+      await decompress(Buffer.from(await cachedPage(slug, n), 'base64'))
+    ).toString()
+  )
 
 /**
  * products.json only supports limit/page, so the whole catalog has to be
@@ -80,14 +109,36 @@ const walk = async (slug: string): Promise<IProduct[]> => {
 
   for (let at = 1; at <= MAX_PAGES;) {
     const size = at === 1 ? 1 : Math.min(BATCH, MAX_PAGES - at + 1)
-    const pages = await Promise.all(
-      Array.from({ length: size }, (_, n) => page(slug, at + n))
+    const pages = Array.from({ length: size }, (_, n) =>
+      page(slug, at + n).then(
+        items => ({ items, error: null }),
+        (error: unknown) => ({ items: null, error })
+      )
     )
-    const short = pages.findIndex(p => p.length < PER_PAGE)
 
-    items.push(...pages.slice(0, short < 0 ? size : short + 1).flat())
+    // Finish speculative requests/cache writes after the response, even if an
+    // earlier short page has already proved the complete catalog is here.
+    after(async () => {
+      await Promise.all(pages)
+    })
+    let complete = false
 
-    if (short >= 0) {
+    for (const pending of pages) {
+      const result = await pending
+
+      if (!result.items) {
+        throw result.error
+      }
+
+      items.push(...result.items)
+
+      if (result.items.length < PER_PAGE) {
+        complete = true
+        break
+      }
+    }
+
+    if (complete) {
       break
     }
 
@@ -95,55 +146,28 @@ const walk = async (slug: string): Promise<IProduct[]> => {
   }
 
   // Vendor doubles as the store slug downstream (urls, cart links), and only
-  // sellable products are worth carrying. Settled here once per walk so every
-  // request shares the same object references — which is what lets metaOf
-  // memoize against them.
+  // sellable products are worth carrying. Concurrent products/facets requests
+  // join this walk and share its object references for metadata memoization.
   return items
     .filter(i => i?.variants?.length)
     .map(i => ({ ...i, vendor: slug }))
 }
 
-const cache = new Map<string, { at: number; items: IProduct[] }>()
 const inflight = new Map<string, Promise<IProduct[]>>()
 
 /** One walk per store at a time — concurrent misses join it, never repeat it. */
-const refresh = (slug: string): Promise<IProduct[]> => {
+const catalog = (slug: string): Promise<IProduct[]> => {
   const going = inflight.get(slug)
 
   if (going) {
     return going
   }
 
-  const next = walk(slug)
-    .then(items => {
-      cache.set(slug, { at: Date.now(), items })
-
-      return items
-    })
-    .finally(() => inflight.delete(slug))
+  const next = walk(slug).finally(() => inflight.delete(slug))
 
   inflight.set(slug, next)
 
   return next
-}
-
-/**
- * Stale-while-revalidate: an expired entry still answers instantly and the
- * re-walk happens behind it, so nobody's request ever blocks on Shopify twice.
- * Only a store never seen before waits on the network.
- */
-const catalog = async (slug: string): Promise<IProduct[]> => {
-  const hit = cache.get(slug)
-
-  if (!hit) {
-    return refresh(slug)
-  }
-
-  if (Date.now() - hit.at >= TTL) {
-    void refresh(slug)
-  }
-
-  return hit.items
 }
 
 interface FacetSelection {
@@ -269,9 +293,8 @@ const valuesOf = (i: IProduct, key: string): string[] => {
 /**
  * Everything derived per product — the search haystack, the resolved sort
  * stamps, every facet group's values raw and folded — memoized against the
- * product object itself. The catalog cache hands back the same references
- * request after request, so this work happens once per walk; the facets
- * resolver alone used to redo it groups × selections times over the pool.
+ * product object itself. This work happens once per catalog read; the facets
+ * resolver otherwise repeats it groups × selections times over the pool.
  */
 interface Meta {
   hay: string

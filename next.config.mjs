@@ -11,7 +11,8 @@ const isProd = VERCEL_ENV === 'production'
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  serverExternalPackages: ['@apollo/server'],
+  // Apollo and schema construction must share the same GraphQL class identities.
+  serverExternalPackages: ['@apollo/server', 'graphql'],
 
   images: {
     formats: ['image/avif', 'image/webp'],
