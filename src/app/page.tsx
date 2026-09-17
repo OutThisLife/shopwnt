@@ -7,7 +7,14 @@ import {
 } from '@tanstack/react-query'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { PackageOpen, Store, TriangleAlert } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode
+} from 'react'
 import type { Product } from '~/../types'
 import { Item } from '~/components'
 import { Button } from '~/components/ui/button'
@@ -27,7 +34,8 @@ import {
 } from '~/lib'
 import Loading from './loading'
 
-const PAGE_SIZE = 24
+const VISIBLE_STEP = 24
+const PAGE_SIZE = 96
 
 const GRID = 'grid grid-cols-1 items-start gap-6 sm:grid-cols-2 lg:grid-cols-3'
 
@@ -115,7 +123,7 @@ export default function Index() {
   )
   const pageOptions = useCallback(
     (offset: number) => ({
-      queryKey: ['product-page', variables, offset],
+      queryKey: ['product-page', variables, offset, PAGE_SIZE],
       retry: false,
       staleTime: 60_000,
       gcTime: 60_000,
@@ -143,7 +151,7 @@ export default function Index() {
     fetchNextPage
   } = useInfiniteQuery({
     enabled: slugs.length > 0,
-    queryKey: ['products', variables],
+    queryKey: ['products', variables, PAGE_SIZE],
     initialPageParam: 0,
     // Changing sort, search, or a filter keys a fresh query. Holding the last
     // grid while it loads keeps the page interactive instead of tearing down
@@ -155,9 +163,17 @@ export default function Index() {
   })
 
   const products = data?.pages.flat() ?? []
+  const viewKey = JSON.stringify(variables)
+  const [view, setView] = useState({ key: viewKey, limit: VISIBLE_STEP })
 
-  // Stay one page ahead on the network without mounting more cards. Scrolling
-  // consumes the same cached request; a new sort/search has a separate key.
+  if (!isPlaceholderData && view.key !== viewKey) {
+    setView({ key: viewKey, limit: VISIBLE_STEP })
+  }
+
+  const hasMore = view.limit < products.length || !!hasNextPage
+
+  // Fetch several screens together and keep one batch ahead, but still reveal
+  // only 24 cards at a time. Fast scrolling shouldn't pay a cold start per screen.
   useEffect(() => {
     if (slugs.length && data && hasNextPage && !isPlaceholderData) {
       void client.prefetchQuery(pageOptions(data.pages.length * PAGE_SIZE))
@@ -169,7 +185,7 @@ export default function Index() {
   useEffect(() => {
     const el = sentinelRef.current
 
-    if (!el || !hasNextPage) {
+    if (!el || !hasMore) {
       return
     }
 
@@ -180,7 +196,15 @@ export default function Index() {
           !isFetchingNextPage &&
           !isPlaceholderData
         ) {
-          fetchNextPage()
+          if (view.limit < products.length) {
+            setView(current =>
+              current.key === viewKey
+                ? { ...current, limit: current.limit + VISIBLE_STEP }
+                : current
+            )
+          } else {
+            fetchNextPage()
+          }
         }
       },
       { rootMargin: '800px 0px' }
@@ -189,7 +213,15 @@ export default function Index() {
     io.observe(el)
 
     return () => io.disconnect()
-  }, [hasNextPage, isFetchingNextPage, isPlaceholderData, fetchNextPage])
+  }, [
+    hasMore,
+    isFetchingNextPage,
+    isPlaceholderData,
+    fetchNextPage,
+    products.length,
+    view.limit,
+    viewKey
+  ])
 
   if (!brandsReady && Object.keys(allSlugs).length > 0) {
     return (
@@ -263,7 +295,7 @@ export default function Index() {
   return (
     <div>
       <div className={GRID}>
-        {products.map(p => (
+        {products.slice(0, view.limit).map(p => (
           <Item key={`${p.vendor}-${p.id}`} {...p} sortField={sort.field} />
         ))}
       </div>
@@ -277,7 +309,7 @@ export default function Index() {
         </div>
       )}
 
-      {!hasNextPage && (
+      {!hasMore && (
         <p className="text-muted-foreground py-10 text-center text-sm">
           You've reached the end.
         </p>
