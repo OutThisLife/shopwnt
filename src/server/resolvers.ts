@@ -9,8 +9,14 @@ const PER_PAGE = 250
 const MAX_PAGES = 20
 /** Pages fetched concurrently once page 1 proves there's more. */
 const BATCH = 5
+const TTL = 5 * 60_000
 const compress = promisify(gzip)
 const decompress = promisify(gunzip)
+
+interface Catalog {
+  at: number
+  items: IProduct[]
+}
 
 const shopify = (slug: string, path: string) =>
   new URL(path, `https://${slug}.myshopify.com`).toString()
@@ -72,7 +78,7 @@ const cachedPage = unstable_cache(
 
     // A removed store is empty; throttling and failed later pages aren't.
     if (n === 1 && (res.status === 404 || res.status === 410)) {
-      return (await compress('[]')).toString('base64')
+      return { at: Date.now(), body: (await compress('[]')).toString('base64') }
     }
 
     if (!res.ok) {
@@ -85,18 +91,25 @@ const cachedPage = unstable_cache(
       throw new Error(`Invalid catalog response from ${slug}`)
     }
 
-    return (await compress(JSON.stringify(products))).toString('base64')
+    return {
+      at: Date.now(),
+      body: (await compress(JSON.stringify(products))).toString('base64')
+    }
   },
-  ['shopify-catalog-page-v1'],
+  ['shopify-catalog-page-v2'],
   { revalidate: 300 }
 )
 
-const page = async (slug: string, n: number): Promise<IProduct[]> =>
-  JSON.parse(
-    (
-      await decompress(Buffer.from(await cachedPage(slug, n), 'base64'))
-    ).toString()
-  )
+const page = async (slug: string, n: number): Promise<Catalog> => {
+  const { at, body } = await cachedPage(slug, n)
+
+  return {
+    at,
+    items: JSON.parse(
+      (await decompress(Buffer.from(body, 'base64'))).toString()
+    )
+  }
+}
 
 /**
  * products.json only supports limit/page, so the whole catalog has to be
@@ -104,15 +117,16 @@ const page = async (slug: string, n: number): Promise<IProduct[]> =>
  * floor — then the rest go in concurrent batches instead of single file, so a
  * 20-page catalog costs ~5 round-trips rather than 20.
  */
-const walk = async (slug: string): Promise<IProduct[]> => {
+const walk = async (slug: string): Promise<Catalog> => {
   const items: IProduct[] = []
+  let oldest = Infinity
 
   for (let at = 1; at <= MAX_PAGES;) {
     const size = at === 1 ? 1 : Math.min(BATCH, MAX_PAGES - at + 1)
     const pages = Array.from({ length: size }, (_, n) =>
       page(slug, at + n).then(
-        items => ({ items, error: null }),
-        (error: unknown) => ({ items: null, error })
+        catalog => ({ catalog, error: null }),
+        (error: unknown) => ({ catalog: null, error })
       )
     )
 
@@ -126,13 +140,14 @@ const walk = async (slug: string): Promise<IProduct[]> => {
     for (const pending of pages) {
       const result = await pending
 
-      if (!result.items) {
+      if (!result.catalog) {
         throw result.error
       }
 
-      items.push(...result.items)
+      oldest = Math.min(oldest, result.catalog.at)
+      items.push(...result.catalog.items)
 
-      if (result.items.length < PER_PAGE) {
+      if (result.catalog.items.length < PER_PAGE) {
         complete = true
         break
       }
@@ -148,22 +163,45 @@ const walk = async (slug: string): Promise<IProduct[]> => {
   // Vendor doubles as the store slug downstream (urls, cart links), and only
   // sellable products are worth carrying. Concurrent products/facets requests
   // join this walk and share its object references for metadata memoization.
-  return items
-    .filter(i => i?.variants?.length)
-    .map(i => ({ ...i, vendor: slug }))
+  return {
+    at: oldest,
+    items: items
+      .filter(i => i?.variants?.length)
+      .map(i => ({ ...i, vendor: slug }))
+  }
 }
 
+const cache = new Map<string, Catalog>()
 const inflight = new Map<string, Promise<IProduct[]>>()
 
 /** One walk per store at a time — concurrent misses join it, never repeat it. */
 const catalog = (slug: string): Promise<IProduct[]> => {
+  const hit = cache.get(slug)
+
+  // Reuse decoded catalogs on warm instances, but keep the oldest upstream
+  // page's timestamp: reading persistent cache must never restart the stock TTL.
+  if (hit && Date.now() - hit.at < TTL) {
+    return Promise.resolve(hit.items)
+  }
+
   const going = inflight.get(slug)
 
   if (going) {
     return going
   }
 
-  const next = walk(slug).finally(() => inflight.delete(slug))
+  const next = walk(slug)
+    .then(snapshot => {
+      cache.delete(slug)
+      cache.set(slug, snapshot)
+
+      if (cache.size > 16) {
+        cache.delete(cache.keys().next().value!)
+      }
+
+      return snapshot.items
+    })
+    .finally(() => inflight.delete(slug))
 
   inflight.set(slug, next)
 
