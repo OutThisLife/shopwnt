@@ -1,0 +1,6 @@
+# These versions ship the artifacts we use; no install-time scripts are needed.
+# Keep pnpm's strict policy for any new or upgraded dependency.
+allowBuilds:
+  '@apollo/protobufjs@1.2.8': false
+  'sharp@0.34.5': false
+  'unrs-resolver@1.12.2': false
