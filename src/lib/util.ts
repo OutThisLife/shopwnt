@@ -19,12 +19,23 @@ export const gqlFetch = async <T>(
   variables?: Record<string, unknown>,
   signal?: AbortSignal
 ): Promise<T> => {
-  const res = await fetch('/api/graphql', {
-    method: 'POST',
-    signal,
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ query, variables })
+  const params = new URLSearchParams({
+    query,
+    variables: JSON.stringify(variables ?? {})
   })
+  const url = `/api/graphql?${params}`
+  // Public reads can use the CDN. Large filter sets retain the POST fallback.
+  const res = await fetch(
+    url.length <= 6000 ? url : '/api/graphql',
+    url.length <= 6000
+      ? { signal, headers: { 'Apollo-Require-Preflight': 'true' } }
+      : {
+          method: 'POST',
+          signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ query, variables })
+        }
+  )
 
   const json = (await res.json()) as {
     data?: T
