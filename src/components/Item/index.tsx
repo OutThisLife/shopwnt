@@ -2,7 +2,7 @@
 
 import { ExternalLink } from 'lucide-react'
 import Image from 'next/image'
-import { memo } from 'react'
+import { memo, useCallback, useEffect, useState } from 'react'
 import type { Product } from '~/../types'
 import {
   arrivedAt,
@@ -20,7 +20,8 @@ import {
   CarouselContent,
   CarouselItem,
   CarouselNext,
-  CarouselPrevious
+  CarouselPrevious,
+  type CarouselApi
 } from '../ui/carousel'
 
 type ItemProps = Partial<Product> & { sortField?: SortField }
@@ -78,6 +79,93 @@ const sizesOf = (
   return [...byLabel.values()]
 }
 
+/** Keep slide geometry, but don't download a wardrobe of hidden photos. */
+function ProductPhotos({ images, title }: Pick<Product, 'images' | 'title'>) {
+  const [api, setApi] = useState<CarouselApi>()
+  const [loaded, setLoaded] = useState(() => new Set([0]))
+  const multi = images.length > 1
+
+  const warmPhotos = useCallback(() => {
+    if (!images.length) {
+      return
+    }
+
+    const at = api?.selectedScrollSnap() ?? 0
+    const nearby = [
+      at,
+      (at + 1) % images.length,
+      (at + images.length - 1) % images.length
+    ]
+
+    setLoaded(current =>
+      nearby.every(i => current.has(i))
+        ? current
+        : new Set([...current, ...nearby])
+    )
+  }, [api, images.length])
+
+  useEffect(() => {
+    if (!api) {
+      return
+    }
+
+    api.on('select', warmPhotos)
+
+    return () => {
+      api.off('select', warmPhotos)
+    }
+  }, [api, warmPhotos])
+
+  return (
+    <Carousel
+      className="size-full"
+      onFocusCapture={warmPhotos}
+      onPointerEnter={warmPhotos}
+      onTouchStart={warmPhotos}
+      opts={{ loop: true, watchDrag: multi }}
+      setApi={setApi}>
+      <CarouselContent className="ml-0 h-full">
+        {images.map((img, index) => (
+          <CarouselItem className="pl-0" key={img.src}>
+            <div className="relative aspect-3/4 w-full overflow-hidden">
+              {loaded.has(index) && (
+                <div className="card-window absolute inset-0">
+                  <Image
+                    aria-hidden
+                    alt=""
+                    className="scale-110 object-cover opacity-[0.07] saturate-75"
+                    fill
+                    loading={index === 0 ? 'lazy' : 'eager'}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=64`}
+                    unoptimized
+                  />
+                  <Image
+                    alt={title ?? ''}
+                    className="object-contain object-center"
+                    fill
+                    loading={index === 0 ? 'lazy' : 'eager'}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=1200`}
+                    unoptimized
+                  />
+                </div>
+              )}
+            </div>
+          </CarouselItem>
+        ))}
+      </CarouselContent>
+
+      {multi && (
+        <div className="opacity-0 transition-opacity group-hover:opacity-100">
+          <CarouselPrevious className={CHIP} />
+          <CarouselNext className={CHIP} />
+        </div>
+      )}
+    </Carousel>
+  )
+}
+
 function Item({
   title,
   url,
@@ -91,7 +179,6 @@ function Item({
   updated_at,
   sortField = 'arrived'
 }: ItemProps) {
-  const multi = images.length > 1
   const price = Number(listPrice)
   const { name: vendorName, resolving: resolvingVendor } = useBrandName(
     vendor ?? ''
@@ -111,52 +198,7 @@ function Item({
       <CardContent className="px-0">
         {/* Card is the photo — meta floats on it, no footer band. */}
         <div className="bg-muted/40 relative aspect-3/4 w-full">
-          <Carousel
-            className="size-full"
-            opts={{ loop: true, watchDrag: multi }}>
-            <CarouselContent className="ml-0 h-full">
-              {images.map(img => (
-                <CarouselItem className="pl-0" key={img.src}>
-                  <div className="relative aspect-3/4 w-full overflow-hidden">
-                    {/* Both layers drift together inside the fixed frame. */}
-                    <div className="card-window absolute inset-0">
-                      {/* A 64px rendition scales into a soft color field
-                          without making every card carry a live GPU blur. */}
-                      <Image
-                        aria-hidden
-                        alt=""
-                        className="scale-110 object-cover opacity-[0.07] saturate-75"
-                        fill
-                        loading="lazy"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=64`}
-                        unoptimized
-                      />
-                      {/* Cards render ~450px wide; a 1200px rendition covers
-                          2x displays while costing a fraction of the original
-                          multi-megapixel file to fetch and decode. */}
-                      <Image
-                        alt={title ?? ''}
-                        className="object-contain object-center"
-                        fill
-                        loading="lazy"
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                        src={`${img.src}${img.src.includes('?') ? '&' : '?'}width=1200`}
-                        unoptimized
-                      />
-                    </div>
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-
-            {multi && (
-              <div className="opacity-0 transition-opacity group-hover:opacity-100">
-                <CarouselPrevious className={CHIP} />
-                <CarouselNext className={CHIP} />
-              </div>
-            )}
-          </Carousel>
+          <ProductPhotos images={images} title={title ?? ''} />
 
           {/* pointer-events-none so carousel arrows still work; links opt back in. */}
           <div className="pointer-events-none absolute inset-0 z-10">

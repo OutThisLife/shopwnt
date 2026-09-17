@@ -16,10 +16,12 @@ export const gql = (
 /** Minimal GraphQL over fetch against the local API route. */
 export const gqlFetch = async <T>(
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
+  signal?: AbortSignal
 ): Promise<T> => {
   const res = await fetch('/api/graphql', {
     method: 'POST',
+    signal,
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ query, variables })
   })

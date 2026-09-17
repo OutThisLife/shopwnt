@@ -1,9 +1,13 @@
 'use client'
 
-import { keepPreviousData, useInfiniteQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQueryClient
+} from '@tanstack/react-query'
 import { useAtomValue, useSetAtom } from 'jotai'
 import { PackageOpen, Store, TriangleAlert } from 'lucide-react'
-import { useEffect, useRef, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, type ReactNode } from 'react'
 import type { Product } from '~/../types'
 import { Item } from '~/components'
 import { Button } from '~/components/ui/button'
@@ -95,6 +99,7 @@ function EmptyState({
 }
 
 export default function Index() {
+  const client = useQueryClient()
   const sortId = useAtomValue(sortAtom)
   const brandsReady = useAtomValue(brandsReadyAtom)
   const allSlugs = useAtomValue(slugsAtom)
@@ -104,7 +109,29 @@ export default function Index() {
   const facetCount = useAtomValue(facetCountAtom)
   const setFacets = useSetAtom(facetsAtom)
   const sort = getSortOption(sortId)
-  const sortArg = { [sort.field]: sort.dir }
+  const variables = useMemo(
+    () => ({ slugs, q, facets, sort: { [sort.field]: sort.dir } }),
+    [slugs, q, facets, sort.field, sort.dir]
+  )
+  const pageOptions = useCallback(
+    (offset: number) => ({
+      queryKey: ['product-page', variables, offset],
+      retry: false,
+      staleTime: 60_000,
+      gcTime: 60_000,
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        gqlFetch<{ products: Product[] }>(
+          QUERY,
+          {
+            ...variables,
+            limit: PAGE_SIZE,
+            offset
+          },
+          signal
+        ).then(r => r.products ?? [])
+    }),
+    [variables]
+  )
 
   const {
     data,
@@ -116,26 +143,26 @@ export default function Index() {
     fetchNextPage
   } = useInfiniteQuery({
     enabled: slugs.length > 0,
-    queryKey: ['products', { slugs, sort: sortArg, q, facets }],
+    queryKey: ['products', variables],
     initialPageParam: 0,
     // Changing sort, search, or a filter keys a fresh query. Holding the last
     // grid while it loads keeps the page interactive instead of tearing down
     // to skeletons on every toolbar touch.
     placeholderData: keepPreviousData,
-    queryFn: ({ pageParam }) =>
-      gqlFetch<{ products: Product[] }>(QUERY, {
-        slugs,
-        q,
-        facets,
-        sort: sortArg,
-        limit: PAGE_SIZE,
-        offset: pageParam
-      }).then(r => r.products ?? []),
+    queryFn: ({ pageParam }) => client.fetchQuery(pageOptions(pageParam)),
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.length < PAGE_SIZE ? undefined : allPages.flat().length
+      lastPage.length < PAGE_SIZE ? undefined : allPages.length * PAGE_SIZE
   })
 
   const products = data?.pages.flat() ?? []
+
+  // Stay one page ahead on the network without mounting more cards. Scrolling
+  // consumes the same cached request; a new sort/search has a separate key.
+  useEffect(() => {
+    if (slugs.length && data && hasNextPage && !isPlaceholderData) {
+      void client.prefetchQuery(pageOptions(data.pages.length * PAGE_SIZE))
+    }
+  }, [client, data, hasNextPage, isPlaceholderData, pageOptions, slugs.length])
 
   const sentinelRef = useRef<HTMLDivElement>(null)
 

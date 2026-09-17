@@ -46,19 +46,23 @@ export function useFacets() {
   const selection = useAtomValue(facetSelectionAtom)
   const prune = useSetAtom(pruneFacetsAtom)
 
-  const { data, isPending } = useQuery({
+  const { data, isPending, isPlaceholderData } = useQuery<Facet[]>({
     enabled: slugs.length > 0,
     queryKey: ['facets', { slugs, q, selection }],
     // Every selection re-keys this query. Holding the previous response keeps
     // the pinned menu's counts up instead of flashing every value to zero
     // while the recount is in flight.
     placeholderData: keepPreviousData,
-    queryFn: () =>
-      gqlFetch<{ facets: Facet[] }>(QUERY, {
-        slugs,
-        q,
-        facets: selection
-      }).then(r => r.facets ?? [])
+    queryFn: ({ signal }) =>
+      gqlFetch<{ facets: Facet[] }>(
+        QUERY,
+        {
+          slugs,
+          q,
+          facets: selection
+        },
+        signal
+      ).then(r => r.facets ?? [])
   })
 
   // Counts are computed with each group's own selection lifted, so a value you
@@ -66,12 +70,12 @@ export function useFacets() {
   // this response genuinely no longer exists, and holding it would filter the
   // grid to nothing with no visible cause.
   useEffect(() => {
-    if (data) {
+    if (data && !isPlaceholderData) {
       prune(
         Object.fromEntries(data.map(f => [f.key, f.values.map(v => v.value)]))
       )
     }
-  }, [data, prune])
+  }, [data, isPlaceholderData, prune])
 
   return { facets: data ?? [], loading: isPending && slugs.length > 0 }
 }
