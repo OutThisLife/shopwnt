@@ -58,10 +58,13 @@ export const getSortOption = (id: SortId): SortOption =>
   SORT_OPTIONS.find(o => o.value === id) ?? SORT_OPTIONS[0]
 
 const DEFAULT_BRANDS: Record<string, boolean> = {
+  fleurdumal: true,
   'for-love-lemons': false,
   'frame-denim': false,
-  loveshackfancy: true,
+  galaxies13x: true,
+  loveshackfancy: false,
   'naked-cashmere': false,
+  'nj-boutique-official': true,
   selkiecollection: false,
   'stripe-stare': false,
   veronicabeard: false
